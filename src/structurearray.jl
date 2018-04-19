@@ -70,6 +70,15 @@ end
 function cat(dims, args::StructureArray...)
     f = key -> cat(dims, (getproperty(t, key) for t in args)...)
     T = mapreduce(eltype, promote_type, args)
-    #map(f, fields(eltype(args[1])))
     StructureArray{T}(map(f, fields(eltype(args[1]))))
+end
+
+for op in [:hcat, :vcat]
+    @eval begin
+        function $op(args::StructureArray...)
+            f = key -> $op((getproperty(t, key) for t in args)...)
+            T = mapreduce(eltype, promote_type, args)
+            StructureArray{T}(map(f, fields(eltype(args[1]))))
+        end
+    end
 end

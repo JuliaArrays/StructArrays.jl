@@ -7,6 +7,8 @@ This package introduces the type `StructureArray` which is an `AbstractArray` wh
 
 `Base.getproperty` or the dot syntax can be used to access columns, whereas rows can be accessed with `getindex`.
 
+The package is largely inspired from the `Columns` type in [IndexedTables](https://github.com/JuliaComputing/IndexedTables.jl)
+
 ## Example usage to store complex numbers
 
 ```julia
