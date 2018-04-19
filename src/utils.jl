@@ -4,18 +4,25 @@ eltypes(::Type{Tuple{}}) = Tuple{}
 eltypes(::Type{T}) where {T<:Tuple} =
     tuple_type_cons(eltype(tuple_type_head(T)), eltypes(tuple_type_tail(T)))
 eltypes(::Type{NamedTuple{K, V}}) where {K, V} = eltypes(V)
-fields(T) = fieldnames(T)
-fields(::Type{<:NamedTuple{K}}) where {K} = K
-#@inline ith_all(i, ::Tuple{}) = ()
-#@inline ith_all(i, as) = (as[1][i], ith_all(i, tail(as))...)
 
-@generated function ith_all(s::StructureArray{T}, I...) where {T}
+@generated function get_ith(s::StructureArray{T}, I...) where {T}
     args = []
     for key in fields(T)
         field = Expr(:., :s, Expr(:quote, key))
         push!(args, :($field[I...]))
     end
     Expr(:call, :createinstance, :T, args...)
+end
+
+@generated function set_ith!(s::StructureArray{T}, vals, I...) where {T}
+    args = []
+    for key in fields(T)
+        field = Expr(:., :s, Expr(:quote, key))
+        val = Expr(:., :vals, Expr(:quote, key))
+        push!(args, :($field[I...] = $val))
+    end
+    push!(args, :s)
+    Expr(:block, args...)
 end
 
 createinstance(::Type{T}, args...) where {T} = T(args...)

@@ -1,7 +1,7 @@
 module StructureArrays
 
 import Base:
-    getindex, setindex!, size, push!, view, getproperty
+    getindex, setindex!, size, push!, view, getproperty, append!, cat
 #     linearindexing, push!, size, sort, sort!, permute!, issorted, sortperm,
 #     summary, resize!, vcat, serialize, deserialize, append!, copy!, view
 
