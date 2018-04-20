@@ -1,9 +1,9 @@
-# StructureArrays
+# StructArrays
 
-[![Build Status](https://travis-ci.org/piever/StructureArrays.jl.svg?branch=master)](https://travis-ci.org/piever/StructureArrays.jl)
-[![codecov.io](http://codecov.io/github/piever/StructureArrays.jl/coverage.svg?branch=master)](http://codecov.io/github/piever/StructureArrays.jl?branch=master)
+[![Build Status](https://travis-ci.org/piever/StructArrays.jl.svg?branch=master)](https://travis-ci.org/piever/StructArrays.jl)
+[![codecov.io](http://codecov.io/github/piever/StructArrays.jl/coverage.svg?branch=master)](http://codecov.io/github/piever/StructArrays.jl?branch=master)
 
-This package introduces the type `StructureArray` which is an `AbstractArray` whose elements are `struct` (for example `NamedTuples`,  or `ComplexF64`, or a custom user defined `struct`). While a `StructureArray` iterates `structs`, the layout is column based (meaning each field of the `struct` is stored in a seprate `Array`).
+This package introduces the type `StructArray` which is an `AbstractArray` whose elements are `struct` (for example `NamedTuples`,  or `ComplexF64`, or a custom user defined `struct`). While a `StructArray` iterates `structs`, the layout is column based (meaning each field of the `struct` is stored in a seprate `Array`).
 
 `Base.getproperty` or the dot syntax can be used to access columns, whereas rows can be accessed with `getindex`.
 
@@ -12,12 +12,12 @@ The package is largely inspired from the `Columns` type in [IndexedTables](https
 ## Example usage to store complex numbers
 
 ```julia
-julia> using StructureArrays, Random
+julia> using StructArrays, Random
 
 julia> srand(4);
 
-julia> s = StructureArray{ComplexF64}(rand(2,2), rand(2,2))
-2×2 StructureArray{Complex{Float64},2,NamedTuple{(:re, :im),Tuple{Array{Float64,2},Array{Float64,2}}}}:
+julia> s = StructArray{ComplexF64}(rand(2,2), rand(2,2))
+2×2 StructArray{Complex{Float64},2,NamedTuple{(:re, :im),Tuple{Array{Float64,2},Array{Float64,2}}}}:
  0.680079+0.625239im   0.92407+0.267358im
  0.874437+0.737254im  0.929336+0.804478im
 
@@ -33,8 +33,8 @@ julia> s.re
 ## Example usage to store a data table
 
 ```julia
-julia> t = StructureArray((a = [1, 2], b = ["x", "y"]))
-2-element StructureArray{NamedTuple{(:a, :b),Tuple{Int64,String}},1,NamedTuple{(:a, :b),Tuple{Array{Int64,1},Array{String,1}}}}:
+julia> t = StructArray((a = [1, 2], b = ["x", "y"]))
+2-element StructArray{NamedTuple{(:a, :b),Tuple{Int64,String}},1,NamedTuple{(:a, :b),Tuple{Array{Int64,1},Array{String,1}}}}:
  (a = 1, b = "x")
  (a = 2, b = "y")
 
@@ -47,7 +47,7 @@ julia> t.a
  2
 
 julia> push!(t, (a = 3, b = "z"))
-3-element StructureArray{NamedTuple{(:a, :b),Tuple{Int64,String}},1,NamedTuple{(:a, :b),Tuple{Array{Int64,1},Array{String,1}}}}:
+3-element StructArray{NamedTuple{(:a, :b),Tuple{Int64,String}},1,NamedTuple{(:a, :b),Tuple{Array{Int64,1},Array{String,1}}}}:
  (a = 1, b = "x")
  (a = 2, b = "y")
  (a = 3, b = "z")

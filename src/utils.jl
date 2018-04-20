@@ -5,7 +5,7 @@ eltypes(::Type{T}) where {T<:Tuple} =
     tuple_type_cons(eltype(tuple_type_head(T)), eltypes(tuple_type_tail(T)))
 eltypes(::Type{NamedTuple{K, V}}) where {K, V} = eltypes(V)
 
-@generated function get_ith(s::StructureArray{T}, I...) where {T}
+@generated function get_ith(s::StructArray{T}, I...) where {T}
     args = []
     for key in fields(T)
         field = Expr(:., :s, Expr(:quote, key))
@@ -14,7 +14,7 @@ eltypes(::Type{NamedTuple{K, V}}) where {K, V} = eltypes(V)
     Expr(:call, :createinstance, :T, args...)
 end
 
-@generated function set_ith!(s::StructureArray{T}, vals, I...) where {T}
+@generated function set_ith!(s::StructArray{T}, vals, I...) where {T}
     args = []
     for key in fields(T)
         field = Expr(:., :s, Expr(:quote, key))
