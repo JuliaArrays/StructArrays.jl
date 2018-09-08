@@ -26,8 +26,13 @@ end
     @test t == StructArray{Pair}([3, 5, 2, 3, 5, 2], ["a", "b", "c", "a", "b", "c"])
     t = StructArray{Pair}([3, 5], ["a", "b"])
     t2 = StructArray{Pair}([1, 6], ["a", "b"])
-    @test cat(1, t, t2) == StructArray{Pair}([3, 5, 1, 6], ["a", "b", "a", "b"]) == vcat(t, t2)
+    @test cat(t, t2; dims=1) == StructArray{Pair}([3, 5, 1, 6], ["a", "b", "a", "b"]) == vcat(t, t2)
     @test vcat(t, t2) isa StructArray
-    @test cat(2, t, t2) == StructArray{Pair}([3 1; 5 6], ["a" "a"; "b" "b"]) == hcat(t, t2)
+    @test cat(t, t2; dims=2) == StructArray{Pair}([3 1; 5 6], ["a" "a"; "b" "b"]) == hcat(t, t2)
     @test hcat(t, t2) isa StructArray
+end
+
+f_infer() = StructArray{ComplexF64}(rand(2,2), rand(2,2))
+@testset "inferrability" begin
+    @inferred f_infer()
 end

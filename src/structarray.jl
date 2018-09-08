@@ -41,9 +41,12 @@ end
 
 setindex!(s::StructArray, val, I::Int...) = set_ith!(s, val, I...)
 
-fields(T) = fieldnames(T)
 fields(::Type{<:NamedTuple{K}}) where {K} = K
 fields(::Type{<:StructArray{T}}) where {T} = fields(T)
+
+@generated function fields(t::Type{T}) where {T}
+   return :($(Expr(:tuple, [QuoteNode(f) for f in fieldnames(T)]...)))
+end
 
 @generated function push!(s::StructArray{T, 1}, vals) where {T}
     args = []
