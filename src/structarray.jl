@@ -44,6 +44,8 @@ setindex!(s::StructArray, val, I::Int...) = set_ith!(s, val, I...)
 fields(::Type{<:NamedTuple{K}}) where {K} = K
 fields(::Type{<:StructArray{T}}) where {T} = fields(T)
 
+Base.propertynames(s::StructArray) = fieldnames(typeof(columns(s)))
+
 @generated function fields(t::Type{T}) where {T}
    return :($(Expr(:tuple, [QuoteNode(f) for f in fieldnames(T)]...)))
 end
