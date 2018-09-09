@@ -18,6 +18,15 @@ end
     @test view(t, 2, 1:2) == StructArray{ComplexF64}(view(a, 2, 1:2), view(b, 2, 1:2))
 end
 
+@testset "resize!" begin
+    t = StructArray{Pair}([3, 5], ["a", "b"])
+    resize!(t, 5)
+    @test length(t) == 5
+    p = 1 => "c"
+    t[5] = p
+    @test t[5] == p
+end
+
 @testset "concat" begin
     t = StructArray{Pair}([3, 5], ["a", "b"])
     push!(t, (2 => "c"))

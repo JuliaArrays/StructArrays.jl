@@ -76,6 +76,13 @@ function cat(dims, args::StructArray...)
     StructArray{T}(map(f, fields(eltype(args[1]))))
 end
 
+function Base.resize!(s::StructArray, i::Integer)
+    for a in columns(s)
+        resize!(a, i)
+    end
+    return s
+end
+
 for op in [:hcat, :vcat]
     @eval begin
         function $op(args::StructArray...)
