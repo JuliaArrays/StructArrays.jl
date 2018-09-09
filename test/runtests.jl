@@ -45,3 +45,8 @@ f_infer() = StructArray{ComplexF64}(rand(2,2), rand(2,2))
 @testset "inferrability" begin
     @inferred f_infer()
 end
+
+@testset "propertynames" begin
+    a = StructArray{ComplexF64}(Float64[], Float64[])
+    @test sort(collect(propertynames(a))) == [:im, :re]
+end
