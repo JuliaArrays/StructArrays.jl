@@ -38,7 +38,7 @@ Base.propertynames(s::StructArray) = fieldnames(typeof(columns(s)))
 
 Base.size(s::StructArray) = size(columns(s)[1])
 
-Base.getindex(s::StructArray, I::Int...) = get_ith(s, I...)
+Base.@propagate_inbounds Base.getindex(s::StructArray, I::Int...) = get_ith(s, I...)
 function Base.getindex(s::StructArray{T, N, C}, I::Union{Int, AbstractArray, Colon}...) where {T, N, C}
     StructArray{T}(map(v -> getindex(v, I...), columns(s)))
 end
@@ -47,7 +47,7 @@ function Base.view(s::StructArray{T, N, C}, I...) where {T, N, C}
     StructArray{T}(map(v -> view(v, I...), columns(s)))
 end
 
-Base.setindex!(s::StructArray, val, I::Int...) = set_ith!(s, val, I...)
+Base.@propagate_inbounds Base.setindex!(s::StructArray, val, I::Int...) = set_ith!(s, val, I...)
 
 fields(::Type{<:NamedTuple{K}}) where {K} = K
 fields(::Type{<:StructArray{T}}) where {T} = fields(T)

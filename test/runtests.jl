@@ -7,6 +7,7 @@ using Test
     t = StructArray((a = a, b = b))
     @test (@inferred t[2,2]) == (a = 4, b = 7)
     @test (@inferred t[2,1:2]) == StructArray((a = [3, 4], b = [6, 7]))
+    @test_throws BoundsError t[3,3]
     @test (@inferred view(t, 2, 1:2)) == StructArray((a = view(a, 2, 1:2), b = view(b, 2, 1:2)))
 end
 
