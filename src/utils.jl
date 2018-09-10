@@ -11,7 +11,10 @@ eltypes(::Type{NamedTuple{K, V}}) where {K, V} = eltypes(V)
         field = Expr(:., :s, Expr(:quote, key))
         push!(args, :($field[I...]))
     end
-    Expr(:call, :createinstance, :T, args...)
+    return quote
+        @boundscheck checkbounds(s, I...)
+        @inbounds $(Expr(:call, :createinstance, :T, args...))
+    end
 end
 
 @generated function set_ith!(s::StructArray{T}, vals, I...) where {T}
@@ -22,7 +25,10 @@ end
         push!(args, :($field[I...] = $val))
     end
     push!(args, :s)
-    Expr(:block, args...)
+    return quote
+        @boundscheck checkbounds(s, I...)
+        @inbounds $(Expr(:block, args...))
+    end
 end
 
 createinstance(::Type{T}, args...) where {T} = T(args...)
