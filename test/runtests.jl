@@ -18,6 +18,16 @@ end
     @test view(t, 2, 1:2) == StructArray{ComplexF64}(view(a, 2, 1:2), view(b, 2, 1:2))
 end
 
+@testset "copy" begin
+    a, b = [1 2; 3 4], [4 5; 6 7]
+    t = StructArray{ComplexF64}(a, b)
+    t2 = @inferred copy(t)
+    @test t2[1,1] == 1.0 + im*4.0
+    t2[1,1] = 2.0 + im*4.0
+    # Test we actually did a copy
+    @test t[1,1] == 1.0 + im*4.0
+end
+
 @testset "undef initializer" begin
     t = @inferred StructArray{ComplexF64}(undef, 5, 5)
     @test eltype(t) == ComplexF64

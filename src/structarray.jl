@@ -99,3 +99,5 @@ for op in [:hcat, :vcat]
         end
     end
 end
+
+Base.copy(s::StructArray{T,N,C}) where {T,N,C} = StructArray{T,N,C}(C(copy(x) for x in columns(s)))
