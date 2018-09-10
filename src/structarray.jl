@@ -23,34 +23,39 @@ StructArray{T}(c::C) where {T, C<:NamedTuple} =
 StructArray(c::C) where {C<:NamedTuple} = StructArray{C}(c)
 
 StructArray{T}(args...) where {T} = StructArray{T}(NamedTuple{fields(T)}(args))
+@generated function StructArray{T}(::Base.UndefInitializer, d::Integer...) where {T}
+    ex = Expr(:tuple, [:(Array{$(fieldtype(T, i))}(undef, sz)) for i in 1:fieldcount(T)]...)
+    return quote
+        sz = convert(Tuple{Vararg{Int}}, d)
+        StructArray{T}(NamedTuple{fields(T)}($ex))
+    end
+end
 
 columns(s::StructArray) = getfield(s, :columns)
-getproperty(s::StructArray, key::Symbol) = getfield(columns(s), key)
-getproperty(s::StructArray, key::Int) = getfield(columns(s), key)
+Base.getproperty(s::StructArray, key::Symbol) = getfield(columns(s), key)
+Base.getproperty(s::StructArray, key::Int) = getfield(columns(s), key)
+Base.propertynames(s::StructArray) = fieldnames(typeof(columns(s)))
 
-size(s::StructArray) = size(columns(s)[1])
+Base.size(s::StructArray) = size(columns(s)[1])
 
-getindex(s::StructArray, I::Int...) = get_ith(s, I...)
-function getindex(s::StructArray{T, N, C}, I::Union{Int, AbstractArray, Colon}...) where {T, N, C}
+Base.getindex(s::StructArray, I::Int...) = get_ith(s, I...)
+function Base.getindex(s::StructArray{T, N, C}, I::Union{Int, AbstractArray, Colon}...) where {T, N, C}
     StructArray{T}(map(v -> getindex(v, I...), columns(s)))
 end
 
-function view(s::StructArray{T, N, C}, I...) where {T, N, C}
+function Base.view(s::StructArray{T, N, C}, I...) where {T, N, C}
     StructArray{T}(map(v -> view(v, I...), columns(s)))
 end
 
-setindex!(s::StructArray, val, I::Int...) = set_ith!(s, val, I...)
+Base.setindex!(s::StructArray, val, I::Int...) = set_ith!(s, val, I...)
 
 fields(::Type{<:NamedTuple{K}}) where {K} = K
 fields(::Type{<:StructArray{T}}) where {T} = fields(T)
-
-Base.propertynames(s::StructArray) = fieldnames(typeof(columns(s)))
-
 @generated function fields(t::Type{T}) where {T}
    return :($(Expr(:tuple, [QuoteNode(f) for f in fieldnames(T)]...)))
 end
 
-@generated function push!(s::StructArray{T, 1}, vals) where {T}
+@generated function Base.push!(s::StructArray{T, 1}, vals) where {T}
     args = []
     for key in fields(T)
         field = Expr(:., :s, Expr(:quote, key))
@@ -61,7 +66,7 @@ end
     Expr(:block, args...)
 end
 
-@generated function append!(s::StructArray{T, 1}, vals) where {T}
+@generated function Base.append!(s::StructArray{T, 1}, vals) where {T}
     args = []
     for key in fields(T)
         field = Expr(:., :s, Expr(:quote, key))
@@ -72,8 +77,8 @@ end
     Expr(:block, args...)
 end
 
-function cat(dims, args::StructArray...)
-    f = key -> cat(dims, (getproperty(t, key) for t in args)...)
+function Base.cat(args::StructArray...; dims)
+    f = key -> cat((getproperty(t, key) for t in args)...; dims=dims)
     T = mapreduce(eltype, promote_type, args)
     StructArray{T}(map(f, fields(eltype(args[1]))))
 end
@@ -87,7 +92,7 @@ end
 
 for op in [:hcat, :vcat]
     @eval begin
-        function $op(args::StructArray...)
+        function Base.$op(args::StructArray...)
             f = key -> $op((getproperty(t, key) for t in args)...)
             T = mapreduce(eltype, promote_type, args)
             StructArray{T}(map(f, fields(eltype(args[1]))))
