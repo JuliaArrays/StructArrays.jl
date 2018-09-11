@@ -31,6 +31,22 @@ StructArray{T}(args...) where {T} = StructArray{T}(NamedTuple{fields(T)}(args))
     end
 end
 
+@generated function StructArray(v::AbstractArray{T, N}) where {T, N}
+    syms = [gensym() for i in 1:fieldcount(T)]
+    init = Expr(:block, [:($(syms[i]) = similar(v, $(fieldtype(T, i)))) for i in 1:fieldcount(T)]...)
+    push = Expr(:block, [:($(syms[i])[j] = f.$(fieldname(T, i))) for i in 1:fieldcount(T)]...)
+    quote
+        $init
+        for (j, f) in enumerate(v)
+            @inbounds $push
+        end
+        return StructArray{T}($(syms...))
+    end
+end
+StructArray(s::StructArray) = copy(s)
+
+Base.convert(::Type{StructArray}, v::AbstractArray) = StructArray(v)
+
 columns(s::StructArray) = getfield(s, :columns)
 Base.getproperty(s::StructArray, key::Symbol) = getfield(columns(s), key)
 Base.getproperty(s::StructArray, key::Int) = getfield(columns(s), key)

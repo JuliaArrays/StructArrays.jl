@@ -11,6 +11,17 @@ using Test
     @test (@inferred view(t, 2, 1:2)) == StructArray((a = view(a, 2, 1:2), b = view(b, 2, 1:2)))
 end
 
+@testset "constructor from existing array" begin
+    v = rand(ComplexF64, 5, 3)
+    t = @inferred StructArray(v)
+    @test size(t) == (5, 3)
+    @test t[2,2] == v[2,2]
+    t2 = convert(StructArray, v)::StructArray
+    @test t2 == t
+    t3 = StructArray(t)::StructArray
+    @test t3 == t
+end
+
 @testset "complex" begin
     a, b = [1 2; 3 4], [4 5; 6 7]
     t = StructArray{ComplexF64}(a, b)
