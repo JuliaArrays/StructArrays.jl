@@ -1,12 +1,12 @@
 """
 A type that stores an array of structures as a structure of arrays.
 # Fields:
-- `columns`: a tuple of arrays. Also `columns(x)`
+- `columns`: a named tuple of arrays. Also `columns(x)`
 """
-struct StructArray{T, N, C<:Tup} <: AbstractArray{T, N}
+struct StructArray{T, N, C<:NamedTuple} <: AbstractArray{T, N}
     columns::C
 
-    function StructArray{T, N, C}(c) where {T, N, C<:Tup}
+    function StructArray{T, N, C}(c) where {T, N, C<:NamedTuple}
         length(c) > 0 || error("must have at least one column")
         n = size(c[1])
         length(n) == N || error("wrong number of dimensions")
@@ -21,6 +21,7 @@ StructArray{T}(c::C) where {T, C<:Tuple} = StructArray{T}(NamedTuple{fields(T)}(
 StructArray{T}(c::C) where {T, C<:NamedTuple} =
     StructArray{createtype(T, eltypes(C)), length(size(c[1])), C}(c)
 StructArray(c::C) where {C<:NamedTuple} = StructArray{C}(c)
+StructArray(c::C) where {C<:Tuple} = StructArray{eltypes(C)}(c)
 
 StructArray{T}(; kwargs...) where {T} = StructArray{T}(values(kwargs))
 StructArray(; kwargs...) = StructArray(values(kwargs))
@@ -73,6 +74,10 @@ fields(::Type{<:StructArray{T}}) where {T} = fields(T)
 @generated function fields(t::Type{T}) where {T}
    return :($(Expr(:tuple, [QuoteNode(f) for f in fieldnames(T)]...)))
 end
+@generated function fields(t::Type{T}) where {T<:Tuple}
+    return :($(Expr(:tuple, [QuoteNode(Symbol("x$f")) for f in fieldnames(T)]...)))
+end
+
 
 @generated function Base.push!(s::StructArray{T, 1}, vals) where {T}
     args = []
