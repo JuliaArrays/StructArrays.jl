@@ -49,6 +49,8 @@ end
 end
 StructArray(s::StructArray) = copy(s)
 
+StructArray(x) = StructArray(Tables.columntable(x))
+
 Base.convert(::Type{StructArray}, v::AbstractArray) = StructArray(v)
 
 columns(s::StructArray) = getfield(s, :columns)
