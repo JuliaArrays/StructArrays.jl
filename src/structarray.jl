@@ -1,12 +1,12 @@
 """
 A type that stores an array of structures as a structure of arrays.
 # Fields:
-- `columns`: a tuple of arrays. Also `columns(x)`
+- `columns`: a named tuple of arrays. Also `columns(x)`
 """
-struct StructArray{T, N, C<:Tup} <: AbstractArray{T, N}
+struct StructArray{T, N, C<:NamedTuple} <: AbstractArray{T, N}
     columns::C
 
-    function StructArray{T, N, C}(c) where {T, N, C<:Tup}
+    function StructArray{T, N, C}(c) where {T, N, C<:NamedTuple}
         length(c) > 0 || error("must have at least one column")
         n = size(c[1])
         length(n) == N || error("wrong number of dimensions")
