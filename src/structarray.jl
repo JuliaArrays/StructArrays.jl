@@ -21,6 +21,7 @@ StructArray{T}(c::C) where {T, C<:Tuple} = StructArray{T}(NamedTuple{fields(T)}(
 StructArray{T}(c::C) where {T, C<:NamedTuple} =
     StructArray{createtype(T, eltypes(C)), length(size(c[1])), C}(c)
 StructArray(c::C) where {C<:NamedTuple} = StructArray{C}(c)
+StructArray(c::C) where {C<:Tuple} = StructArray{eltypes(C)}(c)
 
 StructArray{T}(; kwargs...) where {T} = StructArray{T}(values(kwargs))
 StructArray(; kwargs...) = StructArray(values(kwargs))
@@ -73,6 +74,10 @@ fields(::Type{<:StructArray{T}}) where {T} = fields(T)
 @generated function fields(t::Type{T}) where {T}
    return :($(Expr(:tuple, [QuoteNode(f) for f in fieldnames(T)]...)))
 end
+@generated function fields(t::Type{T}) where {T<:Tuple}
+    return :($(Expr(:tuple, [QuoteNode(Symbol("x$f")) for f in fieldnames(T)]...)))
+end
+
 
 @generated function Base.push!(s::StructArray{T, 1}, vals) where {T}
     args = []

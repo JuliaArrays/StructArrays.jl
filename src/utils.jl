@@ -32,7 +32,7 @@ end
 end
 
 createinstance(::Type{T}, args...) where {T} = T(args...)
-createinstance(::Type{T}, args...) where {T<:NamedTuple} = T(args)
+createinstance(::Type{T}, args...) where {T<:Union{Tuple, NamedTuple}} = T(args)
 
 createtype(::Type{T}, ::Type{C}) where {T<:NamedTuple{N}, C} where {N} = NamedTuple{N, C}
 createtype(::Type{T}, ::Type{C}) where {T, C} = T
