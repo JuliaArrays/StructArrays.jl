@@ -22,6 +22,15 @@ end
     @test t3 == t
 end
 
+@testset "tuple case" begin
+    s = StructArray(([1], ["test"],))
+    @test s[1] == (1, "test")
+    @test Base.getproperty(s, 1) == [1]
+    @test Base.getproperty(s, 2) == ["test"]
+    t = StructArray{Tuple{Int, Float64}}([1], [1.2])
+    @test t[1] == (1, 1.2)
+end
+
 @testset "kwargs constructor" begin
     a = [1.2]
     b = [2.3]
