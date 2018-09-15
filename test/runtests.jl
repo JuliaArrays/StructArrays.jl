@@ -27,6 +27,12 @@ end
     b = [2.3]
     @test StructArray(a=a, b=b) == StructArray((a=a, b=b))
     @test StructArray{ComplexF64}(re=a, im=b) == StructArray{ComplexF64}(a, b)
+    f1() = StructArray(a=[1.2], b=["test"])
+    f2() = StructArray{Pair}(first=[1.2], second=["test"])
+    t1 = @inferred f1()
+    t2 = @inferred f2()
+    @test t1 == StructArray((a=[1.2], b=["test"]))
+    @test t2 == StructArray{Pair}([1.2], ["test"])
 end
 
 @testset "complex" begin
