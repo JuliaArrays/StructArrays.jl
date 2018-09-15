@@ -1,4 +1,5 @@
 using StructArrays
+import Tables
 using Test
 
 # write your own tests here
@@ -103,3 +104,16 @@ end
     a = StructArray{ComplexF64}(Float64[], Float64[])
     @test sort(collect(propertynames(a))) == [:im, :re]
 end
+
+@testset "tables" begin
+    s = StructArray([(a=1, b="test")])
+    @test Tables.schema(s) == Tables.Schema((:a, :b), (Int, String))
+    @test Tables.rows(s)[1].a == 1
+    @test Tables.rows(s)[1].b == "test"
+    @test Tables.columns(s).a == [1]
+    @test Tables.columns(s).b == ["test"]
+    @test Tables.istable(s)
+    @test Tables.rowaccess(s)
+    @test Tables.columnaccess(s)
+end
+    
