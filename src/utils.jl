@@ -6,14 +6,22 @@ eltypes(::Type{T}) where {T<:Tuple} =
 eltypes(::Type{NamedTuple{K, V}}) where {K, V} = eltypes(V)
 
 @generated function get_ith(s::StructArray{T}, I...) where {T}
-    args = []
-    for key in fields(T)
+    exprs = Expr[]
+    names = fields(T)
+    for key in names
         field = Expr(:., :s, Expr(:quote, key))
-        push!(args, :($field[I...]))
+        push!(exprs, :($key = $field[I...]))
+    end
+    if isconcretetype(T)
+        push!(exprs, Expr(:new, :T, names...))
+    elseif T <: Union{Tuple, NamedTuple}
+        push!(exprs, Expr(:call, :T, Expr(:tuple, names...)))
+    else
+        push!(exprs, Expr(:call, :T, names...))
     end
     return quote
         @boundscheck checkbounds(s, I...)
-        @inbounds $(Expr(:call, :createinstance, :T, args...))
+        @inbounds $(Expr(:block, exprs...))
     end
 end
 
@@ -30,9 +38,6 @@ end
         @inbounds $(Expr(:block, args...))
     end
 end
-
-createinstance(::Type{T}, args...) where {T} = T(args...)
-createinstance(::Type{T}, args...) where {T<:Union{Tuple, NamedTuple}} = T(args)
 
 createtype(::Type{T}, ::Type{C}) where {T<:NamedTuple{N}, C} where {N} = NamedTuple{N, C}
 createtype(::Type{T}, ::Type{C}) where {T, C} = T
