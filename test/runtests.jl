@@ -96,8 +96,15 @@ end
 end
 
 f_infer() = StructArray{ComplexF64}(rand(2,2), rand(2,2))
+unwrap(::Type) = false
+unwrap(::Type{<:NamedTuple}) = true
+
+g_infer() = StructArray([(a=(b=1,), c=2)], unwrap = unwrap)
+
 @testset "inferrability" begin
     @inferred f_infer()
+    @inferred g_infer()
+    @test g_infer().a.b == [1]
 end
 
 @testset "propertynames" begin
