@@ -5,23 +5,17 @@ eltypes(::Type{T}) where {T<:Tuple} =
     tuple_type_cons(eltype(tuple_type_head(T)), eltypes(tuple_type_tail(T)))
 eltypes(::Type{NamedTuple{K, V}}) where {K, V} = eltypes(V)
 
+Base.@pure SkipConstructor(::Type) = false
+
 @generated function get_ith(s::StructArray{T}, I...) where {T}
-    exprs = Expr[]
-    names = fields(T)
-    for key in names
+    args = []
+    for key in fields(T)
         field = Expr(:., :s, Expr(:quote, key))
-        push!(exprs, :($key = $field[I...]))
-    end
-    if isconcretetype(T)
-        push!(exprs, Expr(:new, :T, names...))
-    elseif T <: Union{Tuple, NamedTuple}
-        push!(exprs, Expr(:call, :T, Expr(:tuple, names...)))
-    else
-        push!(exprs, Expr(:call, :T, names...))
+        push!(args, :($field[I...]))
     end
     return quote
         @boundscheck checkbounds(s, I...)
-        @inbounds $(Expr(:block, exprs...))
+        @inbounds $(Expr(:call, :createinstance, :T, args...))
     end
 end
 
@@ -37,6 +31,19 @@ end
         @boundscheck checkbounds(s, I...)
         @inbounds $(Expr(:block, args...))
     end
+end
+
+function createinstance(::Type{T}, args...) where {T}
+    SkipConstructor(T) ? unsafe_createinstance(T, args...) : T(args...)
+end
+
+createinstance(::Type{T}, args...) where {T<:Union{Tuple, NamedTuple}} = T(args)
+
+@generated function unsafe_createinstance(::Type{T}, args...) where {T}
+    v = fieldnames(T)
+    new_tup = Expr(:(=), Expr(:tuple, v...), :args)
+    construct = Expr(:new, :T, (:(convert(fieldtype(T, $(Expr(:quote, sym))), $sym)) for sym in v)...)
+    Expr(:block, new_tup, construct)
 end
 
 createtype(::Type{T}, ::Type{C}) where {T<:NamedTuple{N}, C} where {N} = NamedTuple{N, C}
