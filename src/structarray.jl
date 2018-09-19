@@ -27,8 +27,13 @@ StructArray{T}(; kwargs...) where {T} = StructArray{T}(values(kwargs))
 StructArray(; kwargs...) = StructArray(values(kwargs))
 
 StructArray{T}(args...) where {T} = StructArray{T}(NamedTuple{fields(T)}(args))
+
+Base.@pure Unwrap(::Type) = false
+
+_array(::Type{T}, sz) where {T} = Unwrap(T) ? StructArray{T}(undef, sz...) : Array{T}(undef, sz)
+
 @generated function StructArray{T}(::Base.UndefInitializer, d::Integer...) where {T}
-    ex = Expr(:tuple, [:(Array{$(fieldtype(T, i))}(undef, sz)) for i in 1:fieldcount(T)]...)
+    ex = Expr(:tuple, [:(_array($(fieldtype(T, i)), sz)) for i in 1:fieldcount(T)]...)
     return quote
         sz = convert(Tuple{Vararg{Int}}, d)
         StructArray{T}(NamedTuple{fields(T)}($ex))
@@ -37,7 +42,7 @@ end
 
 @generated function StructArray(v::AbstractArray{T, N}) where {T, N}
     syms = [gensym() for i in 1:fieldcount(T)]
-    init = Expr(:block, [:($(syms[i]) = similar(v, $(fieldtype(T, i)))) for i in 1:fieldcount(T)]...)
+    init = Expr(:block, [:($(syms[i]) = _array($(fieldtype(T, i)), size(v))) for i in 1:fieldcount(T)]...)
     push = Expr(:block, [:($(syms[i])[j] = f.$(fieldname(T, i))) for i in 1:fieldcount(T)]...)
     quote
         $init
