@@ -116,4 +116,17 @@ end
     @test Tables.rowaccess(s)
     @test Tables.columnaccess(s)
 end
-    
+
+struct S
+    x::Int
+    y::Float64
+    S(x) = new(x, x)
+end
+
+StructArrays.SkipConstructor(::Type{<:S}) = true
+
+@testset "inner" begin
+    v = StructArray{S}([1], [1])
+    @test v[1] == S(1)
+    @test v[1].y isa Float64
+end
