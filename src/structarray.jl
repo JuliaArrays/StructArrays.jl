@@ -28,19 +28,23 @@ StructArray(; kwargs...) = StructArray(values(kwargs))
 
 StructArray{T}(args...) where {T} = StructArray{T}(NamedTuple{fields(T)}(args))
 
-_array(::Type{T}, unwrap, sz) where {T} = unwrap(T) ? StructArray{T}(undef, sz...) : Array{T}(undef, sz)
+_array(::Type{T}, sz; unwrap = t -> false) where {T} = unwrap(T) ? StructArray{T}(undef, sz; unwrap = unwrap) : Array{T}(undef, sz)
+function _similar(v::S, ::Type{Z}; unwrap = t -> false) where {S <: AbstractArray{T, N}, Z} where {T, N}
+    unwrap(Z) ? StructArray{Z}(map(t -> _similar(v, fieldtype(Z, t); unwrap = unwrap), fields(Z))) : similar(v, Z)
+end
 
-@generated function StructArray{T}(::Base.UndefInitializer, d::Integer...; unwrap = t -> false) where {T}
-    ex = Expr(:tuple, [:(_array($(fieldtype(T, i)), unwrap, sz)) for i in 1:fieldcount(T)]...)
+
+StructArray{T}(u::Base.UndefInitializer, d::Integer...; unwrap = t -> false) where {T} = StructArray{T}(u, convert(Dims, d); unwrap = unwrap)
+@generated function StructArray{T}(::Base.UndefInitializer, sz::Dims; unwrap = t -> false) where {T}
+    ex = Expr(:tuple, [:(_array($(fieldtype(T, i)), sz; unwrap = unwrap)) for i in 1:fieldcount(T)]...)
     return quote
-        sz = convert(Tuple{Vararg{Int}}, d)
         StructArray{T}(NamedTuple{fields(T)}($ex))
     end
 end
 
 @generated function StructArray(v::AbstractArray{T, N}; unwrap = t -> false) where {T, N}
     syms = [gensym() for i in 1:fieldcount(T)]
-    init = Expr(:block, [:($(syms[i]) = _array($(fieldtype(T, i)), unwrap, size(v))) for i in 1:fieldcount(T)]...)
+    init = Expr(:block, [:($(syms[i]) = _similar(v, $(fieldtype(T, i)); unwrap = unwrap)) for i in 1:fieldcount(T)]...)
     push = Expr(:block, [:($(syms[i])[j] = f.$(fieldname(T, i))) for i in 1:fieldcount(T)]...)
     quote
         $init
