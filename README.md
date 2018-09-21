@@ -30,6 +30,15 @@ julia> s.re
  0.874437  0.929336
 ```
 
+Note that the same approach can be used directly from an `Array` of complex numbers:
+
+```julia
+julia> StructArray([1+im, 3-2im])
+2-element StructArray{Complex{Int64},1,NamedTuple{(:re, :im),Tuple{Array{Int64,1},Array{Int64,1}}}}:
+ 1 + 1im
+ 3 - 2im
+```
+
 ## Example usage to store a data table
 
 ```julia
@@ -52,11 +61,3 @@ julia> push!(t, (a = 3, b = "z"))
  (a = 2, b = "y")
  (a = 3, b = "z")
 ```
-
-## Lightweight package
-
-This package aims to be extremely lightweight: so far it has 0 dependencies. One of the reasons to keep it so is to promote its use as a building block for table manipulation packages.
-
-## Warning
-
-The package is still pretty much under development and available only on Julia 0.7 (as it uses `NamedTuples` extensively).
