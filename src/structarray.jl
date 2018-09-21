@@ -44,7 +44,7 @@ end
 @generated function StructArray(v::AbstractArray{T, N}; unwrap = t -> false) where {T, N}
     syms = [gensym() for i in 1:fieldcount(T)]
     init = Expr(:block, [:($(syms[i]) = _similar(v, $(fieldtype(T, i)); unwrap = unwrap)) for i in 1:fieldcount(T)]...)
-    push = Expr(:block, [:($(syms[i])[j] = f.$(fieldname(T, i))) for i in 1:fieldcount(T)]...)
+    push = Expr(:block, [:($(syms[i])[j] = getfield(f, $i)) for i in 1:fieldcount(T)]...)
     quote
         $init
         for (j, f) in enumerate(v)
