@@ -83,27 +83,25 @@ end
     return :($(Expr(:tuple, [QuoteNode(Symbol("x$f")) for f in fieldnames(T)]...)))
 end
 
+function foreach_expr(f, T, args...)
+    exprs = []
+    for key in fields(T)
+        new_args = (Expr(:., arg, Expr(:quote, key)) for arg in args)
+        push!(exprs, f(new_args...))
+    end
+    exprs
+end
 
 @generated function Base.push!(s::StructArray{T, 1}, vals) where {T}
-    args = []
-    for key in fields(T)
-        field = Expr(:., :s, Expr(:quote, key))
-        val = Expr(:., :vals, Expr(:quote, key))
-        push!(args, :(push!($field, $val)))
-    end
-    push!(args, :s)
-    Expr(:block, args...)
+    exprs = foreach_expr((args...) -> Expr(:call, :push!, args...), T, :s, :vals)
+    push!(exprs, :s)
+    Expr(:block, exprs...)
 end
 
 @generated function Base.append!(s::StructArray{T, 1}, vals) where {T}
-    args = []
-    for key in fields(T)
-        field = Expr(:., :s, Expr(:quote, key))
-        val = Expr(:., :vals, Expr(:quote, key))
-        push!(args, :(append!($field, $val)))
-    end
-    push!(args, :s)
-    Expr(:block, args...)
+    exprs = foreach_expr((args...) -> Expr(:call, :append!, args...), T, :s, :vals)
+    push!(exprs, :s)
+    Expr(:block, exprs...)
 end
 
 function Base.cat(args::StructArray...; dims)
