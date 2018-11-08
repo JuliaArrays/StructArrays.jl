@@ -30,6 +30,12 @@ end
     @test Base.getproperty(s, 2) == ["test"]
     t = StructArray{Tuple{Int, Float64}}([1], [1.2])
     @test t[1] == (1, 1.2)
+
+    t[1] = (2, 3)
+    @test t[1] == (2, 3.0)
+    push!(t, (1, 2))
+    @test getproperty(t, 1) == [1, 1]
+    @test getproperty(t, 2) == [3.0, 2.0]
 end
 
 @testset "kwargs constructor" begin
