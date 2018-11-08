@@ -83,10 +83,13 @@ end
     return :($(Expr(:tuple, [QuoteNode(Symbol("x$f")) for f in fieldnames(T)]...)))
 end
 
+@inline getfieldindex(v::Tuple, field::Symbol, index::Integer) = getfield(v, index)
+@inline getfieldindex(v, field::Symbol, index::Integer) = getproperty(v, field)
+
 function foreach_expr(f, T, args...)
     exprs = []
-    for key in fields(T)
-        new_args = (Expr(:., arg, Expr(:quote, key)) for arg in args)
+    for (ind, key) in enumerate(fields(T))
+        new_args = (Expr(:call, :getfieldindex, arg, Expr(:quote, key), ind) for arg in args)
         push!(exprs, f(new_args...))
     end
     exprs
