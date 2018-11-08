@@ -7,29 +7,29 @@ eltypes(::Type{NamedTuple{K, V}}) where {K, V} = eltypes(V)
 
 Base.@pure SkipConstructor(::Type) = false
 
-@generated function get_ith(s::StructArray{T}, I...) where {T}
-    args = []
-    for key in fields(T)
-        field = Expr(:., :s, Expr(:quote, key))
-        push!(args, :($field[I...]))
+function foreach_expr(f, T, args...)
+    exprs = []
+    for (ind, key) in enumerate(fields(T))
+        new_args = (Expr(:call, :getfieldindex, arg, Expr(:quote, key), ind) for arg in args)
+        push!(exprs, f(new_args...))
     end
+    exprs
+end
+
+@generated function get_ith(s::StructArray{T}, I...) where {T}
+    exprs = foreach_expr(field -> :($field[I...]), T, :s)
     return quote
         @boundscheck checkbounds(s, I...)
-        @inbounds $(Expr(:call, :createinstance, :T, args...))
+        @inbounds $(Expr(:call, :createinstance, :T, exprs...))
     end
 end
 
 @generated function set_ith!(s::StructArray{T}, vals, I...) where {T}
-    args = []
-    for key in fields(T)
-        field = Expr(:., :s, Expr(:quote, key))
-        val = Expr(:., :vals, Expr(:quote, key))
-        push!(args, :($field[I...] = $val))
-    end
-    push!(args, :s)
+    exprs = foreach_expr((field, val) -> :($field[I...] = $val), T, :s, :vals)
+    push!(exprs, :s)
     return quote
         @boundscheck checkbounds(s, I...)
-        @inbounds $(Expr(:block, args...))
+        @inbounds $(Expr(:block, exprs...))
     end
 end
 
