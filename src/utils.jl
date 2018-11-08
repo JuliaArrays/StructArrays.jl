@@ -7,6 +7,15 @@ eltypes(::Type{NamedTuple{K, V}}) where {K, V} = eltypes(V)
 
 Base.@pure SkipConstructor(::Type) = false
 
+function foreach_expr(f, T, args...)
+    exprs = []
+    for (ind, key) in enumerate(fields(T))
+        new_args = (Expr(:call, :getfieldindex, arg, Expr(:quote, key), ind) for arg in args)
+        push!(exprs, f(new_args...))
+    end
+    exprs
+end
+
 @generated function get_ith(s::StructArray{T}, I...) where {T}
     exprs = foreach_expr(field -> :($field[I...]), T, :s)
     return quote

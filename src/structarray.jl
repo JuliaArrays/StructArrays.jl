@@ -86,15 +86,6 @@ end
 @inline getfieldindex(v::Tuple, field::Symbol, index::Integer) = getfield(v, index)
 @inline getfieldindex(v, field::Symbol, index::Integer) = getproperty(v, field)
 
-function foreach_expr(f, T, args...)
-    exprs = []
-    for (ind, key) in enumerate(fields(T))
-        new_args = (Expr(:call, :getfieldindex, arg, Expr(:quote, key), ind) for arg in args)
-        push!(exprs, f(new_args...))
-    end
-    exprs
-end
-
 @generated function Base.push!(s::StructArray{T, 1}, vals) where {T}
     exprs = foreach_expr((args...) -> Expr(:call, :push!, args...), T, :s, :vals)
     push!(exprs, :s)
