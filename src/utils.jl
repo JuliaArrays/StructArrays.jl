@@ -49,7 +49,7 @@ end
 createtype(::Type{T}, ::Type{NamedTuple{names, types}}) where {T, names, types} = createtype(T, names, eltypes(types)) 
 
 createtype(::Type{T}, names, types) where {T} = T
-createtype(::Type{T}, names, types) where {T<:Tuple} = NamedTuple{names, T}
+createtype(::Type{T}, names, types) where {T<:Tuple} = types
 createtype(::Type{<:NamedTuple{T}}, names, types) where {T} = NamedTuple{T, types}
 function createtype(::Type{<:Pair}, names, types)
     tp = types.parameters
