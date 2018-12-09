@@ -81,10 +81,9 @@ function grow_to_columns!(dest::AbstractArray{T}, itr, elem = iterate(itr)) wher
     return dest
 end
 
-function widencolumns(dest::A, i, el::S) where {A<:StructArray, S}
+function widencolumns(dest::StructArray{T}, i, el::S) where {T, S}
     new_cols = (widencolumns(columns(dest)[ind], i, getfieldindex(el, f, ind)) for (ind, f) in enumerate(fields(S)))
-    new_typ = promoted_eltype(S, A) 
-    StructArray{new_typ}(new_cols...)
+    StructArray{T}(new_cols...)
 end
 
 function widencolumns(dest::AbstractArray{T}, i, el::S) where {S, T}
