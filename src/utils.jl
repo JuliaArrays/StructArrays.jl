@@ -3,7 +3,7 @@ import Base: tuple_type_cons, tuple_type_head, tuple_type_tail, tail
 eltypes(::Type{Tuple{}}) = Tuple{}
 eltypes(::Type{T}) where {T<:Tuple} =
     tuple_type_cons(eltype(tuple_type_head(T)), eltypes(tuple_type_tail(T)))
-eltypes(::Type{NamedTuple{K, V}}) where {K, V} = eltypes(V)
+eltypes(::Type{NamedTuple{K, V}}) where {K, V} = NamedTuple{K, eltypes(V)}
 
 Base.@pure SkipConstructor(::Type) = false
 
@@ -46,5 +46,12 @@ createinstance(::Type{T}, args...) where {T<:Union{Tuple, NamedTuple}} = T(args)
     Expr(:block, new_tup, construct)
 end
 
-createtype(::Type{T}, ::Type{C}) where {T<:NamedTuple{N}, C} where {N} = NamedTuple{N, C}
-createtype(::Type{T}, ::Type{C}) where {T, C} = T
+createtype(::Type{T}, ::Type{NamedTuple{names, types}}) where {T, names, types} = createtype(T, names, eltypes(types)) 
+
+createtype(::Type{T}, names, types) where {T} = T
+createtype(::Type{T}, names, types) where {T<:Tuple} = types
+createtype(::Type{<:NamedTuple{T}}, names, types) where {T} = NamedTuple{T, types}
+function createtype(::Type{<:Pair}, names, types)
+    tp = types.parameters
+    Pair{tp[1], tp[2]}
+end

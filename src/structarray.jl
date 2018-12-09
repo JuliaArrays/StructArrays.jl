@@ -18,9 +18,8 @@ struct StructArray{T, N, C<:NamedTuple} <: AbstractArray{T, N}
 end
 
 StructArray{T}(c::C) where {T, C<:Tuple} = StructArray{T}(NamedTuple{fields(T)}(c))
-StructArray{T}(c::C) where {T, C<:NamedTuple} =
-    StructArray{createtype(T, eltypes(C)), length(size(c[1])), C}(c)
-StructArray(c::C) where {C<:NamedTuple} = StructArray{C}(c)
+StructArray{T}(c::C) where {T, C<:NamedTuple} = StructArray{T, length(size(c[1])), C}(c)
+StructArray(c::C) where {C<:NamedTuple} = StructArray{eltypes(C)}(c)
 StructArray(c::C) where {C<:Tuple} = StructArray{eltypes(C)}(c)
 
 StructArray{T}(; kwargs...) where {T} = StructArray{T}(values(kwargs))
@@ -122,3 +121,8 @@ for op in [:hcat, :vcat]
 end
 
 Base.copy(s::StructArray{T,N,C}) where {T,N,C} = StructArray{T,N,C}(C(copy(x) for x in columns(s)))
+
+function Base.reshape(s::StructArray{T}, d::Dims) where {T}
+    StructArray{T}(map(x -> reshape(x, d), columns(s)))
+end
+
