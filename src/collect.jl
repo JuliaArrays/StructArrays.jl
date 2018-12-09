@@ -26,7 +26,7 @@ function collect_columns(@nospecialize(itr), ::Union{Base.HasShape, Base.HasLeng
     initializer = default_initializer)
 
     st = iterate(itr)
-    st === nothing && return collect_empty_columns(itr)
+    st === nothing && return collect_empty_columns(itr, initializer = initializer)
     el, i = st
     dest = initializer(typeof(el), (length(itr),))
     dest[1] = el

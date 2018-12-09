@@ -149,9 +149,10 @@ StructArrays.SkipConstructor(::Type{<:S}) = true
     @test v[1].y isa Float64
 end
 
+const initializer = StructArrays.ArrayInitializer(t -> t <: Union{Tuple, NamedTuple, Pair})
+collect_columns(t) = StructArrays.collect_columns(t, initializer = initializer) 
+
 @testset "collectnamedtuples" begin
-    initializer = StructArrays.ArrayInitializer(t -> t <: Union{Tuple, NamedTuple, Pair})
-    collect_columns(t) = StructArrays.collect_columns(t, initializer = initializer) 
     v = [(a = 1, b = 2), (a = 1, b = 3)]
     collect_columns(v) == StructArray((a = Int[1, 1], b = Int[2, 3]))
 
@@ -192,11 +193,12 @@ end
 end
 
 @testset "collecttuples" begin
-    initializer = StructArrays.ArrayInitializer(t -> t <: Union{Tuple, NamedTuple, Pair})
-    collect_columns(t) = StructArrays.collect_columns(t, initializer = initializer) 
     v = [(1, 2), (1, 3)]
     @test collect_columns(v) == StructArray((Int[1, 1], Int[2, 3]))
     @inferred collect_columns(v)
+
+    @test StructArrays.collect_columns(v) == StructArray((Int[1, 1], Int[2, 3]))
+    @inferred StructArrays.collect_columns(v)
 
     v = [(1, 2), (1.2, 3)]
     @test collect_columns(v) == StructArray(([1, 1.2], Int[2, 3]))
@@ -226,8 +228,6 @@ end
 end
 
 @testset "collectscalars" begin
-    initializer = StructArrays.ArrayInitializer(t -> t <: Union{Tuple, NamedTuple, Pair})
-    collect_columns(t) = StructArrays.collect_columns(t, initializer = initializer) 
     v = (i for i in 1:3)
     @test collect_columns(v) == [1,2,3]
     @inferred collect_columns(v)
@@ -256,8 +256,6 @@ end
 end
 
 @testset "collectpairs" begin
-    initializer = StructArrays.ArrayInitializer(t -> t <: Union{Tuple, NamedTuple, Pair})
-    collect_columns(t) = StructArrays.collect_columns(t, initializer = initializer) 
     v = (i=>i+1 for i in 1:3)
     @test collect_columns(v) == StructArray{Pair{Int, Int}}([1,2,3], [2,3,4])
     @test eltype(collect_columns(v)) == Pair{Int, Int}
