@@ -89,6 +89,8 @@ function promoted_eltype(::Type{S}, ::Type{<:StructArray{T}}) where {S, T}
 end
 
 promoted_fieldwise(::Type{S}, ::Type{T}) where {S, T} = promote_type(S, T)
+promoted_fieldwise(::Type{S}, ::Type{T}) where {S<:Tuple, T<:Tuple} = 
+    Tuple{map(promoted_fieldwise, S.parameters, T.parameters)...}
 function promoted_fieldwise(::Type{NamedTuple{names, S}}, ::Type{NamedTuple{names, T}}) where {names, S, T}
     NamedTuple{names, promoted_fieldwise(S, T)}
 end

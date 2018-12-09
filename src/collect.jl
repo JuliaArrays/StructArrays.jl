@@ -1,6 +1,18 @@
-function default_initializer(S, d)
-    StructArray{S}(undef, d)
+struct StructArrayInitializer{F}
+    unwrap::F
 end
+StructArrayInitializer() = StructArrayInitializer(t -> false)
+
+const default_initializer = StructArrayInitializer()
+
+(s::StructArrayInitializer)(S, d) = StructArray{S}(undef, d; unwrap = s.unwrap)
+
+struct ArrayInitializer{F}
+    unwrap::F
+end
+ArrayInitializer() = ArrayInitializer(t -> false)
+
+(s::ArrayInitializer)(S, d) = _undef_array(S, d; unwrap = s.unwrap)
 
 collect_columns(itr; initializer = default_initializer) =
     collect_columns(itr, Base.IteratorSize(itr), initializer = initializer)
@@ -16,7 +28,7 @@ function collect_columns(@nospecialize(itr), ::Union{Base.HasShape, Base.HasLeng
     st = iterate(itr)
     st === nothing && return collect_empty_columns(itr)
     el, i = st
-    dest = default_initializer(typeof(el), (length(itr),))
+    dest = initializer(typeof(el), (length(itr),))
     dest[1] = el
     collect_to_columns!(dest, itr, 2, i)
 end
@@ -70,13 +82,9 @@ function grow_to_columns!(dest::AbstractArray{T}, itr, elem = iterate(itr)) wher
 end
 
 function widencolumns(dest::A, i, el::S) where {A<:StructArray, S}
-    new_cols = Any[columns(dest)...]
-    for (ind, f) in enumerate(fields(S))
-        new_cols[ind] = widencolumns(new_cols[ind], i, getfieldindex(el, f, ind))
-    end
+    new_cols = (widencolumns(columns(dest)[ind], i, getfieldindex(el, f, ind)) for (ind, f) in enumerate(fields(S)))
     new_typ = promoted_eltype(S, A) 
-    @show new_typ
-    @show StructArray{new_typ}(new_cols...)
+    StructArray{new_typ}(new_cols...)
 end
 
 function widencolumns(dest::AbstractArray{T}, i, el::S) where {S, T}
