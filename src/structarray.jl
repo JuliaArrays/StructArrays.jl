@@ -83,6 +83,16 @@ end
     return :($(Expr(:tuple, [QuoteNode(Symbol("x$f")) for f in fieldnames(T)]...)))
 end
 
+fieldtypes(::Type{<:NamedTuple{K, T}}) where {K, T} = T.parameters
+fieldtypes(::Type{T}) where {T} = map(s -> fieldtype(T, s), fields(T))
+fieldtypes(::Type{T}) where {T<:Tuple} = T.parameters
+
+promoted_eltype(::Type{S}, ::Type{<:AbstractArray{T}}) where {S, T} =  promote_type(S, T)
+
+function promoted_eltype(::Type{NamedTuple{names, types}}, ::Type{T}) where {names, types, T<:StructArray}
+    NamedTuple{names, Tuple{map(promote_type, types.parameters, coltypes(T))...}}
+end
+
 @inline getfieldindex(v::Tuple, field::Symbol, index::Integer) = getfield(v, index)
 @inline getfieldindex(v, field::Symbol, index::Integer) = getproperty(v, field)
 
