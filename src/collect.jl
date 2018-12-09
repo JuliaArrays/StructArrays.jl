@@ -75,7 +75,8 @@ function widencolumns(dest::A, i, el::S) where {A<:StructArray, S}
         new_cols[ind] = widencolumns(new_cols[ind], i, getfieldindex(el, f, ind))
     end
     new_typ = promoted_eltype(S, A) 
-    StructArray{new_typ}(new_cols...)
+    @show new_typ
+    @show StructArray{new_typ}(new_cols...)
 end
 
 function widencolumns(dest::AbstractArray{T}, i, el::S) where {S, T}

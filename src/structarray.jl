@@ -90,7 +90,7 @@ end
 
 promoted_fieldwise(::Type{S}, ::Type{T}) where {S, T} = promote_type(S, T)
 function promoted_fieldwise(::Type{NamedTuple{names, S}}, ::Type{NamedTuple{names, T}}) where {names, S, T}
-    promoted_fieldwise(S, T)
+    NamedTuple{names, promoted_fieldwise(S, T)}
 end
 
 promoted_fieldwise(::Type{Pair{P1, P2}}, ::Type{Pair{Q1, Q2}}) where {P1, P2, Q1, Q2} =
