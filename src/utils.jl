@@ -4,11 +4,6 @@ eltypes(::Type{Tuple{}}) = Tuple{}
 eltypes(::Type{T}) where {T<:Tuple} =
     tuple_type_cons(eltype(tuple_type_head(T)), eltypes(tuple_type_tail(T)))
 eltypes(::Type{NamedTuple{K, V}}) where {K, V} = eltypes(V)
-eltypes(::Type{StructArray{T, N, C}}) where {T, N, C} = eltypes(C)
-
-coltypes(::Type{T}) where {T<:Tuple} = T
-coltypes(::Type{NamedTuple{K, V}}) where {K, V} = coltypes(V)
-coltypes(::Type{StructArray{T, N, C}}) where {T, N, C} = coltypes(C)
 
 Base.@pure SkipConstructor(::Type) = false
 
