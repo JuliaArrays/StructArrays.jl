@@ -81,12 +81,25 @@ function grow_to_columns!(dest::AbstractArray{T}, itr, elem = iterate(itr)) wher
     return dest
 end
 
-function widencolumns(dest::StructArray{T}, i, el::S) where {T, S}
-    new_cols = (widencolumns(columns(dest)[ind], i, getfieldindex(el, f, ind)) for (ind, f) in enumerate(fields(S)))
-    StructArray{T}(new_cols...)
+function to_structarray(::Type{T}, nt::C) where {T, C}
+    S = createtype(T, C)
+    StructArray{S}(nt)
 end
 
-function widencolumns(dest::AbstractArray{T}, i, el::S) where {S, T}
+function widencolumns(dest::StructArray{T}, i, el::S) where {T, S}
+    fs = fields(S)
+    if fs === fields(T)
+        new_cols = (widencolumns(columns(dest)[ind], i, getfieldindex(el, f, ind)) for (ind, f) in enumerate(fs))
+        nt = NamedTuple{fs}(Tuple(new_cols))
+        v = to_structarray(T, nt)
+    else
+        widenarray(dest, i, el)
+    end
+end
+
+widencolumns(dest::AbstractArray, i, el) = widenarray(dest, i, el)
+
+function widenarray(dest::AbstractArray{T}, i, el::S) where {S, T}
     S <: T && return dest
     new = Array{promote_type(S, T)}(undef, length(dest))
     copyto!(new, 1, dest, 1, i-1)
