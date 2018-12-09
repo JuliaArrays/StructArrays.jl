@@ -83,16 +83,19 @@ end
     return :($(Expr(:tuple, [QuoteNode(Symbol("x$f")) for f in fieldnames(T)]...)))
 end
 
-fieldtypes(::Type{<:NamedTuple{K, T}}) where {K, T} = T.parameters
-fieldtypes(::Type{T}) where {T} = map(s -> fieldtype(T, s), fields(T))
-fieldtypes(::Type{T}) where {T<:Tuple} = T.parameters
-
 promoted_eltype(::Type{S}, ::Type{<:AbstractArray{T}}) where {S, T} =  promote_type(S, T)
-
-function promoted_eltype(::Type{NamedTuple{names, types}}, ::Type{T}) where {names, types, T<:StructArray}
-    NamedTuple{names, Tuple{map(promote_type, types.parameters, coltypes(T))...}}
+function promoted_eltype(::Type{S}, ::Type{<:StructArray{T}}) where {S, T}
+    promoted_fieldwise(S, T)
 end
 
+promoted_fieldwise(::Type{S}, ::Type{T}) where {S, T} = promote_type(S, T)
+function promoted_fieldwise(::Type{NamedTuple{names, S}}, ::Type{NamedTuple{names, T}}) where {names, S, T}
+    promoted_fieldwise(S, T)
+end
+
+promoted_fieldwise(::Type{Pair{P1, P2}}, ::Type{Pair{Q1, Q2}}) where {P1, P2, Q1, Q2} =
+    Pair{promote_type(P1, Q1), promote_type(P2, Q2)}
+    
 @inline getfieldindex(v::Tuple, field::Symbol, index::Integer) = getfield(v, index)
 @inline getfieldindex(v, field::Symbol, index::Integer) = getproperty(v, field)
 
