@@ -14,8 +14,14 @@ ArrayInitializer() = ArrayInitializer(t -> false)
 
 (s::ArrayInitializer)(S, d) = _undef_array(S, d; unwrap = s.unwrap)
 
-collect_columns(itr; initializer = default_initializer) =
-    collect_columns(itr, Base.IteratorSize(itr), initializer = initializer)
+_reshape(v, itr, ::Base.HasShape) = reshape(v, axes(itr))
+_reshape(v, itr, ::Union{Base.HasLength, Base.SizeUnknown}) = v
+
+function collect_columns(itr; initializer = default_initializer)
+    sz = Base.IteratorSize(itr)
+    v = collect_columns(itr, sz, initializer = initializer)
+    _reshape(v, itr, sz)
+end
 
 function collect_empty_columns(itr::T; initializer = default_initializer) where {T}
     S = Core.Compiler.return_type(first, Tuple{T})

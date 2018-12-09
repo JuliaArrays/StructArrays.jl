@@ -288,5 +288,10 @@ end
     @test s[3] == t[3]
 end
 
-
-
+@testset "collect2D" begin
+    s = (l for l in [(a=i, b=j) for i in 1:3, j in 1:4])
+    v = StructArrays.collect_columns(s)
+    @test size(v) == (3, 4)
+    @test v.a == [i for i in 1:3, j in 1:4]
+    @test v.b == [j for i in 1:3, j in 1:4]
+end

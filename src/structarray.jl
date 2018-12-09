@@ -121,3 +121,8 @@ for op in [:hcat, :vcat]
 end
 
 Base.copy(s::StructArray{T,N,C}) where {T,N,C} = StructArray{T,N,C}(C(copy(x) for x in columns(s)))
+
+function Base.reshape(s::StructArray{T}, d::Dims) where {T}
+    StructArray{T}(map(x -> reshape(x, d), columns(s)))
+end
+
