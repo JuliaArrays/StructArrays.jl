@@ -3,6 +3,7 @@ module StructArrays
 import Requires
 export StructArray
 
+include("interface.jl")
 include("structarray.jl")
 include("utils.jl")
 include("collect.jl")

@@ -74,14 +74,6 @@ end
 
 Base.@propagate_inbounds Base.setindex!(s::StructArray, val, I::Int...) = set_ith!(s, val, I...)
 
-fields(::Type{<:NamedTuple{K}}) where {K} = K
-@generated function fields(t::Type{T}) where {T}
-   return :($(Expr(:tuple, [QuoteNode(f) for f in fieldnames(T)]...)))
-end
-@generated function fields(t::Type{T}) where {T<:Tuple}
-    return :($(Expr(:tuple, [QuoteNode(Symbol("x$f")) for f in fieldnames(T)]...)))
-end
-
 @inline getfieldindex(v::Tuple, field::Symbol, index::Integer) = getfield(v, index)
 @inline getfieldindex(v, field::Symbol, index::Integer) = getproperty(v, field)
 
