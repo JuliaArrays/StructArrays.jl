@@ -83,7 +83,15 @@ Base.propertynames(s::StructArray) = fieldnames(typeof(columns(s)))
 
 Base.size(s::StructArray) = size(columns(s)[1])
 
-Base.@propagate_inbounds Base.getindex(s::StructArray, I::Int...) = get_ith(s, I...)
+@generated function Base.getindex(x::StructArray{T, N, NamedTuple{names, types}}, I::Int...) where {T, N, names, types}
+    args = [:(getfield(cols, $i)[I...]) for i in 1:length(names)]
+    return quote
+        cols = columns(x)
+        @boundscheck checkbounds(x, I...)
+        @inbounds $(Expr(:call, :createinstance, :T, args...))
+    end
+end
+
 function Base.getindex(s::StructArray{T, N, C}, I::Union{Int, AbstractArray, Colon}...) where {T, N, C}
     StructArray{T}(map(v -> getindex(v, I...), columns(s)))
 end
@@ -92,7 +100,11 @@ function Base.view(s::StructArray{T, N, C}, I...) where {T, N, C}
     StructArray{T}(map(v -> view(v, I...), columns(s)))
 end
 
-Base.@propagate_inbounds Base.setindex!(s::StructArray, val, I::Int...) = set_ith!(s, val, I...)
+function Base.setindex!(s::StructArray, vals, I::Int...)
+    @boundscheck checkbounds(s, I...)
+    @inbounds foreachcolumn((col, val) -> (col[I...] = val), s, vals)
+    s
+end
 
 @inline getfieldindex(v::Tuple, field::Symbol, index::Integer) = getfield(v, index)
 @inline getfieldindex(v, field::Symbol, index::Integer) = getproperty(v, field)

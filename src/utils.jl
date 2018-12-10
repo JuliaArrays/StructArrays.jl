@@ -19,36 +19,15 @@ end
 
 Base.@pure SkipConstructor(::Type) = false
 
-@generated function foreachcolumn(f, x::StructArray{T, N, NamedTuple{names, types}}, v) where {T, N, names, types}
+@generated function foreachcolumn(f, x::StructArray{T, N, NamedTuple{names, types}}, xs...) where {T, N, names, types}
     exprs = Expr[]
     for (i, field) in enumerate(names)
         sym = QuoteNode(field)
-        push!(exprs, Expr(:call, :f, Expr(:., :x, sym), Expr(:call, :getfieldindex, :v, sym, i)))
+        args = [Expr(:call, :getfieldindex, :(getfield(xs, $j)), sym, i) for j in 1:length(xs)]
+        push!(exprs, Expr(:call, :f, Expr(:., :x, sym), args...))
     end
+    push!(exprs, :(return nothing))
     Expr(:block, exprs...)
-end
-
-function foreach_expr(f, T, args...)
-    exprs = []
-    for (ind, key) in enumerate(fields(T))
-        new_args = (Expr(:call, :getfieldindex, arg, Expr(:quote, key), ind) for arg in args)
-        push!(exprs, f(new_args...))
-    end
-    exprs
-end
-
-@generated function get_ith(s::StructArray{T}, I...) where {T}
-    exprs = foreach_expr(field -> :($field[I...]), T, :s)
-    return quote
-        @boundscheck checkbounds(s, I...)
-        @inbounds $(Expr(:call, :createinstance, :T, exprs...))
-    end
-end
-
-function set_ith!(s::StructArray, vals, I...)
-    @boundscheck checkbounds(s, I...)
-    @inbounds foreachcolumn((col, val) -> (col[I...] = val), s, vals)
-    s
 end
 
 function createinstance(::Type{T}, args...) where {T}
