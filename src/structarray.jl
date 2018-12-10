@@ -33,11 +33,13 @@ function _similar(v::S, ::Type{Z}; unwrap = t -> false) where {S <: AbstractArra
 end
 
 StructArray{T}(u::Base.UndefInitializer, d::Integer...; unwrap = t -> false) where {T} = StructArray{T}(u, convert(Dims, d); unwrap = unwrap)
-@generated function StructArray{T}(::Base.UndefInitializer, sz::Dims; unwrap = t -> false) where {T}
-    ex = Expr(:tuple, [:(_undef_array($(fieldtype(T, i)), sz; unwrap = unwrap)) for i in 1:fieldcount(T)]...)
-    return quote
-        StructArray{T}(NamedTuple{fields(T)}($ex))
-    end
+function StructArray{T}(::Base.UndefInitializer, sz::Tuple{Vararg{Int, N}}; unwrap = t -> false) where {T, N}
+    NT = staticschema(T)
+    names = getnames(NT)
+    types = gettypes(NT).parameters
+    C = arraytypes(NT, sz; unwrap = unwrap)
+    cols = map(typ -> _undef_array(typ, sz; unwrap = unwrap), NamedTuple{names}(types))
+    return StructArray{T, N, C}(cols)
 end
 
 @generated function StructArray(v::AbstractArray{T, N}; unwrap = t -> false) where {T, N}
