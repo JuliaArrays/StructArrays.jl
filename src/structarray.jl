@@ -28,9 +28,6 @@ StructArray(; kwargs...) = StructArray(values(kwargs))
 StructArray{T}(args...) where {T} = StructArray{T}(NamedTuple{fields(T)}(args))
 
 _undef_array(::Type{T}, sz; unwrap = t -> false) where {T} = unwrap(T) ? StructArray{T}(undef, sz; unwrap = unwrap) : Array{T}(undef, sz)
-function _similar(v::S, ::Type{Z}; unwrap = t -> false) where {S <: AbstractArray{T, N}, Z} where {T, N}
-    unwrap(Z) ? StructArray{Z}(map(t -> _similar(v, fieldtype(Z, t); unwrap = unwrap), fields(Z))) : similar(v, Z)
-end
 
 StructArray{T}(u::Base.UndefInitializer, d::Integer...; unwrap = t -> false) where {T} = StructArray{T}(u, convert(Dims, d); unwrap = unwrap)
 function StructArray{T}(::Base.UndefInitializer, sz::Tuple{Vararg{Int, N}}; unwrap = t -> false) where {T, N}
@@ -42,17 +39,34 @@ function StructArray{T}(::Base.UndefInitializer, sz::Tuple{Vararg{Int, N}}; unwr
     return StructArray{T, N, C}(cols)
 end
 
-@generated function StructArray(v::AbstractArray{T, N}; unwrap = t -> false) where {T, N}
-    syms = [gensym() for i in 1:fieldcount(T)]
-    init = Expr(:block, [:($(syms[i]) = _similar(v, $(fieldtype(T, i)); unwrap = unwrap)) for i in 1:fieldcount(T)]...)
-    push = Expr(:block, [:($(syms[i])[j] = getfield(f, $i)) for i in 1:fieldcount(T)]...)
-    quote
-        $init
-        for (j, f) in enumerate(v)
-            @inbounds $push
-        end
-        return StructArray{T}($(syms...))
+similar_tuple(::Type{Tuple{}}, sz::AbstractArray, simvec::Tuple = (); unwrap = t -> false) = ()
+
+function similar_tuple(::Type{T}, v::AbstractArray{<:Any, N}; unwrap = t -> false) where {N, T<:Tuple}
+    T1 = tuple_type_head(T)
+    if unwrap(T1)
+        NT1 = staticschema(T1)
+        nt = similar_tuple(NT1, v; unwrap = unwrap)
+        firstvec = StructArray{T}(nt)
+    else
+        firstvec = similar(v, T1)
     end
+    lastvecs = similar_tuple(tuple_type_tail(T), v; unwrap = unwrap)
+    (firstvec, lastvecs...)
+end
+
+function similar_tuple(::Type{NamedTuple{K, V}}, v::AbstractArray; unwrap = t-> false) where {K, V}
+    vecs = similar_tuple(V, v; unwrap = unwrap)
+    NamedTuple{K}(vecs)
+end
+
+function StructArray(v::AbstractArray{T, N}; unwrap = t -> false) where {T, N}
+    NT = staticschema(T)
+    vecs = similar_tuple(NT, v; unwrap = unwrap)
+    s = StructArray{T}(vecs)
+    for (i, el) in enumerate(v)
+        @inbounds s[i] = el
+    end
+    s
 end
 StructArray(s::StructArray) = copy(s)
 
@@ -119,4 +133,3 @@ Base.copy(s::StructArray{T,N,C}) where {T,N,C} = StructArray{T,N,C}(C(copy(x) fo
 function Base.reshape(s::StructArray{T}, d::Dims) where {T}
     StructArray{T}(map(x -> reshape(x, d), columns(s)))
 end
-
