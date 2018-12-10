@@ -103,7 +103,7 @@ end
 
 f_infer() = StructArray{ComplexF64}(rand(2,2), rand(2,2))
 
-g_infer() = StructArray([(a=(b="1",), c=2)], unwrap = t -> t <: NamedTuple)
+g_infer() = StructArray([(a=(b="1",), c=2)])
 tup_infer() = StructArray([(1, 2), (3, 4)])
 
 @testset "inferrability" begin
