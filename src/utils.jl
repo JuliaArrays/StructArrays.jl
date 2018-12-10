@@ -19,6 +19,15 @@ end
 
 Base.@pure SkipConstructor(::Type) = false
 
+@generated function foreachcolumn(f, x::StructArray{T, N, NamedTuple{names, types}}, v) where {T, N, names, types}
+    exprs = Expr[]
+    for (i, field) in enumerate(names)
+        sym = QuoteNode(field)
+        push!(exprs, Expr(:call, :f, Expr(:., :x, sym), Expr(:call, :getfieldindex, :v, sym, i)))
+    end
+    Expr(:block, exprs...)
+end
+
 function foreach_expr(f, T, args...)
     exprs = []
     for (ind, key) in enumerate(fields(T))
@@ -36,13 +45,10 @@ end
     end
 end
 
-@generated function set_ith!(s::StructArray{T}, vals, I...) where {T}
-    exprs = foreach_expr((field, val) -> :($field[I...] = $val), T, :s, :vals)
-    push!(exprs, :s)
-    return quote
-        @boundscheck checkbounds(s, I...)
-        @inbounds $(Expr(:block, exprs...))
-    end
+function set_ith!(s::StructArray, vals, I...)
+    @boundscheck checkbounds(s, I...)
+    @inbounds foreachcolumn((col, val) -> (col[I...] = val), s, vals)
+    s
 end
 
 function createinstance(::Type{T}, args...) where {T}
@@ -58,7 +64,7 @@ createinstance(::Type{T}, args...) where {T<:Union{Tuple, NamedTuple}} = T(args)
     Expr(:block, new_tup, construct)
 end
 
-createtype(::Type{T}, ::Type{NamedTuple{names, types}}) where {T, names, types} = createtype(T, names, eltypes(types)) 
+createtype(::Type{T}, ::Type{NamedTuple{names, types}}) where {T, names, types} = createtype(T, names, eltypes(types))
 
 createtype(::Type{T}, names, types) where {T} = T
 createtype(::Type{T}, names, types) where {T<:Tuple} = types

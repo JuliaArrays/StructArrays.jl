@@ -97,16 +97,12 @@ Base.@propagate_inbounds Base.setindex!(s::StructArray, val, I::Int...) = set_it
 @inline getfieldindex(v::Tuple, field::Symbol, index::Integer) = getfield(v, index)
 @inline getfieldindex(v, field::Symbol, index::Integer) = getproperty(v, field)
 
-@generated function Base.push!(s::StructArray{T, 1}, vals) where {T}
-    exprs = foreach_expr((args...) -> Expr(:call, :push!, args...), T, :s, :vals)
-    push!(exprs, :s)
-    Expr(:block, exprs...)
+function Base.push!(s::StructArray, vals)
+    foreachcolumn(push!, s, vals)
 end
 
-@generated function Base.append!(s::StructArray{T, 1}, vals) where {T}
-    exprs = foreach_expr((args...) -> Expr(:call, :append!, args...), T, :s, :vals)
-    push!(exprs, :s)
-    Expr(:block, exprs...)
+function Base.append!(s::StructArray, vals)
+    foreachcolumn(append!, s, vals)
 end
 
 function Base.cat(args::StructArray...; dims)
