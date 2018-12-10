@@ -46,7 +46,7 @@ function similar_tuple(::Type{T}, v::AbstractArray{<:Any, N}; unwrap = t -> fals
     if unwrap(T1)
         NT1 = staticschema(T1)
         nt = similar_tuple(NT1, v; unwrap = unwrap)
-        firstvec = StructArray{T}(nt)
+        firstvec = StructArray{T1}(nt)
     else
         firstvec = similar(v, T1)
     end
