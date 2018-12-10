@@ -39,32 +39,36 @@ function StructArray{T}(::Base.UndefInitializer, sz::Tuple{Vararg{Int, N}}; unwr
     return StructArray{T, N, C}(cols)
 end
 
-similar_tuple(::Type{Tuple{}}, sz::AbstractArray, simvec::Tuple = (); unwrap = t -> false) = ()
+similar_from_tuple(::Type{Tuple{}}, sz::AbstractArray, simvec::Tuple = (); unwrap = t -> false) = ()
 
-function similar_tuple(::Type{T}, v::AbstractArray{<:Any, N}; unwrap = t -> false) where {N, T<:Tuple}
+function similar_from_tuple(::Type{T}, v::AbstractArray{<:Any, N}; unwrap = t -> false) where {N, T<:Tuple}
     T1 = tuple_type_head(T)
     if unwrap(T1)
         NT1 = staticschema(T1)
-        nt = similar_tuple(NT1, v; unwrap = unwrap)
+        nt = similar_from_tuple(NT1, v; unwrap = unwrap)
         firstvec = StructArray{T1}(nt)
     else
         firstvec = similar(v, T1)
     end
-    lastvecs = similar_tuple(tuple_type_tail(T), v; unwrap = unwrap)
+    lastvecs = similar_from_tuple(tuple_type_tail(T), v; unwrap = unwrap)
     (firstvec, lastvecs...)
 end
 
-function similar_tuple(::Type{NamedTuple{K, V}}, v::AbstractArray; unwrap = t-> false) where {K, V}
-    vecs = similar_tuple(V, v; unwrap = unwrap)
+function similar_from_tuple(::Type{NamedTuple{K, V}}, v::AbstractArray; unwrap = t-> false) where {K, V}
+    vecs = similar_from_tuple(V, v; unwrap = unwrap)
     NamedTuple{K}(vecs)
 end
 
-function StructArray(v::AbstractArray{T, N}; unwrap = t -> false) where {T, N}
+function similar_structarray(v::AbstractArray{T}; unwrap = t -> false) where {T}
     NT = staticschema(T)
-    vecs = similar_tuple(NT, v; unwrap = unwrap)
-    s = StructArray{T}(vecs)
-    for (i, el) in enumerate(v)
-        @inbounds s[i] = el
+    vecs = similar_from_tuple(NT, v; unwrap = unwrap)
+    StructArray{T}(vecs)
+end
+
+function StructArray(v::AbstractArray; unwrap = t -> false)
+    s = similar_structarray(v; unwrap = unwrap)
+    for i in eachindex(v)
+        @inbounds s[i] = v[i]
     end
     s
 end
