@@ -1,36 +1,39 @@
 import Base: tuple_type_cons, tuple_type_head, tuple_type_tail, tail
 
-eltypes(::Type{Tuple{}}) = Tuple{}
-eltypes(::Type{T}) where {T<:Tuple} =
-    tuple_type_cons(eltype(tuple_type_head(T)), eltypes(tuple_type_tail(T)))
-eltypes(::Type{NamedTuple{K, V}}) where {K, V} = NamedTuple{K, eltypes(V)}
+eltypes(::Type{T}) where {T} = map_types(eltype, T)
+
+map_types(f, ::Type{Tuple{}}) = Tuple{}
+function map_types(f, ::Type{T}) where {T<:Tuple}
+    tuple_type_cons(f(tuple_type_head(T)), map_types(f, tuple_type_tail(T)))
+end
+map_types(f, ::Type{NamedTuple{names, types}}) where {names, types} =
+    NamedTuple{names, map_types(f, types)}
+
+map_params(f, ::Type{Tuple{}}) = ()
+function map_params(f, ::Type{T}) where {T<:Tuple}
+    (f(tuple_type_head(T)), map_params(f, tuple_type_tail(T))...)
+end
+map_params(f, ::Type{NamedTuple{names, types}}) where {names, types} =
+    NamedTuple{names}(map_params(f, types))
+
+buildfromschema(initializer, ::Type{T}) where {T} = buildfromschema(initializer, T, staticschema(T))
+
+function buildfromschema(initializer, ::Type{T}, ::Type{NT}) where {T, NT<:NamedTuple}
+    nt = map_params(initializer, NT)
+    StructArray{T}(nt)
+end
 
 Base.@pure SkipConstructor(::Type) = false
 
-function foreach_expr(f, T, args...)
-    exprs = []
-    for (ind, key) in enumerate(fields(T))
-        new_args = (Expr(:call, :getfieldindex, arg, Expr(:quote, key), ind) for arg in args)
-        push!(exprs, f(new_args...))
+@generated function foreachcolumn(f, x::StructArray{T, N, NamedTuple{names, types}}, xs...) where {T, N, names, types}
+    exprs = Expr[]
+    for (i, field) in enumerate(names)
+        sym = QuoteNode(field)
+        args = [Expr(:call, :getfieldindex, :(getfield(xs, $j)), sym, i) for j in 1:length(xs)]
+        push!(exprs, Expr(:call, :f, Expr(:., :x, sym), args...))
     end
-    exprs
-end
-
-@generated function get_ith(s::StructArray{T}, I...) where {T}
-    exprs = foreach_expr(field -> :($field[I...]), T, :s)
-    return quote
-        @boundscheck checkbounds(s, I...)
-        @inbounds $(Expr(:call, :createinstance, :T, exprs...))
-    end
-end
-
-@generated function set_ith!(s::StructArray{T}, vals, I...) where {T}
-    exprs = foreach_expr((field, val) -> :($field[I...] = $val), T, :s, :vals)
-    push!(exprs, :s)
-    return quote
-        @boundscheck checkbounds(s, I...)
-        @inbounds $(Expr(:block, exprs...))
-    end
+    push!(exprs, :(return nothing))
+    Expr(:block, exprs...)
 end
 
 function createinstance(::Type{T}, args...) where {T}
@@ -46,7 +49,7 @@ createinstance(::Type{T}, args...) where {T<:Union{Tuple, NamedTuple}} = T(args)
     Expr(:block, new_tup, construct)
 end
 
-createtype(::Type{T}, ::Type{NamedTuple{names, types}}) where {T, names, types} = createtype(T, names, eltypes(types)) 
+createtype(::Type{T}, ::Type{NamedTuple{names, types}}) where {T, names, types} = createtype(T, names, eltypes(types))
 
 createtype(::Type{T}, names, types) where {T} = T
 createtype(::Type{T}, names, types) where {T<:Tuple} = types

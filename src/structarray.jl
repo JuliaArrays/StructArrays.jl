@@ -28,29 +28,25 @@ StructArray(; kwargs...) = StructArray(values(kwargs))
 StructArray{T}(args...) where {T} = StructArray{T}(NamedTuple{fields(T)}(args))
 
 _undef_array(::Type{T}, sz; unwrap = t -> false) where {T} = unwrap(T) ? StructArray{T}(undef, sz; unwrap = unwrap) : Array{T}(undef, sz)
-function _similar(v::S, ::Type{Z}; unwrap = t -> false) where {S <: AbstractArray{T, N}, Z} where {T, N}
-    unwrap(Z) ? StructArray{Z}(map(t -> _similar(v, fieldtype(Z, t); unwrap = unwrap), fields(Z))) : similar(v, Z)
-end
 
+_similar(v::AbstractArray, ::Type{Z}; unwrap = t -> false) where {Z} =
+    unwrap(Z) ? buildfromschema(typ -> _similar(v, typ; unwrap = unwrap), Z) : similar(v, Z)
+
+function StructArray{T}(::Base.UndefInitializer, sz::Dims; unwrap = t -> false) where {T}
+    buildfromschema(typ -> _undef_array(typ, sz; unwrap = unwrap), T)
+end
 StructArray{T}(u::Base.UndefInitializer, d::Integer...; unwrap = t -> false) where {T} = StructArray{T}(u, convert(Dims, d); unwrap = unwrap)
-@generated function StructArray{T}(::Base.UndefInitializer, sz::Dims; unwrap = t -> false) where {T}
-    ex = Expr(:tuple, [:(_undef_array($(fieldtype(T, i)), sz; unwrap = unwrap)) for i in 1:fieldcount(T)]...)
-    return quote
-        StructArray{T}(NamedTuple{fields(T)}($ex))
-    end
+
+function similar_structarray(v::AbstractArray, ::Type{Z}; unwrap = t -> false) where {Z}
+    buildfromschema(typ -> _similar(v, typ; unwrap = unwrap), Z)
 end
 
-@generated function StructArray(v::AbstractArray{T, N}; unwrap = t -> false) where {T, N}
-    syms = [gensym() for i in 1:fieldcount(T)]
-    init = Expr(:block, [:($(syms[i]) = _similar(v, $(fieldtype(T, i)); unwrap = unwrap)) for i in 1:fieldcount(T)]...)
-    push = Expr(:block, [:($(syms[i])[j] = getfield(f, $i)) for i in 1:fieldcount(T)]...)
-    quote
-        $init
-        for (j, f) in enumerate(v)
-            @inbounds $push
-        end
-        return StructArray{T}($(syms...))
+function StructArray(v::AbstractArray{T}; unwrap = t -> false) where {T}
+    s = similar_structarray(v, T; unwrap = unwrap)
+    for i in eachindex(v)
+        @inbounds s[i] = v[i]
     end
+    s
 end
 StructArray(s::StructArray) = copy(s)
 
@@ -63,7 +59,15 @@ Base.propertynames(s::StructArray) = fieldnames(typeof(columns(s)))
 
 Base.size(s::StructArray) = size(columns(s)[1])
 
-Base.@propagate_inbounds Base.getindex(s::StructArray, I::Int...) = get_ith(s, I...)
+@generated function Base.getindex(x::StructArray{T, N, NamedTuple{names, types}}, I::Int...) where {T, N, names, types}
+    args = [:(getfield(cols, $i)[I...]) for i in 1:length(names)]
+    return quote
+        cols = columns(x)
+        @boundscheck checkbounds(x, I...)
+        @inbounds $(Expr(:call, :createinstance, :T, args...))
+    end
+end
+
 function Base.getindex(s::StructArray{T, N, C}, I::Union{Int, AbstractArray, Colon}...) where {T, N, C}
     StructArray{T}(map(v -> getindex(v, I...), columns(s)))
 end
@@ -72,29 +76,21 @@ function Base.view(s::StructArray{T, N, C}, I...) where {T, N, C}
     StructArray{T}(map(v -> view(v, I...), columns(s)))
 end
 
-Base.@propagate_inbounds Base.setindex!(s::StructArray, val, I::Int...) = set_ith!(s, val, I...)
-
-fields(::Type{<:NamedTuple{K}}) where {K} = K
-@generated function fields(t::Type{T}) where {T}
-   return :($(Expr(:tuple, [QuoteNode(f) for f in fieldnames(T)]...)))
-end
-@generated function fields(t::Type{T}) where {T<:Tuple}
-    return :($(Expr(:tuple, [QuoteNode(Symbol("x$f")) for f in fieldnames(T)]...)))
+function Base.setindex!(s::StructArray, vals, I::Int...)
+    @boundscheck checkbounds(s, I...)
+    @inbounds foreachcolumn((col, val) -> (col[I...] = val), s, vals)
+    s
 end
 
 @inline getfieldindex(v::Tuple, field::Symbol, index::Integer) = getfield(v, index)
 @inline getfieldindex(v, field::Symbol, index::Integer) = getproperty(v, field)
 
-@generated function Base.push!(s::StructArray{T, 1}, vals) where {T}
-    exprs = foreach_expr((args...) -> Expr(:call, :push!, args...), T, :s, :vals)
-    push!(exprs, :s)
-    Expr(:block, exprs...)
+function Base.push!(s::StructArray, vals)
+    foreachcolumn(push!, s, vals)
 end
 
-@generated function Base.append!(s::StructArray{T, 1}, vals) where {T}
-    exprs = foreach_expr((args...) -> Expr(:call, :append!, args...), T, :s, :vals)
-    push!(exprs, :s)
-    Expr(:block, exprs...)
+function Base.append!(s::StructArray, vals)
+    foreachcolumn(append!, s, vals)
 end
 
 function Base.cat(args::StructArray...; dims)
@@ -125,4 +121,3 @@ Base.copy(s::StructArray{T,N,C}) where {T,N,C} = StructArray{T,N,C}(C(copy(x) fo
 function Base.reshape(s::StructArray{T}, d::Dims) where {T}
     StructArray{T}(map(x -> reshape(x, d), columns(s)))
 end
-

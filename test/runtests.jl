@@ -102,16 +102,14 @@ end
 end
 
 f_infer() = StructArray{ComplexF64}(rand(2,2), rand(2,2))
-unwrap(::Type) = false
-unwrap(::Type{<:NamedTuple}) = true
 
-g_infer() = StructArray([(a=(b=1,), c=2)], unwrap = unwrap)
+g_infer() = StructArray([(a=(b="1",), c=2)], unwrap = t -> t <: NamedTuple)
 tup_infer() = StructArray([(1, 2), (3, 4)])
 
 @testset "inferrability" begin
     @inferred f_infer()
     @inferred g_infer()
-    @test g_infer().a.b == [1]
+    @test g_infer().a.b == ["1"]
     s = @inferred tup_infer()
     @test Tables.columns(s) == (x1 = [1, 3], x2 = [2, 4])
     @test s[1] == (1, 2)
@@ -150,7 +148,7 @@ StructArrays.SkipConstructor(::Type{<:S}) = true
 end
 
 const initializer = StructArrays.ArrayInitializer(t -> t <: Union{Tuple, NamedTuple, Pair})
-collect_columns(t) = StructArrays.collect_columns(t, initializer = initializer) 
+collect_columns(t) = StructArrays.collect_columns(t, initializer = initializer)
 
 @testset "collectnamedtuples" begin
     v = [(a = 1, b = 2), (a = 1, b = 3)]
