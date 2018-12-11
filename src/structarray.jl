@@ -33,9 +33,13 @@ function StructArray{T}(::Base.UndefInitializer, sz::Dims; unwrap = t -> false) 
 end
 StructArray{T}(u::Base.UndefInitializer, d::Integer...; unwrap = t -> false) where {T} = StructArray{T}(u, convert(Dims, d); unwrap = unwrap)
 
-function _similar(::Type{Z}, v::AbstractArray; unwrap = t -> false) where {Z}
-    unwrap(Z) ? StructArray{Z}(map(t -> _similar(fieldtype(Z, t), v; unwrap = unwrap), fields(Z))) : similar(v, Z)
+_similar(::Type{Z}, v::AbstractArray; unwrap = t -> false) where {Z} =
+    _similar(Z, staticschema(Z), v; unwrap = unwrap)
+
+function _similar(::Type{Z}, ::Type{NamedTuple{names, types}}, v::AbstractArray; unwrap = t -> false) where {Z, names, types}
+    unwrap(Z) ? StructArray{Z}(map(typ -> _similar(typ, v; unwrap = unwrap), types.parameters)) : similar(v, Z)
 end
+
 function similar_structarray(v::AbstractArray{T}; unwrap = t -> false) where {T}
     buildfromschema(T, _similar, v; unwrap = unwrap)
 end
