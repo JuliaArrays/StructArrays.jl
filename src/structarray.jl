@@ -32,9 +32,9 @@ _undef_array(::Type{T}, sz; unwrap = t -> false) where {T} = unwrap(T) ? StructA
 _similar(::Type{Z}, v::AbstractArray; unwrap = t -> false) where {Z} =
     unwrap(Z) ? _similar(Z, staticschema(Z), v; unwrap = unwrap) : similar(v, Z)
 
-function _similar(::Type{Z}, ::Type{NamedTuple{names, types}}, v::AbstractArray; unwrap = t -> false) where {Z, names, types}
-    tup = ntuple(i -> _similar(fieldtype(types, i), v; unwrap = unwrap), fieldcount(types))
-    StructArray{Z}(NamedTuple{names}(tup))
+function _similar(::Type{Z}, ::Type{NT}, v::AbstractArray; unwrap = t -> false) where {Z, NT<:NamedTuple}
+    nt = map_params(typ -> _similar(typ, v; unwrap = unwrap), NT)
+    StructArray{Z}(nt)
 end
 
 function StructArray{T}(::Base.UndefInitializer, sz::Dims; unwrap = t -> false) where {T}
