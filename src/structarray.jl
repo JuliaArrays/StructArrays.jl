@@ -29,20 +29,20 @@ StructArray{T}(args...) where {T} = StructArray{T}(NamedTuple{fields(T)}(args))
 
 _undef_array(::Type{T}, sz; unwrap = t -> false) where {T} = unwrap(T) ? StructArray{T}(undef, sz; unwrap = unwrap) : Array{T}(undef, sz)
 
-_similar(::Type{Z}, v::AbstractArray; unwrap = t -> false) where {Z} =
-    unwrap(Z) ? buildfromschema(typ -> _similar(typ, v; unwrap = unwrap), Z) : similar(v, Z)
+_similar(v::AbstractArray, ::Type{Z}; unwrap = t -> false) where {Z} =
+    unwrap(Z) ? buildfromschema(typ -> _similar(v, typ; unwrap = unwrap), Z) : similar(v, Z)
 
 function StructArray{T}(::Base.UndefInitializer, sz::Dims; unwrap = t -> false) where {T}
     buildfromschema(typ -> _undef_array(typ, sz; unwrap = unwrap), T)
 end
 StructArray{T}(u::Base.UndefInitializer, d::Integer...; unwrap = t -> false) where {T} = StructArray{T}(u, convert(Dims, d); unwrap = unwrap)
 
-function similar_structarray(v::AbstractArray{T}; unwrap = t -> false) where {T}
-    buildfromschema(typ -> _similar(typ, v; unwrap = unwrap), T)
+function similar_structarray(v::AbstractArray, ::Type{Z}; unwrap = t -> false) where {Z}
+    buildfromschema(typ -> _similar(v, typ; unwrap = unwrap), Z)
 end
 
 function StructArray(v::AbstractArray{T}; unwrap = t -> false) where {T}
-    s = similar_structarray(v; unwrap = unwrap)
+    s = similar_structarray(v, T; unwrap = unwrap)
     for i in eachindex(v)
         @inbounds s[i] = v[i]
     end
