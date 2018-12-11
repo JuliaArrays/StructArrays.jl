@@ -16,11 +16,10 @@ end
 map_params(f, ::Type{NamedTuple{names, types}}) where {names, types} =
     NamedTuple{names}(map_params(f, types))
 
-buildfromschema(::Type{T}, initializer, args...; kwargs...) where {T} =
-    buildfromschema(T, staticschema(T), initializer, args...; kwargs...)
+buildfromschema(initializer, ::Type{T}) where {T} = buildfromschema(initializer, T, staticschema(T))
 
-function buildfromschema(::Type{T}, ::Type{NT}, initializer, args...; kwargs...) where {T, NT<:NamedTuple}
-    nt = map_params(typ -> initializer(typ, args...; kwargs...), NT)
+function buildfromschema(initializer, ::Type{T}, ::Type{NT}) where {T, NT<:NamedTuple}
+    nt = map_params(initializer, NT)
     StructArray{T}(nt)
 end
 

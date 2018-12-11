@@ -38,12 +38,12 @@ function _similar(::Type{Z}, ::Type{NT}, v::AbstractArray; unwrap = t -> false) 
 end
 
 function StructArray{T}(::Base.UndefInitializer, sz::Dims; unwrap = t -> false) where {T}
-    buildfromschema(T, _undef_array, sz; unwrap = unwrap)
+    buildfromschema(typ -> _undef_array(typ, sz; unwrap = unwrap), T)
 end
 StructArray{T}(u::Base.UndefInitializer, d::Integer...; unwrap = t -> false) where {T} = StructArray{T}(u, convert(Dims, d); unwrap = unwrap)
 
 function similar_structarray(v::AbstractArray{T}; unwrap = t -> false) where {T}
-    buildfromschema(T, _similar, v; unwrap = unwrap)
+    buildfromschema(typ -> _similar(typ, v; unwrap = unwrap), T)
 end
 
 function StructArray(v::AbstractArray{T}; unwrap = t -> false) where {T}
