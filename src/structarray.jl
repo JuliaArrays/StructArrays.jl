@@ -28,18 +28,19 @@ StructArray(; kwargs...) = StructArray(values(kwargs))
 StructArray{T}(args...) where {T} = StructArray{T}(NamedTuple{fields(T)}(args))
 
 _undef_array(::Type{T}, sz; unwrap = t -> false) where {T} = unwrap(T) ? StructArray{T}(undef, sz; unwrap = unwrap) : Array{T}(undef, sz)
-function StructArray{T}(::Base.UndefInitializer, sz::Dims; unwrap = t -> false) where {T}
-    buildfromschema(T, _undef_array, sz; unwrap = unwrap)
-end
-StructArray{T}(u::Base.UndefInitializer, d::Integer...; unwrap = t -> false) where {T} = StructArray{T}(u, convert(Dims, d); unwrap = unwrap)
 
 _similar(::Type{Z}, v::AbstractArray; unwrap = t -> false) where {Z} =
     unwrap(Z) ? _similar(Z, staticschema(Z), v; unwrap = unwrap) : similar(v, Z)
 
-function _similar(::Type{Z}, ::Type{NT}, v::AbstractArray; unwrap = t -> false) where {Z, NT<:NamedTuple}
-    nt = map_params(typ -> _similar(typ, v; unwrap = unwrap), NT)
-    StructArray{Z}(nt)
+function _similar(::Type{Z}, ::Type{NamedTuple{names, types}}, v::AbstractArray; unwrap = t -> false) where {Z, names, types}
+    tup = ntuple(i -> _similar(fieldtype(types, i), v; unwrap = unwrap), fieldcount(types))
+    StructArray{Z}(NamedTuple{names}(tup))
 end
+
+function StructArray{T}(::Base.UndefInitializer, sz::Dims; unwrap = t -> false) where {T}
+    buildfromschema(T, _undef_array, sz; unwrap = unwrap)
+end
+StructArray{T}(u::Base.UndefInitializer, d::Integer...; unwrap = t -> false) where {T} = StructArray{T}(u, convert(Dims, d); unwrap = unwrap)
 
 function similar_structarray(v::AbstractArray{T}; unwrap = t -> false) where {T}
     buildfromschema(T, _similar, v; unwrap = unwrap)
