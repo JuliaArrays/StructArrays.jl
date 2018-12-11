@@ -27,19 +27,17 @@ StructArray(; kwargs...) = StructArray(values(kwargs))
 
 StructArray{T}(args...) where {T} = StructArray{T}(NamedTuple{fields(T)}(args))
 
-StructArray{T}(u::Base.UndefInitializer, d::Integer...; unwrap = t -> false) where {T} = StructArray{T}(u, convert(Dims, d); unwrap = unwrap)
-
 _undef_array(::Type{T}, sz; unwrap = t -> false) where {T} = unwrap(T) ? StructArray{T}(undef, sz; unwrap = unwrap) : Array{T}(undef, sz)
 function StructArray{T}(::Base.UndefInitializer, sz::Dims; unwrap = t -> false) where {T}
     buildfromschema(T, _undef_array, sz; unwrap = unwrap)
 end
+StructArray{T}(u::Base.UndefInitializer, d::Integer...; unwrap = t -> false) where {T} = StructArray{T}(u, convert(Dims, d); unwrap = unwrap)
 
+function _similar(::Type{Z}, v::AbstractArray; unwrap = t -> false) where {Z}
+    unwrap(Z) ? StructArray{Z}(map(t -> _similar(fieldtype(Z, t), v; unwrap = unwrap), fields(Z))) : similar(v, Z)
+end
 function similar_structarray(v::AbstractArray{T}; unwrap = t -> false) where {T}
     buildfromschema(T, _similar, v; unwrap = unwrap)
-end
-
-function _similar(::Type{Z}, v::S; unwrap = t -> false) where {S <: AbstractArray, Z}
-    unwrap(Z) ? StructArray{Z}(map(t -> _similar(fieldtype(Z, t), v; unwrap = unwrap), fields(Z))) : similar(v, Z)
 end
 
 function StructArray(v::AbstractArray; unwrap = t -> false)
