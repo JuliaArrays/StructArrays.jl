@@ -5,16 +5,13 @@ eltypes(::Type{T}) where {T<:Tuple} =
     tuple_type_cons(eltype(tuple_type_head(T)), eltypes(tuple_type_tail(T)))
 eltypes(::Type{NamedTuple{K, V}}) where {K, V} = NamedTuple{K, eltypes(V)}
 
-arraytypes(::Type{Tuple{}}, ::Tuple{Vararg{Any, N}}; unwrap = t -> false) where N = Tuple{}
+buildfromschema(::Type{T}, initializer::F, args...; unwrap = t -> false) where {T, F} =
+    buildfromschema(T, staticschema(T), initializer, args...; unwrap = unwrap)
 
-function arraytypes(::Type{T}, sz::Tuple{Vararg{Any, N}}; unwrap = t -> false) where {N, T<:Tuple}
-    T1 = tuple_type_head(T)
-    AT = unwrap(T1) ? StructArray{T1, N, arraytypes(staticschema(T1), sz; unwrap = unwrap)} : Array{T1, N}
-    tuple_type_cons(AT, arraytypes(tuple_type_tail(T), sz; unwrap = unwrap))
-end
-
-function arraytypes(::Type{NamedTuple{K, V}}, sz::Tuple{Vararg{Any, N}}; unwrap = t-> false) where {N, K, V}
-    NamedTuple{K, arraytypes(V, sz; unwrap = unwrap)}
+@generated function buildfromschema(::Type{T}, ::Type{NamedTuple{K, V}}, initializer::F, args...; unwrap = t -> false) where {T, K, V, F}
+    vecs = [:(initializer(V.parameters[$i], args...; unwrap = unwrap)) for i in 1:length(V.parameters)]
+    ex = Expr(:tuple, vecs...)
+    return :(StructArray{T}(NamedTuple{K}($ex)))
 end
 
 Base.@pure SkipConstructor(::Type) = false

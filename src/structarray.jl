@@ -27,42 +27,19 @@ StructArray(; kwargs...) = StructArray(values(kwargs))
 
 StructArray{T}(args...) where {T} = StructArray{T}(NamedTuple{fields(T)}(args))
 
-_undef_array(::Type{T}, sz; unwrap = t -> false) where {T} = unwrap(T) ? StructArray{T}(undef, sz; unwrap = unwrap) : Array{T}(undef, sz)
-
 StructArray{T}(u::Base.UndefInitializer, d::Integer...; unwrap = t -> false) where {T} = StructArray{T}(u, convert(Dims, d); unwrap = unwrap)
-function StructArray{T}(::Base.UndefInitializer, sz::Tuple{Vararg{Int, N}}; unwrap = t -> false) where {T, N}
-    NT = staticschema(T)
-    names = getnames(NT)
-    types = gettypes(NT).parameters
-    C = arraytypes(NT, sz; unwrap = unwrap)
-    cols = map(typ -> _undef_array(typ, sz; unwrap = unwrap), NamedTuple{names}(types))
-    return StructArray{T, N, C}(cols)
-end
 
-similar_from_tuple(::Type{Tuple{}}, sz::AbstractArray, simvec::Tuple = (); unwrap = t -> false) = ()
-
-function similar_from_tuple(::Type{T}, v::AbstractArray{<:Any, N}; unwrap = t -> false) where {N, T<:Tuple}
-    T1 = tuple_type_head(T)
-    if unwrap(T1)
-        NT1 = staticschema(T1)
-        nt = similar_from_tuple(NT1, v; unwrap = unwrap)
-        firstvec = StructArray{T1}(nt)
-    else
-        firstvec = similar(v, T1)
-    end
-    lastvecs = similar_from_tuple(tuple_type_tail(T), v; unwrap = unwrap)
-    (firstvec, lastvecs...)
-end
-
-function similar_from_tuple(::Type{NamedTuple{K, V}}, v::AbstractArray; unwrap = t-> false) where {K, V}
-    vecs = similar_from_tuple(V, v; unwrap = unwrap)
-    NamedTuple{K}(vecs)
+_undef_array(::Type{T}, sz; unwrap = t -> false) where {T} = unwrap(T) ? StructArray{T}(undef, sz; unwrap = unwrap) : Array{T}(undef, sz)
+function StructArray{T}(::Base.UndefInitializer, sz::Dims; unwrap = t -> false) where {T}
+    buildfromschema(T, _undef_array, sz; unwrap = unwrap)
 end
 
 function similar_structarray(v::AbstractArray{T}; unwrap = t -> false) where {T}
-    NT = staticschema(T)
-    vecs = similar_from_tuple(NT, v; unwrap = unwrap)
-    StructArray{T}(vecs)
+    buildfromschema(T, _similar, v; unwrap = unwrap)
+end
+
+function _similar(::Type{Z}, v::S; unwrap = t -> false) where {S <: AbstractArray, Z}
+    unwrap(Z) ? StructArray{Z}(map(t -> _similar(fieldtype(Z, t), v; unwrap = unwrap), fields(Z))) : similar(v, Z)
 end
 
 function StructArray(v::AbstractArray; unwrap = t -> false)
