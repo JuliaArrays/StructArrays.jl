@@ -30,12 +30,7 @@ StructArray{T}(args...) where {T} = StructArray{T}(NamedTuple{fields(T)}(args))
 _undef_array(::Type{T}, sz; unwrap = t -> false) where {T} = unwrap(T) ? StructArray{T}(undef, sz; unwrap = unwrap) : Array{T}(undef, sz)
 
 _similar(::Type{Z}, v::AbstractArray; unwrap = t -> false) where {Z} =
-    unwrap(Z) ? _similar(Z, staticschema(Z), v; unwrap = unwrap) : similar(v, Z)
-
-function _similar(::Type{Z}, ::Type{NT}, v::AbstractArray; unwrap = t -> false) where {Z, NT<:NamedTuple}
-    nt = map_params(typ -> _similar(typ, v; unwrap = unwrap), NT)
-    StructArray{Z}(nt)
-end
+    unwrap(Z) ? buildfromschema(typ -> _similar(typ, v; unwrap = unwrap), Z) : similar(v, Z)
 
 function StructArray{T}(::Base.UndefInitializer, sz::Dims; unwrap = t -> false) where {T}
     buildfromschema(typ -> _undef_array(typ, sz; unwrap = unwrap), T)
