@@ -36,15 +36,16 @@ StructArray{T}(u::Base.UndefInitializer, d::Integer...; unwrap = t -> false) whe
 _similar(::Type{Z}, v::AbstractArray; unwrap = t -> false) where {Z} =
     unwrap(Z) ? _similar(Z, staticschema(Z), v; unwrap = unwrap) : similar(v, Z)
 
-function _similar(::Type{Z}, ::Type{NamedTuple{names, types}}, v::AbstractArray; unwrap = t -> false) where {Z, names, types}
-    StructArray{Z}(map(typ -> _similar(typ, v; unwrap = unwrap), types.parameters))
+function _similar(::Type{Z}, ::Type{NT}, v::AbstractArray; unwrap = t -> false) where {Z, NT<:NamedTuple}
+    tup = map_params(typ -> _similar(typ, v; unwrap = unwrap), NT)
+    StructArray{Z}(tup)
 end
 
 function similar_structarray(v::AbstractArray{T}; unwrap = t -> false) where {T}
     buildfromschema(T, _similar, v; unwrap = unwrap)
 end
 
-function StructArray(v::AbstractArray; unwrap = t -> false)
+function StructArray(v::AbstractArray{T}; unwrap = t -> false) where {T}
     s = similar_structarray(v; unwrap = unwrap)
     for i in eachindex(v)
         @inbounds s[i] = v[i]

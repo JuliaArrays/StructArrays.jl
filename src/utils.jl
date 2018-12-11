@@ -1,9 +1,20 @@
 import Base: tuple_type_cons, tuple_type_head, tuple_type_tail, tail
 
-eltypes(::Type{Tuple{}}) = Tuple{}
-eltypes(::Type{T}) where {T<:Tuple} =
-    tuple_type_cons(eltype(tuple_type_head(T)), eltypes(tuple_type_tail(T)))
-eltypes(::Type{NamedTuple{K, V}}) where {K, V} = NamedTuple{K, eltypes(V)}
+eltypes(::Type{T}) where {T} = map_types(eltype, T)
+
+map_types(f, ::Type{Tuple{}}) = Tuple{}
+function map_types(f, ::Type{T}) where {T<:Tuple}
+    tuple_type_cons(f(tuple_type_head(T)), map_types(f, tuple_type_tail(T)))
+end
+map_types(f, ::Type{NamedTuple{names, types}}) where {names, types} =
+    NamedTuple{names, map_types(f, types)}
+
+map_params(f, ::Type{Tuple{}}) = ()
+function map_params(f, ::Type{T}) where {T<:Tuple}
+    (f(tuple_type_head(T)), map_params(f, tuple_type_tail(T))...)
+end
+map_params(f, ::Type{NamedTuple{names, types}}) where {names, types} =
+    NamedTuple{names}(map_params(f, types))
 
 buildfromschema(::Type{T}, initializer::F, args...; unwrap = t -> false) where {T, F} =
     buildfromschema(T, staticschema(T), initializer, args...; unwrap = unwrap)
