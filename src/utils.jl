@@ -19,10 +19,9 @@ map_params(f, ::Type{NamedTuple{names, types}}) where {names, types} =
 buildfromschema(::Type{T}, initializer, args...; kwargs...) where {T} =
     buildfromschema(T, staticschema(T), initializer, args...; kwargs...)
 
-@generated function buildfromschema(::Type{T}, ::Type{NamedTuple{K, V}}, initializer, args...; kwargs...) where {T, K, V}
-    vecs = [:(initializer(V.parameters[$i], args...; kwargs...)) for i in 1:length(V.parameters)]
-    ex = Expr(:tuple, vecs...)
-    return :(StructArray{T}(NamedTuple{K}($ex)))
+function buildfromschema(::Type{T}, ::Type{NT}, initializer, args...; kwargs...) where {T, NT<:NamedTuple}
+    nt = map_params(typ -> initializer(typ, args...; kwargs...), NT)
+    StructArray{T}(nt)
 end
 
 Base.@pure SkipConstructor(::Type) = false
