@@ -29,6 +29,10 @@ StructArray(; kwargs...) = StructArray(values(kwargs))
 
 StructArray{T}(args...) where {T} = StructArray{T}(NamedTuple{fields(T)}(args))
 
+const StructVector{T, C<:NamedTuple} = StructArray{T, 1, C}
+StructVector{T}(args...; kwargs...) where {T} = StructArray{T}(args...; kwargs...)
+StructVector(args...; kwargs...) = StructArray(args...; kwargs...)
+
 _undef_array(::Type{T}, sz; unwrap = t -> false) where {T} = unwrap(T) ? StructArray{T}(undef, sz; unwrap = unwrap) : Array{T}(undef, sz)
 
 _similar(v::AbstractArray, ::Type{Z}; unwrap = t -> false) where {Z} =
