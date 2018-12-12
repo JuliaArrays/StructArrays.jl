@@ -12,6 +12,21 @@ using Test
     @test (@inferred view(t, 2, 1:2)) == StructArray((a = view(a, 2, 1:2), b = view(b, 2, 1:2)))
 end
 
+@testset "columns" begin
+    t = StructArray(a = 1:10, b = rand(Bool, 10))
+    @test StructArrays.ncols(t) == 2
+    @test StructArrays.colnames(t) == (:a, :b)
+    @test StructArrays.ncols(t.a) == 1
+    @test StructArrays.colnames(t.a) == (1,)
+end
+
+@testset "empty" begin
+    s = StructVector(a = [1, 2, 3], b = ["a", "b", "c"])
+    empty!(s)
+    @test isempty(s.a)
+    @test isempty(s.b)
+end
+
 @testset "constructor from existing array" begin
     v = rand(ComplexF64, 5, 3)
     t = @inferred StructArray(v)

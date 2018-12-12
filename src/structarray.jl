@@ -19,13 +19,21 @@ end
 
 StructArray{T}(c::C) where {T, C<:Tuple} = StructArray{T}(NamedTuple{fields(T)}(c))
 StructArray{T}(c::C) where {T, C<:NamedTuple} = StructArray{T, length(size(c[1])), C}(c)
+StructArray{T}(c::C) where {T, C<:Pair} = StructArray{T}(Tuple(c))
 StructArray(c::C) where {C<:NamedTuple} = StructArray{eltypes(C)}(c)
 StructArray(c::C) where {C<:Tuple} = StructArray{eltypes(C)}(c)
+StructArray(c::Pair{P, Q}) where {P, Q} = StructArray{Pair{eltype(P), eltype(Q)}}(c)
 
 StructArray{T}(; kwargs...) where {T} = StructArray{T}(values(kwargs))
 StructArray(; kwargs...) = StructArray(values(kwargs))
 
 StructArray{T}(args...) where {T} = StructArray{T}(NamedTuple{fields(T)}(args))
+
+const StructVector{T, C<:NamedTuple} = StructArray{T, 1, C}
+StructVector{T}(args...; kwargs...) where {T} = StructArray{T}(args...; kwargs...)
+StructVector(args...; kwargs...) = StructArray(args...; kwargs...)
+
+Base.IndexStyle(::Type{StructArray{T, N, C}}) where {T, N, C} = Base.IndexStyle(gettypes(C).parameters[1])
 
 _undef_array(::Type{T}, sz; unwrap = t -> false) where {T} = unwrap(T) ? StructArray{T}(undef, sz; unwrap = unwrap) : Array{T}(undef, sz)
 
@@ -53,6 +61,12 @@ StructArray(s::StructArray) = copy(s)
 Base.convert(::Type{StructArray}, v::AbstractArray) = StructArray(v)
 
 columns(s::StructArray) = getfield(s, :columns)
+columns(v::AbstractVector) = v
+ncols(v::AbstractVector) = 1
+ncols(v::StructArray{T, N, C}) where {T, N, C} = length(getnames(C))
+colnames(v::AbstractVector) = (1,)
+colnames(v::StructArray{T, N, C}) where {T, N, C} = getnames(C)
+
 Base.getproperty(s::StructArray, key::Symbol) = getfield(columns(s), key)
 Base.getproperty(s::StructArray, key::Int) = getfield(columns(s), key)
 Base.propertynames(s::StructArray) = fieldnames(typeof(columns(s)))
@@ -104,6 +118,10 @@ function Base.resize!(s::StructArray, i::Integer)
         resize!(a, i)
     end
     return s
+end
+
+function Base.empty!(s::StructArray)
+    foreachcolumn(empty!, s)
 end
 
 for op in [:hcat, :vcat]

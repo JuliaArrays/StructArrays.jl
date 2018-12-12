@@ -1,7 +1,7 @@
 module StructArrays
 
 import Requires
-export StructArray
+export StructArray, StructVector
 
 include("interface.jl")
 include("structarray.jl")
