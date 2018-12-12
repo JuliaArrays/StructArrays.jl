@@ -61,6 +61,12 @@ StructArray(s::StructArray) = copy(s)
 Base.convert(::Type{StructArray}, v::AbstractArray) = StructArray(v)
 
 columns(s::StructArray) = getfield(s, :columns)
+columns(v::AbstractVector) = v
+ncols(v::AbstractVector) = 1
+ncols(v::StructArray{T, N, C}) where {T, N, C} = length(getnames(C))
+colnames(v::AbstractVector) = (1,)
+colnames(v::StructArray{T, N, C}) where {T, N, C} = getnames(C)
+
 Base.getproperty(s::StructArray, key::Symbol) = getfield(columns(s), key)
 Base.getproperty(s::StructArray, key::Int) = getfield(columns(s), key)
 Base.propertynames(s::StructArray) = fieldnames(typeof(columns(s)))
