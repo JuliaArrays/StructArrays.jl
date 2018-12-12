@@ -19,8 +19,10 @@ end
 
 StructArray{T}(c::C) where {T, C<:Tuple} = StructArray{T}(NamedTuple{fields(T)}(c))
 StructArray{T}(c::C) where {T, C<:NamedTuple} = StructArray{T, length(size(c[1])), C}(c)
+StructArray{T}(c::C) where {T, C<:Pair} = StructArray{T}(Tuple(c))
 StructArray(c::C) where {C<:NamedTuple} = StructArray{eltypes(C)}(c)
 StructArray(c::C) where {C<:Tuple} = StructArray{eltypes(C)}(c)
+StructArray(c::Pair{P, Q}) where {P, Q} = StructArray{Pair{eltype(P), eltype(Q)}}(c)
 
 StructArray{T}(; kwargs...) where {T} = StructArray{T}(values(kwargs))
 StructArray(; kwargs...) = StructArray(values(kwargs))
