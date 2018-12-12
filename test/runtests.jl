@@ -20,6 +20,13 @@ end
     @test StructArrays.colnames(t.a) == (1,)
 end
 
+@testset "empty" begin
+    s = StructVector(a = [1, 2, 3], b = ["a", "b", "c"])
+    empty!(s)
+    @test isempty(s.a)
+    @test isempty(s.b)
+end
+
 @testset "constructor from existing array" begin
     v = rand(ComplexF64, 5, 3)
     t = @inferred StructArray(v)
