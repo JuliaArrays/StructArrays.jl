@@ -47,7 +47,7 @@ function collect_to_columns!(dest::AbstractArray{T}, itr, offs, st) where {T}
         elem = iterate(itr, st)
         elem === nothing && break
         el, st = elem
-        if isa(el, T)
+        if iseltype(el, dest)
             @inbounds dest[i] = el
             i += 1
         else
@@ -74,7 +74,7 @@ function grow_to_columns!(dest::AbstractArray{T}, itr, elem = iterate(itr)) wher
     i = length(dest)+1
     while elem !== nothing
         el, st = elem
-        if isa(el, T)
+        if iseltype(el, dest)
             push!(dest, el)
             elem = iterate(itr, st)
             i += 1
