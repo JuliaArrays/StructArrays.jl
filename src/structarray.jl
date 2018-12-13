@@ -106,11 +106,15 @@ end
 
 function Base.push!(s::StructArray, vals)
     foreachcolumn(push!, s, vals)
+    return s
 end
 
 function Base.append!(s::StructArray, vals)
     foreachcolumn(append!, s, vals)
+    return s
 end
+
+Base.copyto!(I::StructArray, J::StructArray) = (foreachcolumn(copyto!, I, J); I)
 
 function Base.cat(args::StructArray...; dims)
     f = key -> cat((getproperty(t, key) for t in args)...; dims=dims)
