@@ -8,10 +8,10 @@ struct StructArray{T, N, C<:NamedTuple} <: AbstractArray{T, N}
 
     function StructArray{T, N, C}(c) where {T, N, C<:NamedTuple}
         length(c) > 0 || error("must have at least one column")
-        n = size(c[1])
-        length(n) == N || error("wrong number of dimensions")
+        ax = axes(c[1])
+        length(ax) == N || error("wrong number of dimensions")
         for i = 2:length(c)
-            size(c[i]) == n || error("all columns must have same size")
+            axes(c[i]) == ax || error("all columns must have same size")
         end
         new{T, N, C}(c)
     end
@@ -60,6 +60,15 @@ StructArray(s::StructArray) = copy(s)
 
 Base.convert(::Type{StructArray}, v::AbstractArray) = StructArray(v)
 
+function Base.similar(::Type{StructArray{T, N, C}}, sz::Dims) where {T, N, C}
+    cols = map_params(typ -> similar(typ, sz), C)
+    StructArray{T}(cols)
+end
+
+Base.similar(s::S, sz::Tuple) where {S<:StructArray} = similar(S, Base.to_shape(sz))
+Base.similar(s::S, sz::Base.DimOrInd...) where {S<:StructArray} = similar(S, Base.to_shape(sz))
+Base.similar(s::S) where {S<:StructArray} = similar(S, Base.to_shape(axes(s)))
+
 columns(s::StructArray) = getfield(s, :columns)
 columns(v::AbstractVector) = v
 ncols(v::AbstractVector) = 1
@@ -72,6 +81,7 @@ Base.getproperty(s::StructArray, key::Int) = getfield(columns(s), key)
 Base.propertynames(s::StructArray) = fieldnames(typeof(columns(s)))
 
 Base.size(s::StructArray) = size(columns(s)[1])
+Base.axes(s::StructArray) = axes(columns(s)[1])
 
 @generated function Base.getindex(x::StructArray{T, N, NamedTuple{names, types}}, I::Int...) where {T, N, names, types}
     args = [:(getfield(cols, $i)[I...]) for i in 1:length(names)]
