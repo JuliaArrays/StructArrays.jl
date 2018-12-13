@@ -20,6 +20,20 @@ end
     @test StructArrays.colnames(t.a) == (1,)
 end
 
+@testset "similar" begin
+    t = StructArray(a = rand(10), b = rand(Bool, 10))
+    s = similar(t)
+    @test eltype(s) == NamedTuple{(:a, :b), Tuple{Float64, Bool}}
+    @test size(s) == (10,)
+    t = StructArray(a = rand(10, 2), b = rand(Bool, 10, 2))
+    s = similar(t, 3, 5)
+    @test eltype(s) == NamedTuple{(:a, :b), Tuple{Float64, Bool}}
+    @test size(s) == (3, 5)
+    s = similar(t, (3, 5))
+    @test eltype(s) == NamedTuple{(:a, :b), Tuple{Float64, Bool}}
+    @test size(s) == (3, 5)
+end
+
 @testset "empty" begin
     s = StructVector(a = [1, 2, 3], b = ["a", "b", "c"])
     empty!(s)
