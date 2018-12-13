@@ -3,7 +3,7 @@ Tables.rowaccess(::Type{<:StructArray}) = true
 Tables.columnaccess(::Type{<:StructArray}) = true
 
 Tables.rows(s::StructArray) = s
-Tables.columns(s::StructArray) = columns(s)
+Tables.columns(s::StructArray) = fieldarrays(s)
 
 function Tables.schema(s::StructArray{T}) where {T}
     NT = staticschema(T)
