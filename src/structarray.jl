@@ -1,17 +1,17 @@
 """
 A type that stores an array of structures as a structure of arrays.
 # Fields:
-- `columns`: a named tuple of arrays. Also `columns(x)`
+- `fieldarrays`: a named tuple of arrays. Also `fieldarrays(x)`
 """
 struct StructArray{T, N, C<:NamedTuple} <: AbstractArray{T, N}
-    columns::C
+    fieldarrays::C
 
     function StructArray{T, N, C}(c) where {T, N, C<:NamedTuple}
         length(c) > 0 || error("must have at least one column")
         ax = axes(c[1])
         length(ax) == N || error("wrong number of dimensions")
         for i = 2:length(c)
-            axes(c[i]) == ax || error("all columns must have same size")
+            axes(c[i]) == ax || error("all field arrays must have same shape")
         end
         new{T, N, C}(c)
     end
@@ -69,35 +69,30 @@ Base.similar(s::S, sz::Tuple) where {S<:StructArray} = similar(S, Base.to_shape(
 Base.similar(s::S, sz::Base.DimOrInd...) where {S<:StructArray} = similar(S, Base.to_shape(sz))
 Base.similar(s::S) where {S<:StructArray} = similar(S, Base.to_shape(axes(s)))
 
-columns(s::StructArray) = getfield(s, :columns)
-columns(v::AbstractVector) = v
-ncols(v::AbstractVector) = 1
-ncols(v::StructArray{T, N, C}) where {T, N, C} = length(getnames(C))
-colnames(v::AbstractVector) = (1,)
-colnames(v::StructArray{T, N, C}) where {T, N, C} = getnames(C)
+fieldarrays(s::StructArray) = getfield(s, :fieldarrays)
 
-Base.getproperty(s::StructArray, key::Symbol) = getfield(columns(s), key)
-Base.getproperty(s::StructArray, key::Int) = getfield(columns(s), key)
-Base.propertynames(s::StructArray) = fieldnames(typeof(columns(s)))
+Base.getproperty(s::StructArray, key::Symbol) = getfield(fieldarrays(s), key)
+Base.getproperty(s::StructArray, key::Int) = getfield(fieldarrays(s), key)
+Base.propertynames(s::StructArray) = fieldnames(typeof(fieldarrays(s)))
 
-Base.size(s::StructArray) = size(columns(s)[1])
-Base.axes(s::StructArray) = axes(columns(s)[1])
+Base.size(s::StructArray) = size(fieldarrays(s)[1])
+Base.axes(s::StructArray) = axes(fieldarrays(s)[1])
 
 @generated function Base.getindex(x::StructArray{T, N, NamedTuple{names, types}}, I::Int...) where {T, N, names, types}
     args = [:(getfield(cols, $i)[I...]) for i in 1:length(names)]
     return quote
-        cols = columns(x)
+        cols = fieldarrays(x)
         @boundscheck checkbounds(x, I...)
         @inbounds $(Expr(:call, :createinstance, :T, args...))
     end
 end
 
 function Base.getindex(s::StructArray{T, N, C}, I::Union{Int, AbstractArray, Colon}...) where {T, N, C}
-    StructArray{T}(map(v -> getindex(v, I...), columns(s)))
+    StructArray{T}(map(v -> getindex(v, I...), fieldarrays(s)))
 end
 
 function Base.view(s::StructArray{T, N, C}, I...) where {T, N, C}
-    StructArray{T}(map(v -> view(v, I...), columns(s)))
+    StructArray{T}(map(v -> view(v, I...), fieldarrays(s)))
 end
 
 function Base.setindex!(s::StructArray, vals, I::Int...)
@@ -124,7 +119,7 @@ function Base.cat(args::StructArray...; dims)
 end
 
 function Base.resize!(s::StructArray, i::Integer)
-    for a in columns(s)
+    for a in fieldarrays(s)
         resize!(a, i)
     end
     return s
@@ -144,8 +139,8 @@ for op in [:hcat, :vcat]
     end
 end
 
-Base.copy(s::StructArray{T,N,C}) where {T,N,C} = StructArray{T,N,C}(C(copy(x) for x in columns(s)))
+Base.copy(s::StructArray{T,N,C}) where {T,N,C} = StructArray{T,N,C}(C(copy(x) for x in fieldarrays(s)))
 
 function Base.reshape(s::StructArray{T}, d::Dims) where {T}
-    StructArray{T}(map(x -> reshape(x, d), columns(s)))
+    StructArray{T}(map(x -> reshape(x, d), fieldarrays(s)))
 end
