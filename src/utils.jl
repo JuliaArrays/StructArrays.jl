@@ -34,16 +34,17 @@ end
 
 Base.@pure SkipConstructor(::Type) = false
 
-@generated function foreachcolumn(f, x::StructArray{T, N, NamedTuple{names, types}}, xs...) where {T, N, names, types}
+@generated function foreachfield(::Type{<:NamedTuple{names}}, f, xs...) where {names}
     exprs = Expr[]
     for (i, field) in enumerate(names)
         sym = QuoteNode(field)
         args = [Expr(:call, :getfieldindex, :(getfield(xs, $j)), sym, i) for j in 1:length(xs)]
-        push!(exprs, Expr(:call, :f, Expr(:., :x, sym), args...))
+        push!(exprs, Expr(:call, :f, args...))
     end
     push!(exprs, :(return nothing))
     Expr(:block, exprs...)
 end
+foreachfield(f, x::T, xs...) where {T} = foreachfield(staticschema(T), f, x, xs...)
 
 function createinstance(::Type{T}, args...) where {T}
     SkipConstructor(T) ? unsafe_createinstance(T, args...) : T(args...)

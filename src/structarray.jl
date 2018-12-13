@@ -74,6 +74,7 @@ fieldarrays(s::StructArray) = getfield(s, :fieldarrays)
 Base.getproperty(s::StructArray, key::Symbol) = getfield(fieldarrays(s), key)
 Base.getproperty(s::StructArray, key::Int) = getfield(fieldarrays(s), key)
 Base.propertynames(s::StructArray) = fieldnames(typeof(fieldarrays(s)))
+staticschema(::Type{<:StructArray{T}}) where {T} = staticschema(T)
 
 Base.size(s::StructArray) = size(fieldarrays(s)[1])
 Base.axes(s::StructArray) = axes(fieldarrays(s)[1])
@@ -97,7 +98,7 @@ end
 
 function Base.setindex!(s::StructArray, vals, I::Int...)
     @boundscheck checkbounds(s, I...)
-    @inbounds foreachcolumn((col, val) -> (col[I...] = val), s, vals)
+    @inbounds foreachfield((col, val) -> (col[I...] = val), s, vals)
     s
 end
 
@@ -105,16 +106,16 @@ end
 @inline getfieldindex(v, field::Symbol, index::Integer) = getproperty(v, field)
 
 function Base.push!(s::StructArray, vals)
-    foreachcolumn(push!, s, vals)
+    foreachfield(push!, s, vals)
     return s
 end
 
 function Base.append!(s::StructArray, vals)
-    foreachcolumn(append!, s, vals)
+    foreachfield(append!, s, vals)
     return s
 end
 
-Base.copyto!(I::StructArray, J::StructArray) = (foreachcolumn(copyto!, I, J); I)
+Base.copyto!(I::StructArray, J::StructArray) = (foreachfield(copyto!, I, J); I)
 
 function Base.cat(args::StructArray...; dims)
     f = key -> cat((getproperty(t, key) for t in args)...; dims=dims)
@@ -130,7 +131,7 @@ function Base.resize!(s::StructArray, i::Integer)
 end
 
 function Base.empty!(s::StructArray)
-    foreachcolumn(empty!, s)
+    foreachfield(empty!, s)
 end
 
 for op in [:hcat, :vcat]
