@@ -1,7 +1,7 @@
 isdiscrete(v) = false
 
 function Base.permute!(c::StructVector, p::AbstractVector)
-    foreachcolumn(c) do v
+    foreachfield(c) do v
         if isdiscrete(v) || v isa StructVector
             permute!(v, p)
         else
