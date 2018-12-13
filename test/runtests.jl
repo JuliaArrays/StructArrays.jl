@@ -22,6 +22,9 @@ end
     a = WeakRefStrings.StringVector(["a", "b", "c"])
     b = PooledArrays.PooledArray([1, 2, 3])
     c = [:a, :b, :c]
+    @test StructArrays.isdiscrete(a)
+    @test StructArrays.isdiscrete(b)
+    @test !StructArrays.isdiscrete(c)
     s = StructArray(a=a, b=b, c=c)
     permute!(s, [2, 3, 1])
     @test s.a == ["b", "c", "a"]
