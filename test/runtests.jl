@@ -1,5 +1,5 @@
 using StructArrays
-import Tables
+import Tables, PooledArrays, WeakRefStrings
 using Test
 
 # write your own tests here
@@ -16,6 +16,21 @@ end
     t = StructArray(a = 1:10, b = rand(Bool, 10))
     @test StructArrays.propertynames(t) == (:a, :b)
     @test StructArrays.propertynames(StructArrays.fieldarrays(t)) == (:a, :b)
+end
+
+@testset "permute" begin
+    a = WeakRefStrings.StringVector(["a", "b", "c"])
+    b = PooledArrays.PooledArray([1, 2, 3])
+    c = [:a, :b, :c]
+    s = StructArray(a=a, b=b, c=c)
+    permute!(s, [2, 3, 1])
+    @test s.a == ["b", "c", "a"]
+    @test s.b == [2, 3, 1]
+    @test s.c == [:b, :c, :a]
+    s = StructArray(a=[1, 2], b=["a", "b"])
+    t = StructArray(a=[3, 4], b=["c", "d"])
+    copyto!(s, t)
+    @test s == t
 end
 
 @testset "similar" begin
