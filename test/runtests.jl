@@ -1,4 +1,5 @@
 using StructArrays
+using StructArrays: LazyRow
 import Tables, PooledArrays, WeakRefStrings
 using Test
 
@@ -250,6 +251,10 @@ collect_fieldarrays_rec(t) = StructArrays.collect_fieldarrays(t, initializer = i
     v = [(a = 1, b = 2), (a = 1.2, b = 3)]
     @test collect_fieldarrays_rec(v) == StructArray((a = [1, 1.2], b = Int[2, 3]))
     @test typeof(collect_fieldarrays_rec(v)) == typeof(StructArray((a = [1, 1.2], b = Int[2, 3])))
+
+    s = StructArray(a = [1, 2], b  = [3, 4])
+    @test StructArrays.collect_fieldarrays(LazyRow(s, i) for i in eachindex(s)) == s
+    @test collect_fieldarrays_rec(LazyRow(s, i) for i in eachindex(s)) == s
 
     v = [(a = 1, b = 2), (a = 1.2, b = "3")]
     @test collect_fieldarrays_rec(v) == StructArray((a = [1, 1.2], b = Any[2, "3"]))
