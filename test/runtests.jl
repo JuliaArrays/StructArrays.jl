@@ -65,6 +65,18 @@ end
     @test c == d
 end
 
+@testset "iterators" begin
+    c = [1, 2, 3, 1, 1]
+    d = StructArrays.tiedindices(c)
+    @test eltype(d) == Pair{Int, UnitRange{Int}}
+    s = collect(d)
+    @test first.(s) == [1, 2, 3]
+    @test last.(s) == [1:3, 4:4, 5:5]
+    t = collect(StructArrays.groupindices(c))
+    @test first.(t) == [1, 2, 3]
+    @test last.(t) == [[1, 4, 5], [2], [3]]
+end
+
 @testset "similar" begin
     t = StructArray(a = rand(10), b = rand(Bool, 10))
     s = similar(t)

@@ -17,17 +17,20 @@ end
 struct TiedIndices{T <: AbstractVector}
     vec::T
     perm::Vector{Int}
-    extrema::Tuple{Int, Int}
+    within::Tuple{Int, Int}
 end
 
 TiedIndices(vec::AbstractVector, perm=sortperm(vec)) =
-    TiedIndices(vec, perm, extrema(vec))
+    TiedIndices(vec, perm, extrema(axes(vec, 1)))
 
 Base.IteratorSize(::Type{<:TiedIndices}) = Base.SizeUnknown()
 
-function Base.iterate(n::TiedIndices, i = n.extrema[1])
+Base.eltype(::Type{<:TiedIndices{T}}) where {T} =
+    Pair{eltype(T), UnitRange{Int}}
+
+function Base.iterate(n::TiedIndices, i = n.within[1])
     vec, perm = n.vec, n.perm
-    l = n.extrema[2]
+    l = n.within[2]
     i > l && return nothing
     row = vec[perm[i]]
     i1 = i
