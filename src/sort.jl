@@ -1,11 +1,11 @@
 using Base.Sort, Base.Order
 
-isstringarray(::Any) = false
-ispooled(::AbstractArray) = false
+isstringarray(::AbstractArray) = false
+ispooledarray(::AbstractArray) = false
 
 function Base.permute!(c::StructVector, p::AbstractVector)
     foreachfield(c) do v
-        if  v isa StructVector || isstringarray(v) || ispooled(v)
+        if  v isa StructVector || isstringarray(v) || ispooledarray(v)
             permute!(v, p)
         else
             copyto!(v, v[p])
@@ -37,6 +37,14 @@ function Base.iterate(n::TiedIndices, i = n.extrema[1])
     return (row => i:(i1-1), i1)
 end
 
+tiedindices(args...) = TiedIndices(args...)
+
+function groupindices(args...)
+    t = tiedindices(args...)
+    p = t.perm
+    ((row => t.perm[idxs]) for (row, idxs) in t)
+end
+
 function Base.sortperm(c::StructVector{T};
     alg = DEFAULT_UNSTABLE) where {T<:Union{Tuple, NamedTuple}}
 
@@ -50,10 +58,14 @@ function Base.sortperm(c::StructVector{T};
     return p
 end
 
+sort!(c::StructArray{<:Union{Tuple, NamedTuple}}) = permute!(c, sortperm(c))
+sort(c::StructArray{<:Union{Tuple, NamedTuple}}) = c[sortperm(c)]
+
+# Methods from IndexedTables to refine sorting:
 # # assuming x[p] is sorted, sort by remaining columns where x[p] is constant
 function refine_perm!(p, cols, c, x, y, lo, hi)
     temp = similar(p, 0)
-    order = Perm(Forward, y)
+    order = Base.Order.By(j->(@inbounds k=y[j]; k))
     nc = length(cols)
     for (_, idxs) in TiedIndices(x, p, (lo, hi))
         i, i1 = extrema(idxs)
