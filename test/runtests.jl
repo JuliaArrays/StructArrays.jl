@@ -22,9 +22,12 @@ end
     a = WeakRefStrings.StringVector(["a", "b", "c"])
     b = PooledArrays.PooledArray([1, 2, 3])
     c = [:a, :b, :c]
-    @test StructArrays.isdiscrete(a)
-    @test StructArrays.isdiscrete(b)
-    @test !StructArrays.isdiscrete(c)
+    @test !StructArrays.ispooledarray(a)
+    @test StructArrays.isstringarray(a)
+    @test StructArrays.ispooledarray(b)
+    @test !StructArrays.isstringarray(b)
+    @test !StructArrays.ispooledarray(c)
+    @test !StructArrays.isstringarray(c)
     s = StructArray(a=a, b=b, c=c)
     permute!(s, [2, 3, 1])
     @test s.a == ["b", "c", "a"]
@@ -34,6 +37,44 @@ end
     t = StructArray(a=[3, 4], b=["c", "d"])
     copyto!(s, t)
     @test s == t
+end
+
+@testset "sortperm" begin
+    c = StructArray(a=[1,1,2,2], b=[1,2,3,3], c=["a","b","c","d"])
+    d = StructArray(a=[1,1,2,2], b=[1,2,3,3], c=["a","b","c","d"])
+    @test issorted(c)
+    @test sortperm(c) == [1,2,3,4]
+    permute!(c, [2,3,4,1])
+    @test c == StructArray(a=[1,2,2,1], b=[2,3,3,1], c=["b","c","d","a"])
+    @test sortperm(c) == [4,1,2,3]
+    @test !issorted(c)
+    @test sort(c) == d
+    sort!(c)
+    @test c == d
+
+    c = StructArray(a=[1,1,2,2], b=[1,2,3,3], c=PooledArrays.PooledArray(["a","b","c","d"]))
+    d = StructArray(a=[1,1,2,2], b=[1,2,3,3], c=PooledArrays.PooledArray(["a","b","c","d"]))
+    @test issorted(c)
+    @test sortperm(c) == [1,2,3,4]
+    permute!(c, [2,3,4,1])
+    @test c == StructArray(a=[1,2,2,1], b=[2,3,3,1], c=PooledArrays.PooledArray(["b","c","d","a"]))
+    @test sortperm(c) == [4,1,2,3]
+    @test !issorted(c)
+    @test sort(c) == d
+    sort!(c)
+    @test c == d
+end
+
+@testset "iterators" begin
+    c = [1, 2, 3, 1, 1]
+    d = StructArrays.tiedindices(c)
+    @test eltype(d) == Pair{Int, UnitRange{Int}}
+    s = collect(d)
+    @test first.(s) == [1, 2, 3]
+    @test last.(s) == [1:3, 4:4, 5:5]
+    t = collect(StructArrays.groupindices(c))
+    @test first.(t) == [1, 2, 3]
+    @test last.(t) == [[1, 4, 5], [2], [3]]
 end
 
 @testset "similar" begin
