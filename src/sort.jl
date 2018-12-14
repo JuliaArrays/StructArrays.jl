@@ -58,8 +58,8 @@ function Base.sortperm(c::StructVector{T};
     return p
 end
 
-sort!(c::StructArray{<:Union{Tuple, NamedTuple}}) = permute!(c, sortperm(c))
-sort(c::StructArray{<:Union{Tuple, NamedTuple}}) = c[sortperm(c)]
+Base.sort!(c::StructArray{<:Union{Tuple, NamedTuple}}) = permute!(c, sortperm(c))
+Base.sort(c::StructArray{<:Union{Tuple, NamedTuple}}) = c[sortperm(c)]
 
 # Methods from IndexedTables to refine sorting:
 # # assuming x[p] is sorted, sort by remaining columns where x[p] is constant

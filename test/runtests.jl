@@ -39,6 +39,32 @@ end
     @test s == t
 end
 
+@testset "sortperm" begin
+    c = StructArray(a=[1,1,2,2], b=[1,2,3,3], c=["a","b","c","d"])
+    d = StructArray(a=[1,1,2,2], b=[1,2,3,3], c=["a","b","c","d"])
+    @test issorted(c)
+    @test sortperm(c) == [1,2,3,4]
+    permute!(c, [2,3,4,1])
+    @test c == StructArray(a=[1,2,2,1], b=[2,3,3,1], c=["b","c","d","a"])
+    @test sortperm(c) == [4,1,2,3]
+    @test !issorted(c)
+    @test sort(c) == d
+    sort!(c)
+    @test c == d
+
+    c = StructArray(a=[1,1,2,2], b=[1,2,3,3], c=PooledArrays.PooledArray(["a","b","c","d"]))
+    d = StructArray(a=[1,1,2,2], b=[1,2,3,3], c=PooledArrays.PooledArray(["a","b","c","d"]))
+    @test issorted(c)
+    @test sortperm(c) == [1,2,3,4]
+    permute!(c, [2,3,4,1])
+    @test c == StructArray(a=[1,2,2,1], b=[2,3,3,1], c=PooledArrays.PooledArray(["b","c","d","a"]))
+    @test sortperm(c) == [4,1,2,3]
+    @test !issorted(c)
+    @test sort(c) == d
+    sort!(c)
+    @test c == d
+end
+
 @testset "similar" begin
     t = StructArray(a = rand(10), b = rand(Bool, 10))
     s = similar(t)
