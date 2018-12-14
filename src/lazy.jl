@@ -15,13 +15,4 @@ staticschema(::Type{<:LazyRow{T}}) where {T} = staticschema(T)
 iscompatible(::Type{<:LazyRow{S}}, ::Type{StructArray{T, N, C}}) where {S, T, N, C} =
     iscompatible(S, StructArray{T, N, C})
 
-struct LazyArrayInitializer{F}
-    unwrap::F
-end
-LazyArrayInitializer() = LazyArrayInitializer(t -> false)
-
-function (s::LazyArrayInitializer)(S, d)
-    T = collected_type(S)
-    unwrap = (T !== S) || s.unwrap(T)
-    unwrap ? buildfromschema(typ -> s(typ, d), T) : Array{T}(undef, d)
-end
+(s::ArrayInitializer)(::Type{<:LazyRow{T}}, d) where {T} = buildfromschema(typ -> s(typ, d), T)
