@@ -1,18 +1,25 @@
-struct StructArrayInitializer{F}
+arrayof(S, d) = Array{S}(undef, d)
+
+struct StructArrayInitializer{F, G}
     unwrap::F
+    arrayof::G
 end
-StructArrayInitializer() = StructArrayInitializer(t -> false)
+StructArrayInitializer(unwrap = t->false) = StructArrayInitializer(unwrap, arrayof)
 
 const default_initializer = StructArrayInitializer()
 
-(s::StructArrayInitializer)(S, d) = StructArray{S}(undef, d; unwrap = s.unwrap)
-
-struct ArrayInitializer{F}
-    unwrap::F
+function (s::StructArrayInitializer)(S, d)
+    ai = ArrayInitializer(s.unwrap, s.arrayof)
+    buildfromschema(typ -> ai(typ, d), S)
 end
-ArrayInitializer() = ArrayInitializer(t -> false)
 
-(s::ArrayInitializer)(S, d) = _undef_array(S, d; unwrap = s.unwrap)
+struct ArrayInitializer{F, G}
+    unwrap::F
+    arrayof::G
+end
+ArrayInitializer(unwrap = t->false) = ArrayInitializer(unwrap, arrayof)
+
+(s::ArrayInitializer)(S, d) = s.unwrap(S) ? buildfromschema(typ -> s(typ, d), S) : s.arrayof(S, d)
 
 _reshape(v, itr, ::Base.HasShape) = reshape(v, axes(itr))
 _reshape(v, itr, ::Union{Base.HasLength, Base.SizeUnknown}) = v

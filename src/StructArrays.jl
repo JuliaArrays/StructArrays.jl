@@ -8,6 +8,7 @@ include("structarray.jl")
 include("utils.jl")
 include("collect.jl")
 include("sort.jl")
+include("lazy.jl")
 
 function __init__()
     Requires.@require Tables="bd369af6-aec1-5ad0-b16a-f7cc5008161c" include("tables.jl")
@@ -16,6 +17,7 @@ function __init__()
     end
     Requires.@require WeakRefStrings="ea10d353-3f73-51f8-a26c-33c1cb351aa5" begin
         isstringarray(::WeakRefStrings.StringArray) = true
+        arrayof(::Type{T}, d) where {T<:AbstractString} = WeakRefStrings.StringArray{T}(d)
     end
 end
 
