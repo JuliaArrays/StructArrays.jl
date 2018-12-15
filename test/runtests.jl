@@ -73,9 +73,11 @@ end
     s = collect(d)
     @test first.(s) == [1, 2, 3]
     @test last.(s) == [1:3, 4:4, 5:5]
-    t = collect(StructArrays.groupindices(c))
+    t = collect(StructArrays.finduniquesorted(c))
     @test first.(t) == [1, 2, 3]
     @test last.(t) == [[1, 4, 5], [2], [3]]
+    u = collect(StructArrays.uniquesorted(c))
+    @test u == [1, 2, 3]
 end
 
 @testset "similar" begin
