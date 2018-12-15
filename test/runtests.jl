@@ -237,7 +237,7 @@ StructArrays.SkipConstructor(::Type{<:S}) = true
 end
 
 const initializer = StructArrays.ArrayInitializer(t -> t <: Union{Tuple, NamedTuple, Pair})
-collect_structarray_rec(t) = StructArrays.collect_structarray(t, initializer = initializer)
+collect_structarray_rec(t) = collect_structarray(t, initializer = initializer)
 
 @testset "collectnamedtuples" begin
     v = [(a = 1, b = 2), (a = 1, b = 3)]
@@ -255,7 +255,7 @@ collect_structarray_rec(t) = StructArrays.collect_structarray(t, initializer = i
     @test typeof(collect_structarray_rec(v)) == typeof(StructArray((a = Real[1, 1.2], b = Int[2, 3])))
 
     s = StructArray(a = [1, 2], b  = [3, 4])
-    @test StructArrays.collect_structarray(LazyRow(s, i) for i in eachindex(s)) == s
+    @test collect_structarray(LazyRow(s, i) for i in eachindex(s)) == s
     @test collect_structarray_rec(LazyRow(s, i) for i in eachindex(s)) == s
 
     v = [(a = 1, b = 2), (a = 1.2, b = "3")]
@@ -288,8 +288,8 @@ end
     @test collect_structarray_rec(v) == StructArray((Int[1, 1], Int[2, 3]))
     @inferred collect_structarray_rec(v)
 
-    @test StructArrays.collect_structarray(v) == StructArray((Int[1, 1], Int[2, 3]))
-    @inferred StructArrays.collect_structarray(v)
+    @test collect_structarray(v) == StructArray((Int[1, 1], Int[2, 3]))
+    @inferred collect_structarray(v)
 
     v = [(1, 2), (1.2, 3)]
     @test collect_structarray_rec(v) == StructArray((Real[1, 1.2], Int[2, 3]))
@@ -381,7 +381,7 @@ end
 
 @testset "collect2D" begin
     s = (l for l in [(a=i, b=j) for i in 1:3, j in 1:4])
-    v = StructArrays.collect_structarray(s)
+    v = collect_structarray(s)
     @test size(v) == (3, 4)
     @test v.a == [i for i in 1:3, j in 1:4]
     @test v.b == [j for i in 1:3, j in 1:4]
