@@ -115,7 +115,7 @@ widenstructarray(dest::AbstractArray, i, el) = widenarray(dest, i, el)
 
 function widenarray(dest::AbstractArray{T}, i, el::S) where {S, T}
     S <: T && return dest
-    new = similar(dest, promote_type(S, T), length(dest))
+    new = similar(dest, Base.promote_typejoin(S, T), length(dest))
     copyto!(new, 1, dest, 1, i-1)
     new
 end

@@ -252,7 +252,7 @@ collect_structarray_rec(t) = StructArrays.collect_structarray(t, initializer = i
 
     v = [(a = 1, b = 2), (a = 1.2, b = 3)]
     @test collect_structarray_rec(v) == StructArray((a = [1, 1.2], b = Int[2, 3]))
-    @test typeof(collect_structarray_rec(v)) == typeof(StructArray((a = [1, 1.2], b = Int[2, 3])))
+    @test typeof(collect_structarray_rec(v)) == typeof(StructArray((a = Real[1, 1.2], b = Int[2, 3])))
 
     s = StructArray(a = [1, 2], b  = [3, 4])
     @test StructArrays.collect_structarray(LazyRow(s, i) for i in eachindex(s)) == s
@@ -260,11 +260,11 @@ collect_structarray_rec(t) = StructArrays.collect_structarray(t, initializer = i
 
     v = [(a = 1, b = 2), (a = 1.2, b = "3")]
     @test collect_structarray_rec(v) == StructArray((a = [1, 1.2], b = Any[2, "3"]))
-    @test typeof(collect_structarray_rec(v)) == typeof(StructArray((a = [1, 1.2], b = Any[2, "3"])))
+    @test typeof(collect_structarray_rec(v)) == typeof(StructArray((a = Real[1, 1.2], b = Any[2, "3"])))
 
     v = [(a = 1, b = 2), (a = 1.2, b = 2), (a = 1, b = "3")]
-    @test collect_structarray_rec(v) == StructArray((a = [1, 1.2, 1], b = Any[2, 2, "3"]))
-    @test typeof(collect_structarray_rec(v)) == typeof(StructArray((a = [1, 1.2, 1], b = Any[2, 2, "3"])))
+    @test collect_structarray_rec(v) == StructArray((a = Real[1, 1.2, 1], b = Any[2, 2, "3"]))
+    @test typeof(collect_structarray_rec(v)) == typeof(StructArray((a = Real[1, 1.2, 1], b = Any[2, 2, "3"])))
 
     # length unknown
     itr = Iterators.filter(isodd, 1:8)
@@ -292,21 +292,21 @@ end
     @inferred StructArrays.collect_structarray(v)
 
     v = [(1, 2), (1.2, 3)]
-    @test collect_structarray_rec(v) == StructArray(([1, 1.2], Int[2, 3]))
+    @test collect_structarray_rec(v) == StructArray((Real[1, 1.2], Int[2, 3]))
 
     v = [(1, 2), (1.2, "3")]
-    @test collect_structarray_rec(v) == StructArray(([1, 1.2], Any[2, "3"]))
-    @test typeof(collect_structarray_rec(v)) == typeof(StructArray(([1, 1.2], Any[2, "3"])))
+    @test collect_structarray_rec(v) == StructArray((Real[1, 1.2], Any[2, "3"]))
+    @test typeof(collect_structarray_rec(v)) == typeof(StructArray((Real[1, 1.2], Any[2, "3"])))
 
     v = [(1, 2), (1.2, 2), (1, "3")]
-    @test collect_structarray_rec(v) == StructArray(([1, 1.2, 1], Any[2, 2, "3"]))
+    @test collect_structarray_rec(v) == StructArray((Real[1, 1.2, 1], Any[2, 2, "3"]))
     # length unknown
     itr = Iterators.filter(isodd, 1:8)
     tuple_itr = ((i+1, i-1) for i in itr)
     @test collect_structarray_rec(tuple_itr) == StructArray(([2, 4, 6, 8], [0, 2, 4, 6]))
     tuple_itr_real = (i == 1 ? (1.2, i-1) : (i+1, i-1) for i in itr)
-    @test collect_structarray_rec(tuple_itr_real) == StructArray(([1.2, 4, 6, 8], [0, 2, 4, 6]))
-    @test typeof(collect_structarray_rec(tuple_itr_real)) == typeof(StructArray(([1.2, 4, 6, 8], [0, 2, 4, 6])))
+    @test collect_structarray_rec(tuple_itr_real) == StructArray((Real[1.2, 4, 6, 8], [0, 2, 4, 6]))
+    @test typeof(collect_structarray_rec(tuple_itr_real)) == typeof(StructArray((Real[1.2, 4, 6, 8], [0, 2, 4, 6])))
 
     # empty
     itr = Iterators.filter(t -> t > 10, 1:8)
@@ -330,7 +330,7 @@ end
     @test collect_structarray_rec(itr) == collect(itr)
     real_itr = (i == 1 ? 1.5 : i for i in itr)
     @test collect_structarray_rec(real_itr) == collect(real_itr)
-    @test eltype(collect_structarray_rec(real_itr)) == Float64
+    @test eltype(collect_structarray_rec(real_itr)) == Real
 
     #empty
     itr = Iterators.filter(t -> t > 10, 1:8)
@@ -352,8 +352,8 @@ end
     @test eltype(collect_structarray_rec(v)) == Pair{Int, Int}
 
     v = (i == 1 ? (1.2 => i+1) : (i => i+1) for i in 1:3)
-    @test collect_structarray_rec(v) == StructArray{Pair{Float64, Int}}([1.2,2,3], [2,3,4])
-    @test eltype(collect_structarray_rec(v)) == Pair{Float64, Int}
+    @test collect_structarray_rec(v) == StructArray{Pair{Real, Int}}([1.2,2,3], [2,3,4])
+    @test eltype(collect_structarray_rec(v)) == Pair{Real, Int}
 
     v = ((a=i,) => (b="a$i",) for i in 1:3)
     @test collect_structarray_rec(v) == StructArray{Pair{NamedTuple{(:a,),Tuple{Int64}},NamedTuple{(:b,),Tuple{String}}}}(StructArray((a = [1,2,3],)), StructArray((b = ["a1","a2","a3"],)))
