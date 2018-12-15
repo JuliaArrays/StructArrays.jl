@@ -14,23 +14,25 @@ function Base.permute!(c::StructVector, p::AbstractVector)
     return c
 end
 
-struct TiedIndices{T <: AbstractVector}
+struct TiedIndices{T<:AbstractVector, U<:AbstractUnitRange}
     vec::T
     perm::Vector{Int}
-    within::Tuple{Int, Int}
+    within::U
 end
 
 TiedIndices(vec::AbstractVector, perm=sortperm(vec)) =
-    TiedIndices(vec, perm, extrema(axes(vec, 1)))
+    TiedIndices(vec, perm, axes(vec, 1))
 
 Base.IteratorSize(::Type{<:TiedIndices}) = Base.SizeUnknown()
 
 Base.eltype(::Type{<:TiedIndices{T}}) where {T} =
     Pair{eltype(T), UnitRange{Int}}
 
-function Base.iterate(n::TiedIndices, i = n.within[1])
+Base.sortperm(t::TiedIndices) = t.perm
+
+function Base.iterate(n::TiedIndices, i = first(n.within))
     vec, perm = n.vec, n.perm
-    l = n.within[2]
+    l = last(n.within)
     i > l && return nothing
     row = vec[perm[i]]
     i1 = i
@@ -42,10 +44,15 @@ end
 
 tiedindices(args...) = TiedIndices(args...)
 
-function groupindices(args...)
+function uniquesorted(args...)
     t = tiedindices(args...)
-    p = t.perm
-    ((row => t.perm[idxs]) for (row, idxs) in t)
+    (row for (row, _) in t)
+end
+
+function finduniquesorted(args...)
+    t = tiedindices(args...)
+    p = sortperm(t)
+    (row => p[idxs] for (row, idxs) in t)
 end
 
 function Base.sortperm(c::StructVector{T};
@@ -70,7 +77,7 @@ function refine_perm!(p, cols, c, x, y, lo, hi)
     temp = similar(p, 0)
     order = Base.Order.By(j->(@inbounds k=y[j]; k))
     nc = length(cols)
-    for (_, idxs) in TiedIndices(x, p, (lo, hi))
+    for (_, idxs) in TiedIndices(x, p, lo:hi)
         i, i1 = extrema(idxs)
         if i1 > i
             sort_sub_by!(p, i, i1, y, order, temp)
