@@ -35,13 +35,14 @@ function collect_empty_structarray(itr::T; initializer = default_initializer) wh
     initializer(S, (0,))
 end
 
-function collect_structarray(@nospecialize(itr), ::Union{Base.HasShape, Base.HasLength};
-    initializer = default_initializer)
+function collect_structarray(itr, ::Union{Base.HasShape, Base.HasLength};
+                             initializer = default_initializer) 
 
     st = iterate(itr)
     st === nothing && return collect_empty_structarray(itr, initializer = initializer)
     el, i = st
-    dest = initializer(typeof(el), (length(itr),))
+    S = typeof(el)
+    dest = initializer(S, (length(itr),))
     dest[1] = el
     collect_to_structarray!(dest, itr, 2, i)
 end
