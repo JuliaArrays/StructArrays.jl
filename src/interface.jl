@@ -12,9 +12,8 @@ end
 
 staticschema(::Type{T}) where {T<:NamedTuple} = T
 
-getnames(::Type{NamedTuple{names, types}}) where {names, types} = names
-gettypes(::Type{NamedTuple{names, types}}) where {names, types} = types
+tuple_type(::Type{NamedTuple{names, types}}) where {names, types} = types
 
 function fields(::Type{T}) where {T}
-    getnames(staticschema(T))
+    fieldnames(staticschema(T))
 end

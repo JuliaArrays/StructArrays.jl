@@ -7,7 +7,7 @@ Tables.columns(s::StructArray) = fieldarrays(s)
 
 function Tables.schema(s::StructArray{T}) where {T}
     NT = staticschema(T)
-    names = getnames(NT)
-    types = gettypes(NT).parameters
+    names = fieldnames(NT)
+    types = tuple_type(NT).parameters
     Tables.Schema(names, types)
 end
