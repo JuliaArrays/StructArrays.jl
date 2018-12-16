@@ -61,6 +61,9 @@ StructArray(s::StructArray) = copy(s)
 Base.convert(::Type{StructArray}, v::AbstractArray) = StructArray(v)
 Base.convert(::Type{StructArray}, v::StructArray) = v
 
+Base.convert(::Type{StructVector}, v::AbstractVector) = StructVector(v)
+Base.convert(::Type{StructVector}, v::StructVector) = v
+
 function Base.similar(::Type{StructArray{T, N, C}}, sz::Dims) where {T, N, C}
     cols = map_params(typ -> similar(typ, sz), C)
     StructArray{T}(cols)

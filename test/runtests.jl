@@ -111,6 +111,13 @@ end
     t3 = StructArray(t)::StructArray
     @test t3 == t
     @test convert(StructArray, t) == t
+
+    v = rand(ComplexF64, 5)
+    t = @inferred StructVector(v)
+    @test t[2] == v[2]
+    @test size(t) == (5,)
+    @test t == convert(StructVector, v)
+    @test t == convert(StructVector, t)
 end
 
 @testset "tuple case" begin
