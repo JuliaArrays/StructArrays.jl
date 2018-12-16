@@ -110,6 +110,7 @@ end
     @test t2 == t
     t3 = StructArray(t)::StructArray
     @test t3 == t
+    @test convert(StructArray, t) == t
 end
 
 @testset "tuple case" begin
