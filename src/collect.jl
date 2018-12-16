@@ -1,25 +1,26 @@
-arrayof(S, d) = Array{S}(undef, d)
+default_array(::Type{S}, d) where {S} = Array{S}(undef, d)
+default_array(::Type{Missing}, d) = Array{Missing}(undef, d)
 
 struct StructArrayInitializer{F, G}
     unwrap::F
-    arrayof::G
+    default_array::G
 end
-StructArrayInitializer(unwrap = t->false) = StructArrayInitializer(unwrap, arrayof)
+StructArrayInitializer(unwrap = t->false) = StructArrayInitializer(unwrap, default_array)
 
 const default_initializer = StructArrayInitializer()
 
 function (s::StructArrayInitializer)(S, d)
-    ai = ArrayInitializer(s.unwrap, s.arrayof)
+    ai = ArrayInitializer(s.unwrap, s.default_array)
     buildfromschema(typ -> ai(typ, d), S)
 end
 
 struct ArrayInitializer{F, G}
     unwrap::F
-    arrayof::G
+    default_array::G
 end
-ArrayInitializer(unwrap = t->false) = ArrayInitializer(unwrap, arrayof)
+ArrayInitializer(unwrap = t->false) = ArrayInitializer(unwrap, default_array)
 
-(s::ArrayInitializer)(S, d) = s.unwrap(S) ? buildfromschema(typ -> s(typ, d), S) : s.arrayof(S, d)
+(s::ArrayInitializer)(S, d) = s.unwrap(S) ? buildfromschema(typ -> s(typ, d), S) : s.default_array(S, d)
 
 _reshape(v, itr, ::Base.HasShape) = reshape(v, axes(itr))
 _reshape(v, itr, ::Union{Base.HasLength, Base.SizeUnknown}) = v

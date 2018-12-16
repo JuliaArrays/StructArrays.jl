@@ -111,6 +111,13 @@ end
     t3 = StructArray(t)::StructArray
     @test t3 == t
     @test convert(StructArray, t) == t
+
+    v = rand(ComplexF64, 5)
+    t = @inferred StructVector(v)
+    @test t[2] == v[2]
+    @test size(t) == (5,)
+    @test t == convert(StructVector, v)
+    @test t == convert(StructVector, t)
 end
 
 @testset "tuple case" begin
@@ -235,6 +242,17 @@ StructArrays.SkipConstructor(::Type{<:S}) = true
     v = StructArray{S}([1], [1])
     @test v[1] == S(1)
     @test v[1].y isa Float64
+end
+
+@testset "default_array" begin
+    v = StructArrays.default_array(String, (2, 3))
+    @test v isa WeakRefStrings.StringArray{String, 2}
+    v = StructArrays.default_array(Union{String, Missing}, (2, 3))
+    @test v isa WeakRefStrings.StringArray{Union{String, Missing}, 2}
+    v = StructArrays.default_array(Missing, (2,))
+    @test v isa Array{Missing, 1}
+    v = StructArrays.default_array(Int, (2,))
+    @test v isa Array{Int, 1}
 end
 
 const initializer = StructArrays.ArrayInitializer(t -> t <: Union{Tuple, NamedTuple, Pair})
