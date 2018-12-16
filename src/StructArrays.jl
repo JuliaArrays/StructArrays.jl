@@ -18,7 +18,7 @@ function __init__()
     end
     Requires.@require WeakRefStrings="ea10d353-3f73-51f8-a26c-33c1cb351aa5" begin
         isstringarray(::WeakRefStrings.StringArray) = true
-        arrayof(::Type{T}, d) where {T<:AbstractString} = WeakRefStrings.StringArray{T}(d)
+        default_array(::Type{T}, d) where {T<:Union{AbstractString, Missing}} = WeakRefStrings.StringArray{T}(d)
     end
 end
 

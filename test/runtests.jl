@@ -244,6 +244,17 @@ StructArrays.SkipConstructor(::Type{<:S}) = true
     @test v[1].y isa Float64
 end
 
+@testset "default_array" begin
+    v = StructArrays.default_array(String, (2, 3))
+    @test v isa WeakRefStrings.StringArray{String, 2}
+    v = StructArrays.default_array(Union{String, Missing}, (2, 3))
+    @test v isa WeakRefStrings.StringArray{Union{String, Missing}, 2}
+    v = StructArrays.default_array(Missing, (2,))
+    @test v isa Array{Missing, 1}
+    v = StructArrays.default_array(Int, (2,))
+    @test v isa Array{Int, 1}
+end
+
 const initializer = StructArrays.ArrayInitializer(t -> t <: Union{Tuple, NamedTuple, Pair})
 collect_structarray_rec(t) = collect_structarray(t, initializer = initializer)
 
