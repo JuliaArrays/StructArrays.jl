@@ -33,9 +33,9 @@ StructArray(; kwargs...) = StructArray(values(kwargs))
 
 @deprecate(StructArray{T}(args...) where {T}, StructArray{T}(args))
 
-_structarray(args::Tuple, ::Nothing) = StructArray{eltypes(args)}(args)
+_structarray(args::T, ::Nothing) where {T<:Tuple} = StructArray{eltypes(T)}(args)
 _structarray(args::Tuple, names) = _structarray(args, Tuple(names))
-_structarray(args::Tuple, ::Tuple) = StructArray{eltypes(args)}(args)
+_structarray(args::Tuple, ::Tuple) = _structarray(args, nothing)
 _structarray(args::NTuple{N, Any}, names::NTuple{N, Symbol}) where {N} = StructArray(NamedTuple{names}(args))
 
 const StructVector{T, C<:NamedTuple} = StructArray{T, 1, C}
