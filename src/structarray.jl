@@ -29,6 +29,15 @@ StructArray(; kwargs...) = StructArray(values(kwargs))
 
 StructArray{T}(args...) where {T} = StructArray{T}(NamedTuple{fields(T)}(args))
 
+structarraynames(names::Nothing, args) = StructArray(args)
+structarraynames(names, args) = structarraynames(Tuple(names), args)
+structarraynames(names::Tuple, args) = StructArray(args)
+structarraynames(names::NTuple{N, Symbol}, args::NTuple{N, Any}) where {N} = StructArray(NamedTuple{names}(args))
+
+function StructArray(args::Vararg{AbstractArray, N}; names=nothing) where N
+    structarraynames(names, args)
+end
+
 const StructVector{T, C<:NamedTuple} = StructArray{T, 1, C}
 StructVector{T}(args...; kwargs...) where {T} = StructArray{T}(args...; kwargs...)
 StructVector(args...; kwargs...) = StructArray(args...; kwargs...)
@@ -49,19 +58,17 @@ function similar_structarray(v::AbstractArray, ::Type{Z}; unwrap = t -> false) w
     buildfromschema(typ -> _similar(v, typ; unwrap = unwrap), Z)
 end
 
-function StructArray(v::AbstractArray{T}; unwrap = t -> false) where {T}
+function Base.convert(::Type{StructArray}, v::AbstractArray{T}; unwrap = t -> false) where {T}
     s = similar_structarray(v, T; unwrap = unwrap)
     for i in eachindex(v)
         @inbounds s[i] = v[i]
     end
     s
 end
-StructArray(s::StructArray) = copy(s)
 
-Base.convert(::Type{StructArray}, v::AbstractArray) = StructArray(v)
 Base.convert(::Type{StructArray}, v::StructArray) = v
 
-Base.convert(::Type{StructVector}, v::AbstractVector) = StructVector(v)
+Base.convert(::Type{StructVector}, v::AbstractVector) = Base.convert(StructArray, v)
 Base.convert(::Type{StructVector}, v::StructVector) = v
 
 function Base.similar(::Type{StructArray{T, N, C}}, sz::Dims) where {T, N, C}
