@@ -14,9 +14,9 @@ function Base.permute!(c::StructVector, p::AbstractVector)
     return c
 end
 
-struct TiedIndices{T<:AbstractVector, U<:AbstractUnitRange}
+struct TiedIndices{T<:AbstractVector, I<:Integer, U<:AbstractUnitRange}
     vec::T
-    perm::Vector{Int}
+    perm::Vector{I}
     within::U
 end
 
