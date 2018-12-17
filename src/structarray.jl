@@ -93,7 +93,9 @@ Base.propertynames(s::StructArray) = fieldnames(typeof(fieldarrays(s)))
 staticschema(::Type{<:StructArray{T}}) where {T} = staticschema(T)
 
 Base.size(s::StructArray) = size(fieldarrays(s)[1])
+Base.size(s::StructArray{<:Any, <:Any, <:NamedTuple{(), Tuple{}}}) = (0,)
 Base.axes(s::StructArray) = axes(fieldarrays(s)[1])
+Base.axes(s::StructArray{<:Any, <:Any, <:NamedTuple{(), Tuple{}}}) = (1:0,)
 
 @generated function Base.getindex(x::StructArray{T, N, NamedTuple{names, types}}, I::Int...) where {T, N, names, types}
     args = [:(getfield(cols, $i)[I...]) for i in 1:length(names)]
