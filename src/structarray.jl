@@ -7,18 +7,22 @@ struct StructArray{T, N, C<:NamedTuple} <: AbstractArray{T, N}
     fieldarrays::C
 
     function StructArray{T, N, C}(c) where {T, N, C<:NamedTuple}
-        length(c) > 0 || error("must have at least one column")
-        ax = axes(c[1])
-        length(ax) == N || error("wrong number of dimensions")
-        for i = 2:length(c)
-            axes(c[i]) == ax || error("all field arrays must have same shape")
+        if length(c) > 0
+            ax = axes(c[1])
+            length(ax) == N || error("wrong number of dimensions")
+            for i = 2:length(c)
+                axes(c[i]) == ax || error("all field arrays must have same shape")
+            end
         end
         new{T, N, C}(c)
     end
 end
 
+_dims(c::NamedTuple) = length(axes(c[1]))
+_dims(c::NamedTuple{(), Tuple{}}) = 1
+
 StructArray{T}(c::C) where {T, C<:Tuple} = StructArray{T}(NamedTuple{fields(T)}(c))
-StructArray{T}(c::C) where {T, C<:NamedTuple} = StructArray{T, length(size(c[1])), C}(c)
+StructArray{T}(c::C) where {T, C<:NamedTuple} = StructArray{T, _dims(c), C}(c)
 StructArray{T}(c::C) where {T, C<:Pair} = StructArray{T}(Tuple(c))
 StructArray(c::C) where {C<:NamedTuple} = StructArray{eltypes(C)}(c)
 StructArray(c::C) where {C<:Tuple} = StructArray{eltypes(C)}(c)
@@ -58,14 +62,16 @@ function similar_structarray(v::AbstractArray, ::Type{Z}; unwrap = t -> false) w
     buildfromschema(typ -> _similar(v, typ; unwrap = unwrap), Z)
 end
 
-function Base.convert(::Type{StructArray}, v::AbstractArray{T}; unwrap = t -> false) where {T}
+function StructArray(v::AbstractArray{T}; unwrap = t -> false) where {T}
     s = similar_structarray(v, T; unwrap = unwrap)
     for i in eachindex(v)
         @inbounds s[i] = v[i]
     end
     s
 end
+StructArray(s::StructArray) = copy(s)
 
+Base.convert(::Type{StructArray}, v::AbstractArray) = StructArray(v)
 Base.convert(::Type{StructArray}, v::StructArray) = v
 
 Base.convert(::Type{StructVector}, v::AbstractVector) = Base.convert(StructArray, v)
