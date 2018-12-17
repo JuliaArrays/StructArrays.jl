@@ -25,22 +25,18 @@ StructArray{T}(c::C) where {T, C<:Tuple} = StructArray{T}(NamedTuple{fields(T)}(
 StructArray{T}(c::C) where {T, C<:NamedTuple} = StructArray{T, _dims(c), C}(c)
 StructArray{T}(c::C) where {T, C<:Pair} = StructArray{T}(Tuple(c))
 StructArray(c::C) where {C<:NamedTuple} = StructArray{eltypes(C)}(c)
-StructArray(c::C) where {C<:Tuple} = StructArray{eltypes(C)}(c)
+StructArray(c::Tuple; names = nothing) = _structarray(c, names)
 StructArray(c::Pair{P, Q}) where {P, Q} = StructArray{Pair{eltype(P), eltype(Q)}}(c)
 
 StructArray{T}(; kwargs...) where {T} = StructArray{T}(values(kwargs))
 StructArray(; kwargs...) = StructArray(values(kwargs))
 
-StructArray{T}(args...) where {T} = StructArray{T}(NamedTuple{fields(T)}(args))
+@deprecate(StructArray{T}(args...) where {T}, StructArray{T}(args))
 
-structarraynames(names::Nothing, args) = StructArray(args)
-structarraynames(names, args) = structarraynames(Tuple(names), args)
-structarraynames(names::Tuple, args) = StructArray(args)
-structarraynames(names::NTuple{N, Symbol}, args::NTuple{N, Any}) where {N} = StructArray(NamedTuple{names}(args))
-
-function StructArray(args::Vararg{AbstractArray, N}; names=nothing) where N
-    structarraynames(names, args)
-end
+_structarray(args::Tuple, ::Nothing) = StructArray{eltypes(args)}(args)
+_structarray(args::Tuple, names) = _structarray(args, Tuple(names))
+_structarray(args::Tuple, ::Tuple) = StructArray{eltypes(args)}(args)
+_structarray(args::NTuple{N, Any}, names::NTuple{N, Symbol}) where {N} = StructArray(NamedTuple{names}(args))
 
 const StructVector{T, C<:NamedTuple} = StructArray{T, 1, C}
 StructVector{T}(args...; kwargs...) where {T} = StructArray{T}(args...; kwargs...)
