@@ -274,6 +274,7 @@ collect_structarray_rec(t) = collect_structarray(t, initializer = initializer)
     v = [(a = 1, b = 2), (a = 1.2, b = 3)]
     @test collect_structarray_rec(v) == StructArray((a = [1, 1.2], b = Int[2, 3]))
     @test typeof(collect_structarray_rec(v)) == typeof(StructArray((a = Real[1, 1.2], b = Int[2, 3])))
+    @test StructArray(v[i] for i in eachindex(v)) == StructArray((a = [1, 1.2], b = Int[2, 3]))
 
     s = StructArray(a = [1, 2], b  = [3, 4])
     @test collect_structarray(LazyRow(s, i) for i in eachindex(s)) == s
