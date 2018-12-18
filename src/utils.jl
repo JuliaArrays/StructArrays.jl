@@ -9,7 +9,9 @@ end
 map_types(f, ::Type{NamedTuple{names, types}}) where {names, types} =
     NamedTuple{names, map_types(f, types)}
 
-all_types(f, ::Type{Tuple{}}, ::Type{T}) where {T<:Tuple} = true
+all_types(f, ::Type{Tuple{}}, ::Type{T}) where {T<:Tuple} = false
+all_types(f, ::Type{T}, ::Type{Tuple{}}) where {T<:Tuple} = false
+all_types(f, ::Type{Tuple{}}, ::Type{Tuple{}}) = true
 
 function all_types(f, ::Type{S}, ::Type{T}) where {S<:Tuple, T<:Tuple}
     f(tuple_type_head(S), tuple_type_head(T)) && all_types(f, tuple_type_tail(S), tuple_type_tail(T))
