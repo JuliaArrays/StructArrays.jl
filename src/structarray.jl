@@ -78,10 +78,9 @@ function Base.similar(::Type{StructArray{T, N, C}}, sz::Dims) where {T, N, C}
     StructArray{T}(cols)
 end
 
-Base.similar(s::StructArray, sz::Tuple) = similar(s, Base.to_shape(sz))
 Base.similar(s::StructArray, sz::Base.DimOrInd...) = similar(s, Base.to_shape(sz))
 Base.similar(s::StructArray) = similar(s, Base.to_shape(axes(s)))
-function Base.similar(s::StructArray{T}, sz::Dims) where {T}
+function Base.similar(s::StructArray{T}, sz::Tuple) where {T}
     StructArray{T}(map(typ -> similar(typ, sz), fieldarrays(s)))
 end
 
