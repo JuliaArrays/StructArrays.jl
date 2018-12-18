@@ -125,7 +125,7 @@ end
     @test s[1] == (1, "test")
     @test Base.getproperty(s, 1) == [1]
     @test Base.getproperty(s, 2) == ["test"]
-    t = StructArray{Tuple{Int, Float64}}([1], [1.2])
+    t = StructArray{Tuple{Int, Float64}}(([1], [1.2]))
     @test t[1] == (1, 1.2)
 
     t[1] = (2, 3)
@@ -139,26 +139,26 @@ end
     a = [1.2]
     b = [2.3]
     @test StructArray(a=a, b=b) == StructArray((a=a, b=b))
-    @test StructArray{ComplexF64}(re=a, im=b) == StructArray{ComplexF64}(a, b)
+    @test StructArray{ComplexF64}(re=a, im=b) == StructArray{ComplexF64}((a, b))
     f1() = StructArray(a=[1.2], b=["test"])
     f2() = StructArray{Pair}(first=[1.2], second=["test"])
     t1 = @inferred f1()
     t2 = @inferred f2()
     @test t1 == StructArray((a=[1.2], b=["test"]))
-    @test t2 == StructArray{Pair}([1.2], ["test"])
+    @test t2 == StructArray{Pair}(([1.2], ["test"]))
 end
 
 @testset "complex" begin
     a, b = [1 2; 3 4], [4 5; 6 7]
-    t = StructArray{ComplexF64}(a, b)
+    t = StructArray{ComplexF64}((a, b))
     @test t[2,2] == ComplexF64(4, 7)
-    @test t[2,1:2] == StructArray{ComplexF64}([3, 4], [6, 7])
-    @test view(t, 2, 1:2) == StructArray{ComplexF64}(view(a, 2, 1:2), view(b, 2, 1:2))
+    @test t[2,1:2] == StructArray{ComplexF64}(([3, 4], [6, 7]))
+    @test view(t, 2, 1:2) == StructArray{ComplexF64}((view(a, 2, 1:2), view(b, 2, 1:2)))
 end
 
 @testset "copy" begin
     a, b = [1 2; 3 4], [4 5; 6 7]
-    t = StructArray{ComplexF64}(a, b)
+    t = StructArray{ComplexF64}((a, b))
     t2 = @inferred copy(t)
     @test t2[1,1] == 1.0 + im*4.0
     t2[1,1] = 2.0 + im*4.0
@@ -176,7 +176,7 @@ end
 end
 
 @testset "resize!" begin
-    t = StructArray{Pair}([3, 5], ["a", "b"])
+    t = StructArray{Pair}(([3, 5], ["a", "b"]))
     resize!(t, 5)
     @test length(t) == 5
     p = 1 => "c"
@@ -185,23 +185,24 @@ end
 end
 
 @testset "concat" begin
-    t = StructArray{Pair}([3, 5], ["a", "b"])
+    t = StructArray{Pair}(([3, 5], ["a", "b"]))
     push!(t, (2 => "c"))
-    @test t == StructArray{Pair}([3, 5, 2], ["a", "b", "c"])
+    @test t == StructArray{Pair}(([3, 5, 2], ["a", "b", "c"]))
     append!(t, t)
-    @test t == StructArray{Pair}([3, 5, 2, 3, 5, 2], ["a", "b", "c", "a", "b", "c"])
-    t = StructArray{Pair}([3, 5], ["a", "b"])
-    t2 = StructArray{Pair}([1, 6], ["a", "b"])
-    @test cat(t, t2; dims=1)::StructArray == StructArray{Pair}([3, 5, 1, 6], ["a", "b", "a", "b"]) == vcat(t, t2)
+    @test t == StructArray{Pair}(([3, 5, 2, 3, 5, 2], ["a", "b", "c", "a", "b", "c"]))
+    t = StructArray{Pair}(([3, 5], ["a", "b"]))
+    t2 = StructArray{Pair}(([1, 6], ["a", "b"]))
+    @test cat(t, t2; dims=1)::StructArray == StructArray{Pair}(([3, 5, 1, 6], ["a", "b", "a", "b"])) == vcat(t, t2)
     @test vcat(t, t2) isa StructArray
-    @test cat(t, t2; dims=2)::StructArray == StructArray{Pair}([3 1; 5 6], ["a" "a"; "b" "b"]) == hcat(t, t2)
+    @test cat(t, t2; dims=2)::StructArray == StructArray{Pair}(([3 1; 5 6], ["a" "a"; "b" "b"])) == hcat(t, t2)
     @test hcat(t, t2) isa StructArray
 end
 
-f_infer() = StructArray{ComplexF64}(rand(2,2), rand(2,2))
+f_infer() = StructArray{ComplexF64}((rand(2,2), rand(2,2)))
 
 g_infer() = StructArray([(a=(b="1",), c=2)], unwrap = t -> t <: NamedTuple)
 tup_infer() = StructArray([(1, 2), (3, 4)])
+cols_infer() = StructArray(([1, 2], [1.2, 2.3]))
 
 @testset "inferrability" begin
     @inferred f_infer()
@@ -211,10 +212,11 @@ tup_infer() = StructArray([(1, 2), (3, 4)])
     @test Tables.columns(s) == (x1 = [1, 3], x2 = [2, 4])
     @test s[1] == (1, 2)
     @test s[2] == (3, 4)
+    @inferred cols_infer()
 end
 
 @testset "propertynames" begin
-    a = StructArray{ComplexF64}(Float64[], Float64[])
+    a = StructArray{ComplexF64}((Float64[], Float64[]))
     @test sort(collect(propertynames(a))) == [:im, :re]
 end
 
@@ -239,7 +241,7 @@ end
 StructArrays.SkipConstructor(::Type{<:S}) = true
 
 @testset "inner" begin
-    v = StructArray{S}([1], [1])
+    v = StructArray{S}(([1], [1]))
     @test v[1] == S(1)
     @test v[1].y isa Float64
 end
@@ -367,32 +369,32 @@ end
 
 @testset "collectpairs" begin
     v = (i=>i+1 for i in 1:3)
-    @test collect_structarray_rec(v) == StructArray{Pair{Int, Int}}([1,2,3], [2,3,4])
+    @test collect_structarray_rec(v) == StructArray{Pair{Int, Int}}(([1,2,3], [2,3,4]))
     @test eltype(collect_structarray_rec(v)) == Pair{Int, Int}
 
     v = (i == 1 ? (1.2 => i+1) : (i => i+1) for i in 1:3)
-    @test collect_structarray_rec(v) == StructArray{Pair{Real, Int}}([1.2,2,3], [2,3,4])
+    @test collect_structarray_rec(v) == StructArray{Pair{Real, Int}}(([1.2,2,3], [2,3,4]))
     @test eltype(collect_structarray_rec(v)) == Pair{Real, Int}
 
     v = ((a=i,) => (b="a$i",) for i in 1:3)
-    @test collect_structarray_rec(v) == StructArray{Pair{NamedTuple{(:a,),Tuple{Int64}},NamedTuple{(:b,),Tuple{String}}}}(StructArray((a = [1,2,3],)), StructArray((b = ["a1","a2","a3"],)))
+    @test collect_structarray_rec(v) == StructArray(StructArray((a = [1,2,3],)) => StructArray((b = ["a1","a2","a3"],)))
     @test eltype(collect_structarray_rec(v)) == Pair{NamedTuple{(:a,), Tuple{Int64}}, NamedTuple{(:b,), Tuple{String}}}
 
     v = (i == 1 ? (a="1",) => (b="a$i",) : (a=i,) => (b="a$i",) for i in 1:3)
-    @test collect_structarray_rec(v) == StructArray{Pair{NamedTuple{(:a,),Tuple{Any}},NamedTuple{(:b,),Tuple{String}}}}(StructArray((a = ["1",2,3],)), StructArray((b = ["a1","a2","a3"],)))
+    @test collect_structarray_rec(v) == StructArray(StructArray((a = ["1",2,3],)) => StructArray((b = ["a1","a2","a3"],)))
     @test eltype(collect_structarray_rec(v)) == Pair{NamedTuple{(:a,), Tuple{Any}}, NamedTuple{(:b,), Tuple{String}}}
 
     # empty
     v = ((a=i,) => (b="a$i",) for i in 0:-1)
-    @test collect_structarray_rec(v) == StructArray{Pair{NamedTuple{(:a,),Tuple{Int64}},NamedTuple{(:b,),Tuple{String}}}}(StructArray((a = Int[],)), StructArray((b = String[],)))
+    @test collect_structarray_rec(v) == StructArray(StructArray((a = Int[],)) => StructArray((b = String[],)))
     @test eltype(collect_structarray_rec(v)) == Pair{NamedTuple{(:a,), Tuple{Int}}, NamedTuple{(:b,), Tuple{String}}}
 
     v = Iterators.filter(t -> t.first.a == 4, ((a=i,) => (b="a$i",) for i in 1:3))
-    @test collect_structarray_rec(v) == StructArray{Pair{NamedTuple{(:a,),Tuple{Int64}},NamedTuple{(:b,),Tuple{String}}}}(StructArray((a = Int[],)), StructArray((b = String[],)))
+    @test collect_structarray_rec(v) == StructArray(StructArray((a = Int[],)) => StructArray((b = String[],)))
     @test eltype(collect_structarray_rec(v)) == Pair{NamedTuple{(:a,), Tuple{Int}}, NamedTuple{(:b,), Tuple{String}}}
 
     t = collect_structarray_rec((b = 1,) => (a = i,) for i in (2, missing, 3))
-    s = StructArray{Pair{NamedTuple{(:b,),Tuple{Int64}},NamedTuple{(:a,),Tuple{Union{Missing, Int64}}}}}(StructArray(b = [1,1,1]), StructArray(a = [2, missing, 3]))
+    s = StructArray(StructArray(b = [1,1,1]) => StructArray(a = [2, missing, 3]))
     @test s[1] == t[1]
     @test ismissing(t[2].second.a)
     @test s[3] == t[3]

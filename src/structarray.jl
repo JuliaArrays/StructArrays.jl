@@ -7,27 +7,36 @@ struct StructArray{T, N, C<:NamedTuple} <: AbstractArray{T, N}
     fieldarrays::C
 
     function StructArray{T, N, C}(c) where {T, N, C<:NamedTuple}
-        length(c) > 0 || error("must have at least one column")
-        ax = axes(c[1])
-        length(ax) == N || error("wrong number of dimensions")
-        for i = 2:length(c)
-            axes(c[i]) == ax || error("all field arrays must have same shape")
+        if length(c) > 0
+            ax = axes(c[1])
+            length(ax) == N || error("wrong number of dimensions")
+            for i = 2:length(c)
+                axes(c[i]) == ax || error("all field arrays must have same shape")
+            end
         end
         new{T, N, C}(c)
     end
 end
 
+_dims(c::NamedTuple) = length(axes(c[1]))
+_dims(c::NamedTuple{(), Tuple{}}) = 1
+
 StructArray{T}(c::C) where {T, C<:Tuple} = StructArray{T}(NamedTuple{fields(T)}(c))
-StructArray{T}(c::C) where {T, C<:NamedTuple} = StructArray{T, length(size(c[1])), C}(c)
+StructArray{T}(c::C) where {T, C<:NamedTuple} = StructArray{T, _dims(c), C}(c)
 StructArray{T}(c::C) where {T, C<:Pair} = StructArray{T}(Tuple(c))
 StructArray(c::C) where {C<:NamedTuple} = StructArray{eltypes(C)}(c)
-StructArray(c::C) where {C<:Tuple} = StructArray{eltypes(C)}(c)
+StructArray(c::Tuple; names = nothing) = _structarray(c, names)
 StructArray(c::Pair{P, Q}) where {P, Q} = StructArray{Pair{eltype(P), eltype(Q)}}(c)
 
 StructArray{T}(; kwargs...) where {T} = StructArray{T}(values(kwargs))
 StructArray(; kwargs...) = StructArray(values(kwargs))
 
-StructArray{T}(args...) where {T} = StructArray{T}(NamedTuple{fields(T)}(args))
+@deprecate(StructArray{T}(args...) where {T}, StructArray{T}(args))
+
+_structarray(args::T, ::Nothing) where {T<:Tuple} = StructArray{eltypes(T)}(args)
+_structarray(args::Tuple, names) = _structarray(args, Tuple(names))
+_structarray(args::Tuple, ::Tuple) = _structarray(args, nothing)
+_structarray(args::NTuple{N, Any}, names::NTuple{N, Symbol}) where {N} = StructArray(NamedTuple{names}(args))
 
 const StructVector{T, C<:NamedTuple} = StructArray{T, 1, C}
 StructVector{T}(args...; kwargs...) where {T} = StructArray{T}(args...; kwargs...)
@@ -69,10 +78,9 @@ function Base.similar(::Type{StructArray{T, N, C}}, sz::Dims) where {T, N, C}
     StructArray{T}(cols)
 end
 
-Base.similar(s::StructArray, sz::Tuple) = similar(s, Base.to_shape(sz))
 Base.similar(s::StructArray, sz::Base.DimOrInd...) = similar(s, Base.to_shape(sz))
 Base.similar(s::StructArray) = similar(s, Base.to_shape(axes(s)))
-function Base.similar(s::StructArray{T}, sz::Dims) where {T}
+function Base.similar(s::StructArray{T}, sz::Tuple) where {T}
     StructArray{T}(map(typ -> similar(typ, sz), fieldarrays(s)))
 end
 
@@ -84,7 +92,9 @@ Base.propertynames(s::StructArray) = fieldnames(typeof(fieldarrays(s)))
 staticschema(::Type{<:StructArray{T}}) where {T} = staticschema(T)
 
 Base.size(s::StructArray) = size(fieldarrays(s)[1])
+Base.size(s::StructArray{<:Any, <:Any, <:NamedTuple{(), Tuple{}}}) = (0,)
 Base.axes(s::StructArray) = axes(fieldarrays(s)[1])
+Base.axes(s::StructArray{<:Any, <:Any, <:NamedTuple{(), Tuple{}}}) = (1:0,)
 
 @generated function Base.getindex(x::StructArray{T, N, NamedTuple{names, types}}, I::Int...) where {T, N, names, types}
     args = [:(getfield(cols, $i)[I...]) for i in 1:length(names)]

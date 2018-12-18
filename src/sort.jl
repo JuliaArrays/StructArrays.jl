@@ -55,12 +55,11 @@ function finduniquesorted(args...)
     (row => p[idxs] for (row, idxs) in t)
 end
 
-function Base.sortperm(c::StructVector{T};
-    alg = DEFAULT_UNSTABLE) where {T<:Union{Tuple, NamedTuple}}
+function Base.sortperm(c::StructVector{T}) where {T<:Union{Tuple, NamedTuple}}
 
     cols = fieldarrays(c)
     x = cols[1]
-    p = sortperm(x; alg = alg)
+    p = sortperm(x)
     if length(cols) > 1
         y = cols[2]
         refine_perm!(p, cols, 1, x, y, 1, length(x))
