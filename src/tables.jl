@@ -1,13 +1,14 @@
-Tables.istable(::Type{<:StructArray}) = true
-Tables.rowaccess(::Type{<:StructArray}) = true
-Tables.columnaccess(::Type{<:StructArray}) = true
+Tables.istable(::Type{<:StructVector}) = true
+Tables.istable(::Type{<:StructVector{<:Tuple}}) = false
+Tables.rowaccess(::Type{<:StructVector}) = true
+Tables.columnaccess(::Type{<:StructVector}) = true
 
-Tables.rows(s::StructArray) = s
-Tables.columns(s::StructArray) = fieldarrays(s)
+Tables.rows(s::StructVector) = s
+Tables.columns(s::StructVector) = fieldarrays(s)
 
-function Tables.schema(s::StructArray{T}) where {T}
-    NT = staticschema(T)
-    names = fieldnames(NT)
-    types = tuple_type(NT).parameters
+function Tables.schema(s::StructVector)
+    cols = fieldarrays(s)
+    names = propertynames(cols)
+    types = map(eltype, cols) 
     Tables.Schema(names, types)
 end

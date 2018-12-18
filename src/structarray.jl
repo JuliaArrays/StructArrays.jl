@@ -58,6 +58,7 @@ function similar_structarray(v::AbstractArray, ::Type{Z}; unwrap = t -> false) w
     buildfromschema(typ -> _similar(v, typ; unwrap = unwrap), Z)
 end
 
+StructArray(v; unwrap = t -> false) = collect_structarray(v; initializer = StructArrayInitializer(unwrap))
 function StructArray(v::AbstractArray{T}; unwrap = t -> false) where {T}
     s = similar_structarray(v, T; unwrap = unwrap)
     for i in eachindex(v)
