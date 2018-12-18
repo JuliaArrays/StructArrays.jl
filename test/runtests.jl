@@ -202,6 +202,7 @@ f_infer() = StructArray{ComplexF64}((rand(2,2), rand(2,2)))
 
 g_infer() = StructArray([(a=(b="1",), c=2)], unwrap = t -> t <: NamedTuple)
 tup_infer() = StructArray([(1, 2), (3, 4)])
+cols_infer() = StructArray(([1, 2], [1.2, 2.3]))
 
 @testset "inferrability" begin
     @inferred f_infer()
@@ -211,6 +212,7 @@ tup_infer() = StructArray([(1, 2), (3, 4)])
     @test Tables.columns(s) == (x1 = [1, 3], x2 = [2, 4])
     @test s[1] == (1, 2)
     @test s[2] == (3, 4)
+    @inferred cols_infer()
 end
 
 @testset "propertynames" begin
