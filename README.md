@@ -14,9 +14,9 @@ The package is largely inspired from the `Columns` type in [IndexedTables](https
 ```julia
 julia> using StructArrays, Random
 
-julia> srand(4);
+julia> Random.seed!(4);
 
-julia> s = StructArray{ComplexF64}(rand(2,2), rand(2,2))
+julia> s = StructArray{ComplexF64}((rand(2,2), rand(2,2)))
 2×2 StructArray{Complex{Float64},2,NamedTuple{(:re, :im),Tuple{Array{Float64,2},Array{Float64,2}}}}:
  0.680079+0.625239im   0.92407+0.267358im
  0.874437+0.737254im  0.929336+0.804478im

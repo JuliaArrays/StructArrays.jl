@@ -5,6 +5,7 @@
 ### Breaking
 
 - Renamed `columns` to `fieldarrays`
+- `StructArray{T}(args...)` has been deprecated in favor of `StructArray{T}(args::Tuple)`
 
 ### New features
 
