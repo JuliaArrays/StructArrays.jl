@@ -1,6 +1,7 @@
 using StructArrays
 using StructArrays: LazyRow
 import Tables, PooledArrays, WeakRefStrings
+using DataValues: DataValue
 using Test
 
 # write your own tests here
@@ -407,4 +408,14 @@ end
     @test size(v) == (3, 4)
     @test v.a == [i for i in 1:3, j in 1:4]
     @test v.b == [j for i in 1:3, j in 1:4]
+end
+
+@testset "datavalues" begin
+    a = DataValue(2)
+    b = DataValue{Float64}()
+    s = StructArray(i for i in (a, b))
+    @test propertynames(s) == (:hasvalue, :value)
+    @test s.hasvalue == [true, false]
+    @test s.value isa Vector{Real}
+    @test s.value[1] == 2
 end
