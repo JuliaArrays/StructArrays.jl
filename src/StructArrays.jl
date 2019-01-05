@@ -21,7 +21,7 @@ function __init__()
         default_array(::Type{T}, d) where {T<:Union{AbstractString, Missing}} = WeakRefStrings.StringArray{T}(d)
     end
     Requires.@require DataValues="e7dc6d0d-1eca-5fa6-8ad6-5aecde8b7ea5" begin
-        createinstance(::Type{<:DataValues.DataValue}, a, b) = DataValues.DataValue(b, a)
+        Base.@pure SkipConstructor(::Type{<:DataValues.DataValue}) = true
     end
 end
 
