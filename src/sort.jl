@@ -1,7 +1,7 @@
 using Base.Sort, Base.Order
 
-fastpermute!(v::AbstractArray, p) = copyto!(v, v[p])
-fastpermute!(v::StructArray, p) = permute!(v, p)
+fastpermute!(v::AbstractArray, p::AbstractVector) = copyto!(v, v[p])
+fastpermute!(v::StructArray, p::AbstractVector) = permute!(v, p)
 
 function Base.permute!(c::StructArray, p::AbstractVector)
     foreachfield(v -> fastpermute!(v, p), c)
