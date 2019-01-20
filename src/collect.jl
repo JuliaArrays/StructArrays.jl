@@ -1,5 +1,4 @@
 default_array(::Type{S}, d) where {S} = Array{S}(undef, d)
-default_array(::Type{Missing}, d) = Array{Missing}(undef, d)
 
 struct StructArrayInitializer{F, G}
     unwrap::F

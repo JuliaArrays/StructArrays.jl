@@ -247,10 +247,6 @@ StructArrays.SkipConstructor(::Type{<:S}) = true
 end
 
 @testset "default_array" begin
-    v = StructArrays.default_array(String, (2, 3))
-    @test v isa WeakRefStrings.StringArray{String, 2}
-    v = StructArrays.default_array(Union{String, Missing}, (2, 3))
-    @test v isa WeakRefStrings.StringArray{Union{String, Missing}, 2}
     v = StructArrays.default_array(Missing, (2,))
     @test v isa Array{Missing, 1}
     v = StructArrays.default_array(Int, (2,))
