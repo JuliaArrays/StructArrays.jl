@@ -1,13 +1,9 @@
 using Base.Sort, Base.Order
 
-ispermutable(::Type{<:AbstractArray}) = false
-ispermutable(::Type{<:StructArray}) = true
+fastpermute!(v::AbstractArray, p) = copyto!(v, v[p])
+fastpermute!(v::StructArray, p) = permute!(v, p)
 
-function fastpermute!(v::S, p) where {S<:AbstractArray}
-    ispermutable(S) ? permute!(v, p) : copyto!(v, v[p])
-end
-
-function Base.permute!(c::StructVector, p::AbstractVector)
+function Base.permute!(c::StructArray, p::AbstractVector)
     foreachfield(v -> fastpermute!(v, p), c)
     return c
 end
