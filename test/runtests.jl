@@ -23,13 +23,11 @@ end
     a = WeakRefStrings.StringVector(["a", "b", "c"])
     b = PooledArrays.PooledArray([1, 2, 3])
     c = [:a, :b, :c]
-    @test !StructArrays.ispooledarray(a)
-    @test StructArrays.isstringarray(a)
-    @test StructArrays.ispooledarray(b)
-    @test !StructArrays.isstringarray(b)
-    @test !StructArrays.ispooledarray(c)
-    @test !StructArrays.isstringarray(c)
+    @test StructArrays.ispermutable(typeof(a))
+    @test StructArrays.ispermutable(typeof(b))
+    @test !StructArrays.ispermutable(typeof(c))
     s = StructArray(a=a, b=b, c=c)
+    @test StructArrays.ispermutable(typeof(s))
     permute!(s, [2, 3, 1])
     @test s.a == ["b", "c", "a"]
     @test s.b == [2, 3, 1]

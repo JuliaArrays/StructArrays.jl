@@ -1,16 +1,14 @@
 using Base.Sort, Base.Order
 
-isstringarray(::AbstractArray) = false
-ispooledarray(::AbstractArray) = false
+ispermutable(::Type{<:AbstractArray}) = false
+ispermutable(::Type{<:StructArray}) = true
+
+function fastpermute!(v::S, p) where {S<:AbstractArray}
+    ispermutable(S) ? permute!(v, p) : copyto!(v, v[p])
+end
 
 function Base.permute!(c::StructVector, p::AbstractVector)
-    foreachfield(c) do v
-        if  v isa StructVector || isstringarray(v) || ispooledarray(v)
-            permute!(v, p)
-        else
-            copyto!(v, v[p])
-        end
-    end
+    foreachfield(v -> fastpermute!(v, p), c)
     return c
 end
 
