@@ -14,11 +14,10 @@ include("lazy.jl")
 function __init__()
     Requires.@require Tables="bd369af6-aec1-5ad0-b16a-f7cc5008161c" include("tables.jl")
     Requires.@require PooledArrays="2dfb63ee-cc39-5dd5-95bd-886bf059d720" begin
-        ispooledarray(::PooledArrays.PooledArray) = true
+        fastpermute!(v::PooledArrays.PooledArray, p::AbstractVector) = permute!(v, p)
     end
     Requires.@require WeakRefStrings="ea10d353-3f73-51f8-a26c-33c1cb351aa5" begin
-        isstringarray(::WeakRefStrings.StringArray) = true
-        default_array(::Type{T}, d) where {T<:Union{AbstractString, Missing}} = WeakRefStrings.StringArray{T}(d)
+        fastpermute!(v::WeakRefStrings.StringArray, p::AbstractVector) = permute!(v, p)
     end
 end
 
