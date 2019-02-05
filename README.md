@@ -135,6 +135,3 @@ julia> push!(t, (a = 3, b = "z"))
  (a = 3, b = "z")
 ```
 
-## Custom array types
-
-
