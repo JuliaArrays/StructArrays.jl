@@ -72,6 +72,46 @@ julia> rand!(s)
  0.0340059+0.420472im   0.907252+0.808263im
 ```
 
+### Using custom array types
+
+StructArrays supports using custom array types. It is always possible to pass field arrays of a custom type. The "custom array of structs to struct of custom arrays" transformation will use the `similar` method of the custom array type. This can be useful when working on the GPU for example:
+
+```julia
+julia> using StructArrays, CuArrays
+
+julia> a = CuArray(rand(Float32, 10));
+
+julia> b = CuArray(rand(Float32, 10));
+
+julia> StructArray{ComplexF32}((a, b))
+10-element StructArray{Complex{Float32},1,NamedTuple{(:re, :im),Tuple{CuArray{Float32,1},CuArray{Float32,1}}}}:
+   0.7539003f0 + 0.5406891f0im
+   0.2818451f0 + 0.60345674f0im
+   0.3271774f0 + 0.56674314f0im
+   0.6943406f0 + 0.8360009f0im
+   0.9609026f0 + 0.27519035f0im
+ 0.051933408f0 + 0.93443274f0im
+  0.51335454f0 + 0.90320504f0im
+   0.6588727f0 + 0.16270757f0im
+  0.20075476f0 + 0.6591008f0im
+  0.58832633f0 + 0.45309567f0im
+
+julia> c = CuArray(rand(ComplexF32, 10));
+
+julia> StructArray(c)
+10-element StructArray{Complex{Float32},1,NamedTuple{(:re, :im),Tuple{CuArray{Float32,1},CuArray{Float32,1}}}}:
+  0.76695776f0 + 0.31588173f0im
+   0.9804857f0 + 0.15740407f0im
+  0.85849273f0 + 0.51903546f0im
+ 0.106796384f0 + 0.9493377f0im
+  0.38152885f0 + 0.8419838f0im
+   0.8892112f0 + 0.5276251f0im
+  0.11579132f0 + 0.79168653f0im
+  0.16804445f0 + 0.40545344f0im
+  0.42822742f0 + 0.61150527f0im
+  0.29996157f0 + 0.94151044f0im
+```
+
 ## Example usage to store a data table
 
 ```julia
@@ -94,3 +134,7 @@ julia> push!(t, (a = 3, b = "z"))
  (a = 2, b = "y")
  (a = 3, b = "z")
 ```
+
+## Custom array types
+
+
