@@ -16,7 +16,12 @@ function __init__()
     Requires.@require PooledArrays="2dfb63ee-cc39-5dd5-95bd-886bf059d720" begin
         fastpermute!(v::PooledArrays.PooledArray, p::AbstractVector) = permute!(v, p)
         function sort_by(y::PooledArrays.PooledArray)
-            poolranks = invperm(sortperm(y.pool))
+            if y.pool isa Dict # Compatibility for PooledArrays < v0.5
+                pool = [y.revpool[i] for i=1:length(y.revpool)]
+            else
+                pool = y.pool
+            end
+            poolranks = invperm(sortperm(pool))
             j->(@inbounds k=poolranks[y.refs[j]]; k)
         end
     end
