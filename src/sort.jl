@@ -1,7 +1,10 @@
 using Base.Sort, Base.Order
+using PooledArrays, WeakRefStrings # additional methods for PooledArray and StringArrays
 
 fastpermute!(v::AbstractArray, p::AbstractVector) = copyto!(v, v[p])
 fastpermute!(v::StructArray, p::AbstractVector) = permute!(v, p)
+fastpermute!(v::StringArray, p::AbstractVector) = permute!(v, p)
+fastpermute!(v::PooledArray, p::AbstractVector) = permute!(v, p)
 
 function Base.permute!(c::StructArray, p::AbstractVector)
     foreachfield(v -> fastpermute!(v, p), c)
@@ -49,11 +52,20 @@ function finduniquesorted(args...)
     (row => p[idxs] for (row, idxs) in t)
 end
 
+fast_sortable(y) = y
+function fast_sortable(y::PooledArray)
+    poolranks = invperm(sortperm(y.pool))
+    newpool = Dict(j=>convert(eltype(y.refs), i) for (i,j) in enumerate(poolranks))
+    PooledArrays.PooledArray(PooledArrays.RefArray(y.refs), newpool)
+end
+fast_sortable(y::StringArray) = fast_sortable(PooledArray(y))
+
+
 function Base.sortperm(c::StructVector{T}) where {T<:Union{Tuple, NamedTuple}}
 
     cols = fieldarrays(c)
     x = cols[1]
-    p = sortperm(x)
+    p = sortperm(fast_sortable(x))
     if length(cols) > 1
         y = cols[2]
         refine_perm!(p, cols, 1, x, y, 1, length(x))
@@ -63,8 +75,6 @@ end
 
 Base.sort!(c::StructArray{<:Union{Tuple, NamedTuple}}) = permute!(c, sortperm(c))
 Base.sort(c::StructArray{<:Union{Tuple, NamedTuple}}) = c[sortperm(c)]
-
-fast_sortable(y) = y
 
 # Methods from IndexedTables to refine sorting:
 # # assuming x[p] is sorted, sort by remaining columns where x[p] is constant
@@ -137,4 +147,3 @@ function sort_int_range_sub_by!(x, ioffs, n, by, rangelen, minval, temp)
     end
     x
 end
-

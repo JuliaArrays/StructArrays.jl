@@ -1,2 +1,4 @@
 julia 0.7
 Requires
+PooledArrays 0.5
+WeakRefStrings 0.5.7
