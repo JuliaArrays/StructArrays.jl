@@ -59,6 +59,7 @@ function fast_sortable(y::PooledArray)
     PooledArrays.PooledArray(PooledArrays.RefArray(y.refs), newpool)
 end
 fast_sortable(y::StringArray) = fast_sortable(PooledArray(y))
+fast_sortable(y::StringArray{String}) = fast_sortable(convert(StringArray{WeakRefString{UInt8}}, y))
 
 
 function Base.sortperm(c::StructVector{T}) where {T<:Union{Tuple, NamedTuple}}
