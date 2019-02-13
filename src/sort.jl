@@ -68,7 +68,7 @@ Base.sort(c::StructArray{<:Union{Tuple, NamedTuple}}) = c[sortperm(c)]
 # # assuming x[p] is sorted, sort by remaining columns where x[p] is constant
 function refine_perm!(p, cols, c, x, y, lo, hi)
     temp = similar(p, 0)
-    order = Base.Order.By(j->(@inbounds k=y[j]; k))
+    order = Base.Order.Perm(Base.Order.Forward, y)
     nc = length(cols)
     for (_, idxs) in TiedIndices(x, p, lo:hi)
         i, i1 = extrema(idxs)
