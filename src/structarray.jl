@@ -85,6 +85,21 @@ function Base.similar(s::StructArray{T}, sz::Tuple) where {T}
     StructArray{T}(map(typ -> similar(typ, sz), fieldarrays(s)))
 end
 
+"""
+`fieldarrays(s::StructArray)`
+
+Return the field arrays corresponding to the various entry of the struct as a named tuple.
+If the struct has no names (e.g. a tuple) automatic names are assigned (`:x1, :x2, ...`).
+
+## Examples
+
+```julia
+julia> s = StructArray(rand(ComplexF64, 4));
+
+julia> fieldarrays(s)
+(re = [0.396526, 0.486036, 0.459595, 0.0323561], im = [0.147702, 0.81043, 0.00993469, 0.487091])
+```
+"""
 fieldarrays(s::StructArray) = getfield(s, :fieldarrays)
 
 Base.getproperty(s::StructArray, key::Symbol) = getfield(fieldarrays(s), key)

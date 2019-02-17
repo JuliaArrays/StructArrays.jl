@@ -28,6 +28,9 @@ julia> s.re
 2×2 Array{Float64,2}:
  0.680079  0.92407
  0.874437  0.929336
+
+julia> fieldarrays(s) # obtain all field arrays as a named tuple
+(re = [0.680079 0.92407; 0.874437 0.929336], im = [0.625239 0.267358; 0.737254 0.804478])
 ```
 
 Note that the same approach can be used directly from an `Array` of complex numbers:
