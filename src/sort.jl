@@ -64,11 +64,17 @@ end
 Base.sort!(c::StructArray{<:Union{Tuple, NamedTuple}}) = permute!(c, sortperm(c))
 Base.sort(c::StructArray{<:Union{Tuple, NamedTuple}}) = c[sortperm(c)]
 
+# Given an ordering `p`, return a vector `v` such that `Perm(Forward, v)` is
+# equivalent to `p`. Return `nothing` if such vector is not found.
+forward_vec(p::Perm{ForwardOrdering}) = p.data
+forward_vec(::Ordering) = nothing
+
 # Methods from IndexedTables to refine sorting:
 # # assuming x[p] is sorted, sort by remaining columns where x[p] is constant
-function refine_perm!(p, cols, c, x, y, lo, hi)
+function refine_perm!(p, cols, c, x, y′, lo, hi)
     temp = similar(p, 0)
-    order = Base.Order.By(j->(@inbounds k=y[j]; k))
+    order = Perm(Forward, y′)
+    y = something(forward_vec(order), y′)
     nc = length(cols)
     for (_, idxs) in TiedIndices(x, p, lo:hi)
         i, i1 = extrema(idxs)
@@ -88,7 +94,7 @@ Base.@noinline function sort_sub_by!(v, i0, i1, by, order, temp)
     sort!(v, i0, i1, MergeSort, order, temp)
 end
 
-Base.@noinline function sort_sub_by!(v, i0, i1, by::Vector{T}, order, temp) where T<:Integer
+Base.@noinline function sort_sub_by!(v, i0, i1, by::AbstractVector{T}, order, temp) where T<:Integer
     min = max = by[v[i0]]
     @inbounds for i = i0+1:i1
         val = by[v[i]]
