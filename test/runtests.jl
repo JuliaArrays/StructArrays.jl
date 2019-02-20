@@ -19,6 +19,16 @@ end
     @test StructArrays.propertynames(StructArrays.fieldarrays(t)) == (:a, :b)
 end
 
+@testset "pool" begin
+    v = StructArray(a=rand(10), b = fill("string", 10))
+    v_pooled = StructArrays.pool(v, condition = !isbitstype)
+    @test eltype(v) == eltype(v_pooled)
+    @test all(v.a .== v_pooled.a)
+    @test all(v.b .== v_pooled.b)
+    @test !isa(v_pooled.a, PooledArrays.PooledArray)
+    @test isa(v_pooled.b, PooledArrays.PooledArray)
+end
+
 @testset "permute" begin
     a = WeakRefStrings.StringVector(["a", "b", "c"])
     b = PooledArrays.PooledArray([1, 2, 3])
