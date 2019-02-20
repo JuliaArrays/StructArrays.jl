@@ -16,7 +16,7 @@ function __init__()
     Requires.@require PooledArrays="2dfb63ee-cc39-5dd5-95bd-886bf059d720" begin
         fastpermute!(v::PooledArrays.PooledArray, p::AbstractVector) = permute!(v, p)
         function pool(v::AbstractArray{T}; condition) where T
-            condition(T) ? PooledArrays.PooledArray(v) : v
+            condition(T) ? convert(PooledArrays.PooledArray, v) : v
         end
     end
     Requires.@require WeakRefStrings="ea10d353-3f73-51f8-a26c-33c1cb351aa5" begin
