@@ -3,7 +3,11 @@ using StructArrays: LazyRow
 import Tables, PooledArrays, WeakRefStrings
 using Test
 
-# write your own tests here
+struct Person
+    age::Float64
+    name::String
+end
+
 @testset "index" begin
     a, b = [1 2; 3 4], [4 5; 6 7]
     t = StructArray((a = a, b = b))
@@ -32,10 +36,6 @@ end
 end
 
 @testset "namedtuple" begin
-    struct Person
-        age::Float64
-        name::String
-    end
     pers = Person(12.3, "Luke")
     @inferred StructArrays.to_namedtuple(pers)
     @test StructArrays.to_namedtuple(pers) == (age = 12.3, name = "Luke")
