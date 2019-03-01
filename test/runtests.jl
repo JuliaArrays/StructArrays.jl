@@ -3,11 +3,6 @@ using StructArrays: LazyRow
 import Tables, PooledArrays, WeakRefStrings
 using Test
 
-struct Person
-    age::Float64
-    name::String
-end
-
 @testset "index" begin
     a, b = [1 2; 3 4], [4 5; 6 7]
     t = StructArray((a = a, b = b))
@@ -36,9 +31,8 @@ end
 end
 
 @testset "namedtuple" begin
-    pers = Person(12.3, "Luke")
-    @inferred StructArrays.to_namedtuple(pers)
-    @test StructArrays.to_namedtuple(pers) == (age = 12.3, name = "Luke")
+    @inferred StructArrays.to_namedtuple(1+2im)
+    @test StructArrays.to_namedtuple(1+2im) == (re = 1, im = 2)
     @test StructArrays.to_namedtuple((a=1,)) == (a=1,)
     @test StructArrays.to_namedtuple((1, 2, :s)) == (x1=1, x2=2, x3=:s)
 end
