@@ -19,7 +19,7 @@ end
     @test StructArrays.propertynames(StructArrays.fieldarrays(t)) == (:a, :b)
 end
 
-@testset "pool" begin
+@testset "replace_storage" begin
     v = StructArray(a=rand(10), b = fill("string", 10))
     v_pooled = StructArrays.replace_storage(v) do c
         isbitstype(eltype(c)) ? c : convert(PooledArrays.PooledArray, c)
