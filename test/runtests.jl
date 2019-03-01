@@ -31,6 +31,18 @@ end
     @test isa(v_pooled.b, PooledArrays.PooledArray)
 end
 
+@testset "namedtuple" begin
+    struct Person
+        age::Float64
+        name::String
+    end
+    pers = Person(12.3, "Luke")
+    @inferred StructArrays.to_namedtuple(pers)
+    @test StructArrays.to_namedtuple(pers) == (age = 12.3, name = "Luke")
+    @test StructArrays.to_namedtuple((a=1,)) == (a=1,)
+    @test StructArrays.to_namedtuple((1, 2, :s)) == (x1=1, x2=2, x3=:s)
+end
+
 @testset "permute" begin
     a = WeakRefStrings.StringVector(["a", "b", "c"])
     b = PooledArrays.PooledArray([1, 2, 3])
