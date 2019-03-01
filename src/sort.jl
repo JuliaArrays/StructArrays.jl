@@ -1,17 +1,5 @@
 using Base.Sort, Base.Order
 
-"""
-`pool(v::StructArray; condition)`
-
-If PooledArrays is loaded, pool columns of `v` whose `eltype` respects `condition`.
-For example `condition = !isbitstype` would pool all columns of non `isbitstype`.
-"""
-function pool(v::StructArray{T}; condition) where T
-    cols = fieldarrays(v)
-    pooledcols = map(t -> pool(t; condition = condition), cols)
-    StructArray{T}(pooledcols)
-end
-
 fastpermute!(v::AbstractArray, p::AbstractVector) = copyto!(v, v[p])
 fastpermute!(v::StructArray, p::AbstractVector) = permute!(v, p)
 

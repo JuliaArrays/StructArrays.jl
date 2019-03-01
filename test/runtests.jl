@@ -21,7 +21,9 @@ end
 
 @testset "pool" begin
     v = StructArray(a=rand(10), b = fill("string", 10))
-    v_pooled = StructArrays.pool(v, condition = !isbitstype)
+    v_pooled = StructArrays.replace_storage(v) do c
+        isbitstype(eltype(c)) ? c : convert(PooledArrays.PooledArray, c)
+    end
     @test eltype(v) == eltype(v_pooled)
     @test all(v.a .== v_pooled.a)
     @test all(v.b .== v_pooled.b)
