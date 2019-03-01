@@ -78,3 +78,38 @@ iscompatible(::Type{S}, ::Type{<:AbstractArray{T}}) where {S, T} = S<:T
 function iscompatible(::Type{S}, ::Type{StructArray{T, N, C}}) where {S, T, N, C}
     all_types(iscompatible, staticschema(S), C)
 end
+
+function replace_storage(f, v::AbstractArray{T, N})::AbstractArray{T, N} where {T, N}
+    f(v)
+end
+
+"""
+`replace_storage(f, s::StructArray)`
+
+Change storage type for fieldarrays: each array `v` is replaced by `f(v)`. `f(v) is expected to have the same
+`eltype` and `size` as `v`.
+
+## Examples
+
+If PooledArrays is loaded, we can pool all columns of non `isbitstype`:
+
+```jldoctest
+julia> using PooledArrays
+
+julia> s = StructArray(a=1:3, b = fill("string", 3));
+
+julia> s_pooled = StructArrays.replace_storage(s) do v
+           isbitstype(eltype(v)) ? v : convert(PooledArray, v)
+       end
+10-element StructArray{NamedTuple{(:a, :b),Tuple{Int64,String}},1,NamedTuple{(:a, :b),Tuple{UnitRange{Int64},PooledArray{String,UInt8,1,Array{UInt8,1}}}}}:
+ (a = 1, b = "string") 
+ (a = 2, b = "string") 
+ (a = 3, b = "string") 
+```
+"""
+function replace_storage(f, s::StructArray{T}) where T
+    cols = fieldarrays(s)
+    newcols = map(t -> replace_storage(f, t), cols)
+    StructArray{T}(newcols)
+end
+
