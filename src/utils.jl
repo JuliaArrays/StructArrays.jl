@@ -91,8 +91,7 @@ Change storage type for fieldarrays: each array `v` is replaced by `f(v)`. `f(v)
 
 ## Examples
 
-If PooledArrays is loaded, pool columns of `v` whose `eltype` respects `condition`.
-For example `condition = !isbitstype` would pool all columns of non `isbitstype`.
+If PooledArrays is loaded, we can pool all columns of non `isbitstype`:
 
 ```jldoctest
 julia> using PooledArrays
