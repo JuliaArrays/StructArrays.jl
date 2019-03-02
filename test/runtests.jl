@@ -3,7 +3,6 @@ using StructArrays: LazyRow
 import Tables, PooledArrays, WeakRefStrings
 using Test
 
-# write your own tests here
 @testset "index" begin
     a, b = [1 2; 3 4], [4 5; 6 7]
     t = StructArray((a = a, b = b))
@@ -29,6 +28,13 @@ end
     @test all(v.b .== v_pooled.b)
     @test !isa(v_pooled.a, PooledArrays.PooledArray)
     @test isa(v_pooled.b, PooledArrays.PooledArray)
+end
+
+@testset "namedtuple" begin
+    @inferred StructArrays.to_namedtuple(1+2im)
+    @test StructArrays.to_namedtuple(1+2im) == (re = 1, im = 2)
+    @test StructArrays.to_namedtuple((a=1,)) == (a=1,)
+    @test StructArrays.to_namedtuple((1, 2, :s)) == (x1=1, x2=2, x3=:s)
 end
 
 @testset "permute" begin
