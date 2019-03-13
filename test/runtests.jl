@@ -1,5 +1,4 @@
 using StructArrays
-using StructArrays: LazyRow
 import Tables, PooledArrays, WeakRefStrings
 using Test
 
@@ -415,4 +414,15 @@ end
     @test size(v) == (3, 4)
     @test v.a == [i for i in 1:3, j in 1:4]
     @test v.b == [j for i in 1:3, j in 1:4]
+end
+
+@testset "lazy" begin
+    s = StructArray(rand(ComplexF64, 10, 10))
+    rows = LazyRows(s)
+    @test IndexStyle(rows) isa IndexLinear
+    @test all(t -> t.re >= 0, s)
+    @test all(t -> t.re >= 0, rows)
+    rows[13].re = -12
+    @test !all(t -> t.re >= 0, s)
+    @test !all(t -> t.re >= 0, rows)
 end

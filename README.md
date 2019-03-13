@@ -138,3 +138,29 @@ julia> push!(t, (a = 3, b = "z"))
  (a = 3, b = "z")
 ```
 
+### Lazy row iteration
+
+StructArrays also provides a `LazyRow` wrapper for lazy row iteration. `LazyRow(t, i)` does not materialize the i-th row but returns a lazy wrapper around it on which `getproperty` does the correct thing. This is useful when the row has many fields only some of which are necessary. It also allows changing columns in place.
+
+```julia
+julia> LazyRow(t, 2).a
+2
+
+julia> LazyRow(t, 2).a = 123
+123
+
+julia> t
+2-element StructArray{NamedTuple{(:a, :b),Tuple{Int64,String}},1,NamedTuple{(:a, :b),Tu
+ple{Array{Int64,1},Array{String,1}}}}:
+ (a = 1, b = "x")
+ (a = 123, b = "y")
+```
+
+To iterate in a lazy way one can simply iterate `LazyRows`:
+
+```julia
+julia> map(t -> t.b ^ t.a, LazyRows(t))
+2-element Array{String,1}:
+ "x"
+ "yy"
+```
