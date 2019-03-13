@@ -1,7 +1,7 @@
 module StructArrays
 
 import Requires
-export StructArray, StructVector
+export StructArray, StructVector, LazyRow, LazyRows
 export collect_structarray, fieldarrays
 
 include("interface.jl")
