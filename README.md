@@ -164,3 +164,35 @@ julia> map(t -> t.b ^ t.a, LazyRows(t))
  "x"
  "yy"
 ```
+
+## Advanced: structures with non-standard data layout
+
+StructArrays support structures with non-standard data layout (where `getproperty` has been overloaded or where the constructors are non-standard). The user is required to provide an overloaded `staticscheme` for their type (to give the names and types of the properties of a given type) as well as a `createinstance` method. Here is an example of a type `MyType` that has as properties either its field `data` or properties of its field `rest` (which is a named tuple):
+
+```julia
+using StructArrays
+struct MyType{NT<:NamedTuple}
+    data::Float64
+    rest::NT
+end
+
+MyType(x; kwargs...) = MyType(x, values(kwargs))
+
+Base.getproperty(b::MyType, s::Symbol) = s == :data ? getfield(b, 1) : getproperty(getfield(b, 2), s)
+
+getnamestypes(::Type{NamedTuple{names, types}}) where {names, types} = (names, types)
+getnamestypes(::Type{MyType{NT}}) where NT = getnamestypes(NT)
+
+function StructArrays.staticschema(::Type{T}) where {T<:MyType}
+    names, types = getnamestypes(T)
+    NamedTuple{(:data, names...), Base.tuple_type_cons(Float64, types)}
+end
+
+function StructArrays.createinstance(::Type{T}, x, args...) where {T<:MyType}
+    names, types = getnamestypes(T)
+    MyType(x, NamedTuple{names, types}(args))
+end
+
+s = [MyType(rand(), a=1, b=2) for i in 1:10]
+StructArray(s)
+```
