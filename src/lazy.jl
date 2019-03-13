@@ -24,7 +24,7 @@ LazyRows(::IndexCartesian, s::StructArray{T, N, C}) where {T, N, C} = LazyRows{T
 Base.parent(v::LazyRows) = getfield(v, 1)
 
 Base.size(v::LazyRows) = size(parent(v))
-Base.getindex(v::LazyRows, i::Integer) = LazyRow(parent(v), i)
-Base.getindex(v::LazyRows, i::CartesianIndex) = LazyRow(parent(v), i)
+Base.getindex(v::LazyRows{<:Any, <:Any, <:Any, <:Integer}, i::Integer) = LazyRow(parent(v), i)
+Base.getindex(v::LazyRows{<:Any, <:Any, <:Any, <:CartesianIndex}, i::Integer...) = LazyRow(parent(v), CartesianIndex(i))
 
-Base.IndexStyle(::Type{LazyRows{T, N, C, I}}) where {T, N, C, I<:Integer} = IndexLinear()
+Base.IndexStyle(::Type{<:LazyRows{<:Any, <:Any, <:Any, <:Integer}}) = IndexLinear()
