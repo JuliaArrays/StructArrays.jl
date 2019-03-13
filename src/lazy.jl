@@ -14,3 +14,17 @@ iscompatible(::Type{<:LazyRow{S}}, ::Type{StructArray{T, N, C}}) where {S, T, N,
     iscompatible(S, StructArray{T, N, C})
 
 (s::ArrayInitializer)(::Type{<:LazyRow{T}}, d) where {T} = buildfromschema(typ -> s(typ, d), T)
+
+struct LazyRows{T, N, C, I} <: AbstractArray{LazyRow{T, N, C, I}, N}
+    columns::StructArray{T, N, C}
+end
+LazyRows(s::S) where {S<:StructArray} = LazyRows(IndexStyle(S), s)
+LazyRows(::IndexLinear, s::StructArray{T, N, C}) where {T, N, C} = LazyRows{T, N, C, Int}(s)
+LazyRows(::IndexCartesian, s::StructArray{T, N, C}) where {T, N, C} = LazyRows{T, N, C, CartesianIndex{N}}(s)
+Base.parent(v::LazyRows) = getfield(v, 1)
+
+Base.size(v::LazyRows) = size(parent(v))
+Base.getindex(v::LazyRows, i::Integer) = LazyRow(parent(v), i)
+Base.getindex(v::LazyRows, i::CartesianIndex) = LazyRow(parent(v), i)
+
+Base.IndexStyle(::Type{LazyRows{T, N, C, I}}) where {T, N, C, I<:Integer} = IndexLinear()
