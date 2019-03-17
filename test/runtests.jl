@@ -27,7 +27,7 @@ end
     @test all(v.b .== v_pooled.b)
     @test !isa(v_pooled.a, PooledArrays.PooledArray)
     @test isa(v_pooled.b, PooledArrays.PooledArray)
-    @test v_pooled = StructArrays.pool(v)
+    @test v_pooled == StructArrays.pool(v)
 end
 
 @testset "optimize_isequal" begin
@@ -38,7 +38,7 @@ end
     @test t[1] != t[2]
     @test t[1] != t[3]
     @test t[1] == t[4]
-    @test t[1].b isa Integer
+    @test t[1][2] isa Integer
 end
 
 @testset "namedtuple" begin
