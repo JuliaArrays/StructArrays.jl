@@ -2,13 +2,13 @@ using Base.Sort, Base.Order
 
 fastpermute!(v::AbstractArray, p::AbstractVector) = copyto!(v, v[p])
 fastpermute!(v::StructArray, p::AbstractVector) = permute!(v, p)
-fastpermute!(v::PooledArrays.PooledArray, p::AbstractVector) = permute!(v, p)
+fastpermute!(v::PooledArray, p::AbstractVector) = permute!(v, p)
 
 optimize_isequal(v::AbstractArray) = v
-optimize_isequal(v::PooledArrays.PooledArray) = v.refs
+optimize_isequal(v::PooledArray) = v.refs
 optimize_isequal(v::StructArray{<:Union{Tuple, NamedTuple}}) = StructArray(map(optimize_isequal, fieldarrays(v)))
 
-pool(v::V, condition = !isbitstype∘eltype) where {V<:AbstractArray} = condition(V) ? convert(PooledArrays.PooledArray, v) : v
+pool(v::V, condition = !isbitstype∘eltype) where {V<:AbstractArray} = condition(V) ? convert(PooledArray, v) : v
 pool(v::StructArray, condition = !isbitstype∘eltype) = replace_storage(t -> pool(t, condition), v)
 
 function Base.permute!(c::StructArray, p::AbstractVector)
