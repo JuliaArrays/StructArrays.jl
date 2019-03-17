@@ -27,6 +27,18 @@ end
     @test all(v.b .== v_pooled.b)
     @test !isa(v_pooled.a, PooledArrays.PooledArray)
     @test isa(v_pooled.b, PooledArrays.PooledArray)
+    @test v_pooled == StructArrays.pool(v)
+end
+
+@testset "optimize_isequal" begin
+    a = ["a", "b", "a", "a"]
+    b = PooledArrays.PooledArray(["x", "y", "z", "x"])
+    s = StructArray((a, b))
+    t = StructArrays.optimize_isequal(s)
+    @test t[1] != t[2]
+    @test t[1] != t[3]
+    @test t[1] == t[4]
+    @test t[1][2] isa Integer
 end
 
 @testset "namedtuple" begin

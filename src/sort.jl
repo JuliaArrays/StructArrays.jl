@@ -2,6 +2,14 @@ using Base.Sort, Base.Order
 
 fastpermute!(v::AbstractArray, p::AbstractVector) = copyto!(v, v[p])
 fastpermute!(v::StructArray, p::AbstractVector) = permute!(v, p)
+fastpermute!(v::PooledArray, p::AbstractVector) = permute!(v, p)
+
+optimize_isequal(v::AbstractArray) = v
+optimize_isequal(v::PooledArray) = v.refs
+optimize_isequal(v::StructArray{<:Union{Tuple, NamedTuple}}) = StructArray(map(optimize_isequal, fieldarrays(v)))
+
+pool(v::AbstractArray, condition = !isbitstype∘eltype) = condition(v) ? convert(PooledArray, v) : v
+pool(v::StructArray, condition = !isbitstype∘eltype) = replace_storage(t -> pool(t, condition), v)
 
 function Base.permute!(c::StructArray, p::AbstractVector)
     foreachfield(v -> fastpermute!(v, p), c)
@@ -76,7 +84,7 @@ function refine_perm!(p, cols, c, x, y′, lo, hi)
     order = Perm(Forward, y′)
     y = something(forward_vec(order), y′)
     nc = length(cols)
-    for (_, idxs) in TiedIndices(x, p, lo:hi)
+    for (_, idxs) in TiedIndices(optimize_isequal(x), p, lo:hi)
         i, i1 = extrema(idxs)
         if i1 > i
             sort_sub_by!(p, i, i1, y, order, temp)
