@@ -8,7 +8,7 @@ optimize_isequal(v::AbstractArray) = v
 optimize_isequal(v::PooledArray) = v.refs
 optimize_isequal(v::StructArray{<:Union{Tuple, NamedTuple}}) = StructArray(map(optimize_isequal, fieldarrays(v)))
 
-pool(v::V, condition = !isbitstype∘eltype) where {V<:AbstractArray} = condition(V) ? convert(PooledArray, v) : v
+pool(v::AbstractArray, condition = !isbitstype∘eltype) = condition(v) ? convert(PooledArray, v) : v
 pool(v::StructArray, condition = !isbitstype∘eltype) = replace_storage(t -> pool(t, condition), v)
 
 function Base.permute!(c::StructArray, p::AbstractVector)
