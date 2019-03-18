@@ -39,6 +39,10 @@ end
     @test t[1] != t[3]
     @test t[1] == t[4]
     @test t[1][2] isa Integer
+    @test StructArrays.recover_original(s, t[1]) == s[1]
+    @test StructArrays.recover_original(s, t[2]) == s[2]
+    @test StructArrays.recover_original(s, t[3]) == s[3]
+    @test StructArrays.recover_original(s, t[4]) == s[4]
 end
 
 @testset "namedtuple" begin
