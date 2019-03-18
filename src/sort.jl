@@ -48,12 +48,47 @@ function Base.iterate(n::TiedIndices, i = first(n.within))
     return (row => i:(i1-1), i1)
 end
 
-tiedindices(args...) = TiedIndices(args...)
+"""
+`tiedindices(v, perm=sortperm(v))`
 
-function maptiedindices(f, keys, perm)
-    fast_keys = optimize_isequal(keys)
-    itr = TiedIndices(fast_keys, perm)
-    (f(recover_original(keys, key), idxs) for (key, idxs) in itr)
+Given an abstract vector `v` and a permutation vector `perm`, return an iterator
+of pairs `val => range` where `range` is a maximal interval such as `v[perm[range]]`
+is constant: `val` is the unique value of `v[perm[range]]`.
+"""
+tiedindices(v, perm=sortperm(v)) = TiedIndices(v, perm)
+
+"""
+`maptiedindices(f, v, perm)`
+
+Given a function `f`, compute the iterator `tiedindices(v, perm)` and return
+in iterable object which yields `f(val, idxs)` where `val => idxs` are the pairs
+iterated by `tiedindices(v, perm)`.
+
+## Examples
+
+`maptiedindices` is a low level building block that can be used to define grouping
+operators. For example:
+
+```jldoctest
+julia> function mygroupby(f, keys, data)
+           perm = sortperm(keys)
+           StructArrays.maptiedindices(keys, perm) do key, idxs
+               key => f(data[perm[idxs]])
+           end
+       end
+mygroupby (generic function with 1 method)
+
+julia> StructArray(mygroupby(sum, [1, 2, 1, 3], [1, 4, 10, 11]))
+3-element StructArray{Pair{Int64,Int64},1,NamedTuple{(:first, :second),Tuple{Array{Int64,1},Array{Int64,1}}}}:
+ 1 => 11
+ 2 => 4
+ 3 => 11
+```
+"""
+function maptiedindices(f, v, perm)
+    fast_v = optimize_isequal(v)
+    itr = TiedIndices(fast_v, perm)
+    (f(recover_original(v, val), idxs) for (val, idxs) in itr)
 end
 
 function uniquesorted(keys, perm=sortperm(keys))
