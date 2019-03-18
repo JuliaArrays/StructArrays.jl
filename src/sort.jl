@@ -8,6 +8,10 @@ optimize_isequal(v::AbstractArray) = v
 optimize_isequal(v::PooledArray) = v.refs
 optimize_isequal(v::StructArray{<:Union{Tuple, NamedTuple}}) = StructArray(map(optimize_isequal, fieldarrays(v)))
 
+recover_original(v::AbstractArray, el) = el
+recover_original(v::PooledArray, el) = v.pool[el]
+recover_original(v::StructArray{T}, el) where {T<:Union{Tuple, NamedTuple}} = T(map(recover_original, fieldarrays(v), el))
+
 pool(v::AbstractArray, condition = !isbitstype∘eltype) = condition(v) ? convert(PooledArray, v) : v
 pool(v::StructArray, condition = !isbitstype∘eltype) = replace_storage(t -> pool(t, condition), v)
 
@@ -55,6 +59,12 @@ function finduniquesorted(args...)
     t = tiedindices(args...)
     p = sortperm(t)
     (row => p[idxs] for (row, idxs) in t)
+end
+
+function iterate_grouped_data(f, keys, data, perm)
+    fast_keys = optimize_isequal(keys)
+    itr = TiedIndices(fast_keys, perm)
+    (f(recover_original(keys, key), data, perm, idxs) for (key, idxs) in itr)
 end
 
 function Base.sortperm(c::StructVector{T}) where {T<:Union{Tuple, NamedTuple}}
@@ -148,4 +158,3 @@ function sort_int_range_sub_by!(x, ioffs, n, by, rangelen, minval, temp)
     end
     x
 end
-
