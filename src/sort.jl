@@ -20,9 +20,9 @@ function Base.permute!(c::StructArray, p::AbstractVector)
     return c
 end
 
-struct TiedIndices{T<:AbstractVector, I<:Integer, U<:AbstractUnitRange}
+struct TiedIndices{T<:AbstractVector, V<:AbstractVector{<:Integer}, U<:AbstractUnitRange}
     vec::T
-    perm::Vector{I}
+    perm::V
     within::U
 end
 
@@ -50,21 +50,18 @@ end
 
 tiedindices(args...) = TiedIndices(args...)
 
-function uniquesorted(args...)
-    t = tiedindices(args...)
-    (row for (row, _) in t)
+function uniquesorted(keys, perm=sortperm(keys))
+    lazygroupmap((key, perm, idxs) -> key, keys, perm)
 end
 
-function finduniquesorted(args...)
-    t = tiedindices(args...)
-    p = sortperm(t)
-    (row => p[idxs] for (row, idxs) in t)
+function finduniquesorted(keys, perm=sortperm(keys))
+    lazygroupmap((key, perm, idxs) -> (key => perm[idxs]), keys, perm)
 end
 
-function iterate_grouped_data(f, keys, data, perm)
+function lazygroupmap(f, keys, perm)
     fast_keys = optimize_isequal(keys)
     itr = TiedIndices(fast_keys, perm)
-    (f(recover_original(keys, key), data, perm, idxs) for (key, idxs) in itr)
+    (f(recover_original(keys, key), perm, idxs) for (key, idxs) in itr)
 end
 
 function Base.sortperm(c::StructVector{T}) where {T<:Union{Tuple, NamedTuple}}
