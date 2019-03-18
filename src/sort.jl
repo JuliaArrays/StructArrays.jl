@@ -50,18 +50,18 @@ end
 
 tiedindices(args...) = TiedIndices(args...)
 
+function maptiedindices(f, keys, perm)
+    fast_keys = optimize_isequal(keys)
+    itr = TiedIndices(fast_keys, perm)
+    (f(recover_original(keys, key), idxs) for (key, idxs) in itr)
+end
+
 function uniquesorted(keys, perm=sortperm(keys))
-    lazygroupmap((key, perm, idxs) -> key, keys, perm)
+    maptiedindices((key, _) -> key, keys, perm)
 end
 
 function finduniquesorted(keys, perm=sortperm(keys))
-    lazygroupmap((key, perm, idxs) -> (key => perm[idxs]), keys, perm)
-end
-
-function lazygroupmap(f, keys, perm)
-    fast_keys = optimize_isequal(keys)
-    itr = TiedIndices(fast_keys, perm)
-    (f(recover_original(keys, key), perm, idxs) for (key, idxs) in itr)
+    maptiedindices((key, idxs) -> (key => perm[idxs]), keys, perm)
 end
 
 function Base.sortperm(c::StructVector{T}) where {T<:Union{Tuple, NamedTuple}}
