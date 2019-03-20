@@ -40,8 +40,8 @@ function Base.iterate(n::TiedIndices, i = first(n.within))
     vec, perm = n.vec, n.perm
     l = last(n.within)
     i > l && return nothing
-    row = vec[perm[i]]
-    i1 = i
+    @inbounds row = vec[perm[i]]
+    i1 = i+1
     @inbounds while i1 <= l && isequal(row, vec[perm[i1]])
         i1 += 1
     end
