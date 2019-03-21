@@ -97,10 +97,9 @@ end
     c = [1, 2, 3, 1, 1]
     d = StructArrays.GroupPerm(c)
     @test eltype(d) == UnitRange{Int}
-    @test Base.IteratorEl
+    @test Base.IteratorEltype(d) == Base.HasEltype()
     s = collect(d)
-    @test first.(s) == [1, 2, 3]
-    @test last.(s) == [1:3, 4:4, 5:5]
+    @test s == [1:3, 4:4, 5:5]
     t = collect(StructArrays.finduniquesorted(c))
     @test first.(t) == [1, 2, 3]
     @test last.(t) == [[1, 4, 5], [2], [3]]

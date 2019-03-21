@@ -13,7 +13,7 @@ struct GroupPerm{V<:AbstractVector, P<:AbstractVector{<:Integer}, U<:AbstractUni
     within::U
 end
 
-GroupPerm(vec, perm) = GroupPerm(vec, perm, axes(vec, 1))
+GroupPerm(vec, perm=sortperm(vec)) = GroupPerm(vec, perm, axes(vec, 1))
 
 function Base.iterate(g::GroupPerm, i = first(g.within))
     vec, perm = g.vec, g.perm
@@ -86,7 +86,7 @@ function refine_perm!(p, cols, c, x, y′, lo, hi)
     order = Perm(Forward, y′)
     y = something(forward_vec(order), y′)
     nc = length(cols)
-    for (_, idxs) in GroupPerm(x, p, lo:hi)
+    for idxs in GroupPerm(x, p, lo:hi)
         i, i1 = extrema(idxs)
         if i1 > i
             sort_sub_by!(p, i, i1, y, order, temp)
