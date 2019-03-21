@@ -96,6 +96,7 @@ end
 @testset "iterators" begin
     c = [1, 2, 3, 1, 1]
     d = StructArrays.GroupPerm(c)
+    @test parent(d) == c
     @test eltype(d) == UnitRange{Int}
     @test Base.IteratorEltype(d) == Base.HasEltype()
     @test sortperm(d) == sortperm(c)
