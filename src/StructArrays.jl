@@ -1,7 +1,7 @@
 module StructArrays
 
 import Requires
-using PooledArrays: PooledArray, PooledVector
+using PooledArrays: PooledArray
 
 export StructArray, StructVector, LazyRow, LazyRows
 export collect_structarray, fieldarrays

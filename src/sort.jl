@@ -4,6 +4,11 @@ fastpermute!(v::AbstractArray, p::AbstractVector) = copyto!(v, v[p])
 fastpermute!(v::StructArray, p::AbstractVector) = permute!(v, p)
 fastpermute!(v::PooledArray, p::AbstractVector) = permute!(v, p)
 
+function Base.permute!(c::StructArray, p::AbstractVector)
+    foreachfield(v -> fastpermute!(v, p), c)
+    return c
+end
+
 pool(v::AbstractArray, condition = !isbitstype∘eltype) = condition(v) ? convert(PooledArray, v) : v
 pool(v::StructArray, condition = !isbitstype∘eltype) = replace_storage(t -> pool(t, condition), v)
 
@@ -42,11 +47,6 @@ Base.eltype(::Type{<:GroupPerm}) = UnitRange{Int}
         ex = :(($ex) && (roweq(getfield(fieldarrays(c),$n), i, j)))
     end
     ex
-end
-
-function Base.permute!(c::StructArray, p::AbstractVector)
-    foreachfield(v -> fastpermute!(v, p), c)
-    return c
 end
 
 function uniquesorted(keys, perm=sortperm(keys))
