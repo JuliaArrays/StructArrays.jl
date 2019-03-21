@@ -30,19 +30,19 @@ end
     @test v_pooled == StructArrays.pool(v)
 end
 
-@testset "optimize_isequal" begin
+@testset "roweq" begin
     a = ["a", "b", "a", "a"]
     b = PooledArrays.PooledArray(["x", "y", "z", "x"])
     s = StructArray((a, b))
-    t = StructArrays.optimize_isequal(s)
-    @test t[1] != t[2]
-    @test t[1] != t[3]
-    @test t[1] == t[4]
-    @test t[1][2] isa Integer
-    @test StructArrays.recover_original(s, t[1]) == s[1]
-    @test StructArrays.recover_original(s, t[2]) == s[2]
-    @test StructArrays.recover_original(s, t[3]) == s[3]
-    @test StructArrays.recover_original(s, t[4]) == s[4]
+    @test StructArrays.roweq(s, 1, 1)
+    @test !StructArrays.roweq(s, 1, 2)
+    @test !StructArrays.roweq(s, 1, 3)
+    @test StructArrays.roweq(s, 1, 4)
+    strs = WeakRefStrings.StringArray(["a", "a", "b"])
+    @test StructArrays.roweq(strs, 1, 1)
+    @test StructArrays.roweq(strs, 1, 2)
+    @test !StructArrays.roweq(strs, 1, 3)
+    @test !StructArrays.roweq(strs, 2, 3)
 end
 
 @testset "namedtuple" begin
@@ -95,8 +95,9 @@ end
 
 @testset "iterators" begin
     c = [1, 2, 3, 1, 1]
-    d = StructArrays.tiedindices(c)
-    @test eltype(d) == Pair{Int, UnitRange{Int}}
+    d = StructArrays.GroupPerm(c)
+    @test eltype(d) == UnitRange{Int}
+    @test Base.IteratorEl
     s = collect(d)
     @test first.(s) == [1, 2, 3]
     @test last.(s) == [1:3, 4:4, 5:5]
