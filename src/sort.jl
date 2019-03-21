@@ -15,6 +15,8 @@ end
 
 GroupPerm(vec, perm=sortperm(vec)) = GroupPerm(vec, perm, axes(vec, 1))
 
+Base.sortperm(g::GroupPerm) = g.perm
+
 function Base.iterate(g::GroupPerm, i = first(g.within))
     vec, perm = g.vec, g.perm
     l = last(g.within)

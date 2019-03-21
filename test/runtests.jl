@@ -98,6 +98,7 @@ end
     d = StructArrays.GroupPerm(c)
     @test eltype(d) == UnitRange{Int}
     @test Base.IteratorEltype(d) == Base.HasEltype()
+    @test sortperm(d) == sortperm(c)
     s = collect(d)
     @test s == [1:3, 4:4, 5:5]
     t = collect(StructArrays.finduniquesorted(c))
