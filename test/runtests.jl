@@ -109,6 +109,16 @@ end
     @test u == [1, 2, 3]
 end
 
+@testset "groupjoin" begin
+    a = [1, 2, 1, 1, 0, 9, -100]
+    b = [-2, 12, 1, 1, 0, 11, 9]
+    itr = StructArrays.GroupJoinPerm(a, b)
+    s = StructArray(itr)
+    as, bs = fieldarrays(s)
+    @test as == [1:1, 1:0, 2:2, 3:5, 6:6, 7:7, 1:0, 1:0]
+    @test bs == [1:0, 1:1, 2:2, 3:4, 1:0, 5:5, 6:6, 7:7]
+end
+
 @testset "similar" begin
     t = StructArray(a = rand(10), b = rand(Bool, 10))
     s = similar(t)

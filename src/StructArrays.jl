@@ -11,6 +11,7 @@ include("structarray.jl")
 include("utils.jl")
 include("collect.jl")
 include("sort.jl")
+include("groupjoin.jl")
 include("lazy.jl")
 
 function __init__()
