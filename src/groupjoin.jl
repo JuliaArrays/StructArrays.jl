@@ -1,3 +1,5 @@
+# Important, for broadcast joins we cannot assume c and d have same number of columns:
+# c could have more columns than d
 @generated function rowcmp(c::StructVector, i, d::StructVector{C, D}, j) where {C, D}
     N = fieldcount(D)
     ex = :(cmp(getfield(fieldarrays(c),$N)[i], getfield(fieldarrays(d),$N)[j]))
