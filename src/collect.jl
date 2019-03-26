@@ -25,13 +25,22 @@ _reshape(v, itr) = _reshape(v, itr, Base.IteratorSize(itr))
 _reshape(v, itr, ::Base.HasShape) = reshape(v, axes(itr))
 _reshape(v, itr, ::Union{Base.HasLength, Base.SizeUnknown}) = v
 
-function collect_structarray(itr; initializer = default_initializer)
-    fr = iterate(itr)
-    fr === nothing ? collect_empty_structarray(itr; initializer = initializer) : collect_structarray(itr, fr; initializer = initializer)
-end
+"""
+`collect_structarray(itr, fr=iterate(itr); initializer = default_initializer)`
+
+Collects `itr` into a `StructArray`. The user can optionally pass a `initializer`, that is to say
+a function `(S, d) -> v` that associates to a type and a size an array of eltype `S`
+and size `d`. By default `initializer` returns a `StructArray` of `Array` but custom array types
+may be used. `fr` represents the moment in the iteration of `itr` from which to start collecting.
+"""
+collect_structarray(itr; initializer = default_initializer) =
+    collect_structarray(itr, iterate(itr); initializer = initializer)
 
 collect_structarray(itr, fr; initializer = default_initializer) =
     collect_structarray(itr, fr, Base.IteratorSize(itr); initializer = initializer)
+
+collect_structarray(itr, ::Nothing; initializer = default_initializer) =
+    collect_empty_structarray(itr; initializer = initializer)
 
 function collect_empty_structarray(itr::T; initializer = default_initializer) where {T}
     S = Core.Compiler.return_type(first, Tuple{T})
@@ -40,7 +49,7 @@ function collect_empty_structarray(itr::T; initializer = default_initializer) wh
 end
 
 function collect_structarray(itr, elem, sz::Union{Base.HasShape, Base.HasLength};
-                             initializer = default_initializer) 
+                             initializer = default_initializer)
     el, i = elem
     S = typeof(el)
     dest = initializer(S, (length(itr),))
