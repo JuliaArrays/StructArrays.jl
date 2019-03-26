@@ -21,30 +21,32 @@ ArrayInitializer(unwrap = t->false) = ArrayInitializer(unwrap, default_array)
 
 (s::ArrayInitializer)(S, d) = s.unwrap(S) ? buildfromschema(typ -> s(typ, d), S) : s.default_array(S, d)
 
+_reshape(v, itr) = _reshape(v, itr, Base.IteratorSize(itr))
 _reshape(v, itr, ::Base.HasShape) = reshape(v, axes(itr))
 _reshape(v, itr, ::Union{Base.HasLength, Base.SizeUnknown}) = v
 
 function collect_structarray(itr; initializer = default_initializer)
-    sz = Base.IteratorSize(itr)
-    v = collect_structarray(itr, sz, initializer = initializer)
-    _reshape(v, itr, sz)
+    fr = iterate(itr)
+    fr === nothing ? collect_empty_structarray(itr; initializer = initializer) : collect_structarray(itr, fr; initializer = initializer)
 end
+
+collect_structarray(itr, fr; initializer = default_initializer) =
+    collect_structarray(itr, fr, Base.IteratorSize(itr); initializer = initializer)
 
 function collect_empty_structarray(itr::T; initializer = default_initializer) where {T}
     S = Core.Compiler.return_type(first, Tuple{T})
-    initializer(S, (0,))
+    res = initializer(S, (0,))
+    _reshape(res, itr)
 end
 
-function collect_structarray(itr, ::Union{Base.HasShape, Base.HasLength};
+function collect_structarray(itr, elem, sz::Union{Base.HasShape, Base.HasLength};
                              initializer = default_initializer) 
-
-    st = iterate(itr)
-    st === nothing && return collect_empty_structarray(itr, initializer = initializer)
-    el, i = st
+    el, i = elem
     S = typeof(el)
     dest = initializer(S, (length(itr),))
     dest[1] = el
-    collect_to_structarray!(dest, itr, 2, i)
+    v = collect_to_structarray!(dest, itr, 2, i)
+    _reshape(v, itr, sz)
 end
 
 function collect_to_structarray!(dest::AbstractArray{T}, itr, offs, st) where {T}
@@ -67,9 +69,7 @@ function collect_to_structarray!(dest::AbstractArray{T}, itr, offs, st) where {T
     return dest
 end
 
-function collect_structarray(itr, ::Base.SizeUnknown; initializer = default_initializer)
-    elem = iterate(itr)
-    elem === nothing && return collect_empty_structarray(itr; initializer = initializer)
+function collect_structarray(itr, elem, ::Base.SizeUnknown; initializer = default_initializer)
     el, st = elem
     dest = initializer(typeof(el), (1,))
     dest[1] = el
