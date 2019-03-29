@@ -28,6 +28,12 @@ end
     @test !isa(v_pooled.a, PooledArrays.PooledArray)
     @test isa(v_pooled.b, PooledArrays.PooledArray)
     @test v_pooled == StructArrays.pool(v)
+    s = WeakRefStrings.StringArray(["a", "b", "c"])
+    @test StructArrays.pool(s) isa PooledArrays.PooledArray{String}
+    @test StructArrays.pool(s)[1] == "a"
+    @test StructArrays.pool(s)[2] == "b"
+    @test StructArrays.pool(s)[3] == "c"
+    @test StructArrays.pool(StructArrays.pool(s)) == StructArrays.pool(s)
 end
 
 @testset "roweq" begin

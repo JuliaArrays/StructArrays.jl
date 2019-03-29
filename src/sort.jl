@@ -9,7 +9,8 @@ function Base.permute!(c::StructArray, p::AbstractVector)
     return c
 end
 
-pool(v::AbstractArray, condition = !isbitstype∘eltype) = condition(v) ? convert(PooledArray, v) : v
+pool(v::PooledArray, condition = !isbitstype∘eltype) = v
+pool(v::AbstractArray, condition = !isbitstype∘eltype) = condition(v) ? PooledArray(v) : v
 pool(v::StructArray, condition = !isbitstype∘eltype) = replace_storage(t -> pool(t, condition), v)
 
 struct GroupPerm{V<:AbstractVector, P<:AbstractVector{<:Integer}, U<:AbstractUnitRange}
