@@ -33,6 +33,7 @@ end
     @test StructArrays.pool(s)[1] == "a"
     @test StructArrays.pool(s)[2] == "b"
     @test StructArrays.pool(s)[3] == "c"
+    @test StructArrays.pool(StructArrays.pool(s)) == StructArrays.pool(s)
 end
 
 @testset "roweq" begin
