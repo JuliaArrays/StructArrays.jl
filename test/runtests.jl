@@ -17,6 +17,13 @@ end
     @test StructArrays.propertynames(StructArrays.fieldarrays(t)) == (:a, :b)
 end
 
+@testset "indexstyle" begin
+    style1 = @inferred IndexStyle(StructArray(a=rand(10,10), b=view(rand(100,100), 1:10, 1:10)))
+    @test style1 isa IndexCartesian
+    style2 = @inferred IndexStyle(StructArray(a=rand(10,10), b=rand(10,10)))
+    @test style2 isa IndexLinear
+end
+
 @testset "replace_storage" begin
     v = StructArray(a=rand(10), b = fill("string", 10))
     v_pooled = StructArrays.replace_storage(v) do c
