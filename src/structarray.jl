@@ -42,7 +42,13 @@ const StructVector{T, C<:NamedTuple} = StructArray{T, 1, C}
 StructVector{T}(args...; kwargs...) where {T} = StructArray{T}(args...; kwargs...)
 StructVector(args...; kwargs...) = StructArray(args...; kwargs...)
 
-Base.IndexStyle(::Type{StructArray{T, N, C}}) where {T, N, C} = Base.IndexStyle(tuple_type(C).parameters[1])
+_indexstyle(::Type{Tuple{}}) = IndexStyle(Union{})
+_indexstyle(::Type{T}) where {T<:Tuple} = IndexStyle(IndexStyle(tuple_type_head(T)), _indexstyle(tuple_type_tail(T)))
+_indexstyle(::Type{NamedTuple{names, types}}) where {names, types} = _indexstyle(types)
+
+function Base.IndexStyle(::Type{StructArray{T, N, C}}) where {T, N, C}
+    _indexstyle(C)
+end
 
 _undef_array(::Type{T}, sz; unwrap = t -> false) where {T} = unwrap(T) ? StructArray{T}(undef, sz; unwrap = unwrap) : Array{T}(undef, sz)
 
