@@ -189,7 +189,13 @@ function Base.reshape(s::StructArray{T}, d::Dims) where {T}
     StructArray{T}(map(x -> reshape(x, d), fieldarrays(s)))
 end
 
-for typ in [:Integer, :(Base.OneTo), :UnitRange, :(Base.IdentityUnitRange)]
+@static if !isdefined(Base, :IdentityUnitRange)
+    const IdentityUnitRange = Base.Slice
+else
+    using Base: IdentityUnitRange
+end
+
+for typ in [:Integer, :(Base.OneTo), :UnitRange, :IdentityUnitRange]
     @eval function Base.reshape(s::StructArray{T}, d::Tuple{$typ, Vararg{$typ}}) where {T}
         StructArray{T}(map(x -> reshape(x, d), fieldarrays(s)))
     end
