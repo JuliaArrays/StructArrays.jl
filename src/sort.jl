@@ -1,7 +1,9 @@
 using Base.Sort, Base.Order
 
-Base.permute!!(c::StructArray, p::AbstractVector{<:Integer}) =
+function Base.permute!!(c::StructArray, p::AbstractVector{<:Integer})
     Base.permute!!(refsarray(c), p)
+    return c
+end
 
 struct GroupPerm{V<:AbstractVector, P<:AbstractVector{<:Integer}, U<:AbstractUnitRange}
     vec::V

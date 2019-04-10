@@ -73,6 +73,16 @@ end
     t = StructArray(a=[3, 4], b=["c", "d"])
     copyto!(s, t)
     @test s == t
+
+    a = WeakRefStrings.StringVector(["a", "b", "c"])
+    b = PooledArrays.PooledArray(["1", "2", "3"])
+    c = [:a, :b, :c]
+    s = StructArray(a=a, b=b, c=c)
+    ref = StructArrays.refsarray(s)
+    @test ref[1].a isa WeakRefStrings.WeakRefString{UInt8}
+    @test ref[1].b isa Integer
+    Base.permute!!(ref, sortperm(s))
+    @test issorted(s)
 end
 
 @testset "sortperm" begin
