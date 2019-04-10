@@ -188,3 +188,9 @@ Base.copy(s::StructArray{T,N,C}) where {T,N,C} = StructArray{T,N,C}(C(copy(x) fo
 function Base.reshape(s::StructArray{T}, d::Dims) where {T}
     StructArray{T}(map(x -> reshape(x, d), fieldarrays(s)))
 end
+
+for typ in [:Integer, :(Base.OneTo), :UnitRange, :(Base.IdentityUnitRange)]
+    @eval function Base.reshape(s::StructArray{T}, d::Tuple{$typ, Vararg{$typ}}) where {T}
+        StructArray{T}(map(x -> reshape(x, d), fieldarrays(s)))
+    end
+end

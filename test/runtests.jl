@@ -1,4 +1,5 @@
 using StructArrays
+using OffsetArrays: OffsetArray
 import Tables, PooledArrays, WeakRefStrings
 using Test
 
@@ -457,6 +458,30 @@ end
     @test size(v) == (3, 4)
     @test v.a == [i for i in 1:3, j in 1:4]
     @test v.b == [j for i in 1:3, j in 1:4]
+end
+
+@testset "collectoffset" begin
+    s = OffsetArray([(a=1,) for i in 1:10], -3)
+    sa = StructArray(s)
+    @test sa isa StructArray
+    @test axes(sa) == (-2:7,)
+    @test sa.a == fill(1, -2:7)
+
+    sa = StructArray(i for i in s)
+    @test sa isa StructArray
+    @test axes(sa) == (-2:7,)
+    @test sa.a == fill(1, -2:7)
+end
+
+@testset "reshape" begin
+    s = StructArray(a=[1,2,3,4], b=["a","b","c","d"])
+    rs = reshape(s, (2, 2))
+    @test rs.a == [1 3; 2 4]
+    @test rs.b == ["a" "c"; "b" "d"]
+
+    os = reshape(s, -1:2)
+    @test os.a == OffsetArray([1,2,3,4], -2)
+    @test os.b == OffsetArray(["a","b","c","d"], -2)
 end
 
 @testset "lazy" begin
