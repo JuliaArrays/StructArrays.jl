@@ -1,7 +1,11 @@
 using Base.Sort, Base.Order
 
+refs(v::PooledArray) = v.refs
+refs(v::AbstractArray) = v
+refs(v::StructArray) = StructArray(map(refs, fieldarrays(v)))
+
 function Base.permute!!(c::StructArray, p::AbstractVector{<:Integer})
-    Base.permute!!(refsarray(c), p)
+    Base.invoke(Base.permute!!, Tuple{AbstractArray, AbstractVector{<:Integer}}, refs(c), p)
     return c
 end
 

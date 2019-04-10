@@ -78,7 +78,7 @@ end
     b = PooledArrays.PooledArray(["1", "2", "3"])
     c = [:a, :b, :c]
     s = StructArray(a=a, b=b, c=c)
-    ref = StructArrays.refsarray(s)
+    ref = StructArrays.refs(s)
     @test ref[1].a isa WeakRefStrings.WeakRefString{UInt8}
     @test ref[1].b isa Integer
     Base.permute!!(ref, sortperm(s))
