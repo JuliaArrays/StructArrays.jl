@@ -497,3 +497,15 @@ end
     @test !all(t -> t.re >= 0, s)
     @test !all(t -> t.re >= 0, rows)
 end
+
+@testset "refs" begin
+    s = PooledArrays.PooledArray(["a", "b", "c", "c"])
+    @test StructArrays.refs(s) == UInt8.([1, 2, 3, 3])
+
+    s = WeakRefStrings.StringArray(["a", "b"])
+    @test StructArrays.refs(s) isa WeakRefStrings.StringArray{WeakRefStrings.WeakRefString{UInt8}}
+    @test all(isequal.(s, StructArrays.refs(s)))
+    s = WeakRefStrings.StringArray(["a", missing])
+    @test StructArrays.refs(s) isa WeakRefStrings.StringArray{Union{WeakRefStrings.WeakRefString{UInt8}, Missing}}
+    @test all(isequal.(s, StructArrays.refs(s)))
+end
