@@ -1,15 +1,7 @@
 using Base.Sort, Base.Order
 
-refs(v::PooledArray) = v.refs
-refs(v::AbstractArray) = v
-
-fastpermute!(v::AbstractArray, p::AbstractVector) = (w = refs(v); copyto!(w, w[p]))
-fastpermute!(c::StructArray, p::AbstractVector) = (foreachfield(v -> fastpermute!(v, p), c); c)
-Base.permute!(c::StructArray, p::AbstractVector) = (foreachfield(v -> permute!(v, p), c); c)
-
-pool(v::PooledArray, condition = !isbitstype∘eltype) = v
-pool(v::AbstractArray, condition = !isbitstype∘eltype) = condition(v) ? PooledArray(v) : v
-pool(v::StructArray, condition = !isbitstype∘eltype) = replace_storage(t -> pool(t, condition), v)
+Base.permute!!(c::StructArray, p::AbstractVector{<:Integer}) =
+    Base.permute!!(refsarray(c), p)
 
 struct GroupPerm{V<:AbstractVector, P<:AbstractVector{<:Integer}, U<:AbstractUnitRange}
     vec::V
@@ -76,7 +68,7 @@ function Base.sortperm(c::StructVector{T}) where {T<:Union{Tuple, NamedTuple}}
     return p
 end
 
-Base.sort!(c::StructArray{<:Union{Tuple, NamedTuple}}) = fastpermute!(c, sortperm(c))
+Base.sort!(c::StructArray{<:Union{Tuple, NamedTuple}}) = (Base.permute!!(c, sortperm(c)); c)
 Base.sort(c::StructArray{<:Union{Tuple, NamedTuple}}) = c[sortperm(c)]
 
 # Given an ordering `p`, return a vector `v` such that `Perm(Forward, v)` is
