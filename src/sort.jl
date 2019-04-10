@@ -1,17 +1,13 @@
 using Base.Sort, Base.Order
 
-fastpermute!(v::AbstractArray, p::AbstractVector) = copyto!(v, v[p])
-fastpermute!(v::StructArray, p::AbstractVector) = permute!(v, p)
-fastpermute!(v::PooledArray, p::AbstractVector) = permute!(v, p)
+refs(v::PooledArray) = v.refs
+refs(v::AbstractArray) = v
+refs(v::StructArray) = StructArray(map(refs, fieldarrays(v)))
 
-function Base.permute!(c::StructArray, p::AbstractVector)
-    foreachfield(v -> fastpermute!(v, p), c)
+function Base.permute!!(c::StructArray, p::AbstractVector{<:Integer})
+    Base.invoke(Base.permute!!, Tuple{AbstractArray, AbstractVector{<:Integer}}, refs(c), p)
     return c
 end
-
-pool(v::PooledArray, condition = !isbitstype∘eltype) = v
-pool(v::AbstractArray, condition = !isbitstype∘eltype) = condition(v) ? PooledArray(v) : v
-pool(v::StructArray, condition = !isbitstype∘eltype) = replace_storage(t -> pool(t, condition), v)
 
 struct GroupPerm{V<:AbstractVector, P<:AbstractVector{<:Integer}, U<:AbstractUnitRange}
     vec::V
@@ -40,8 +36,12 @@ Base.IteratorSize(::Type{<:GroupPerm}) = Base.SizeUnknown()
 
 Base.eltype(::Type{<:GroupPerm}) = UnitRange{Int}
 
-@inline roweq(x::AbstractVector, i, j) = (@inbounds eq=isequal(x[i], x[j]); eq)
-@inline roweq(a::PooledArray, i, j) = (@inbounds x=a.refs[i] == a.refs[j]; x)
+@inline function roweq(x::AbstractVector, i, j)
+    r = refs(x)
+    @inbounds eq = isequal(r[i], r[j])
+    return eq
+end
+
 @generated function roweq(c::StructVector{D,C}, i, j) where {D,C}
     N = fieldcount(C)
     ex = :(roweq(getfield(fieldarrays(c),1), i, j))
@@ -64,7 +64,6 @@ function finduniquesorted(keys, perm=sortperm(keys))
 end
 
 function Base.sortperm(c::StructVector{T}) where {T<:Union{Tuple, NamedTuple}}
-
     cols = fieldarrays(c)
     x = cols[1]
     p = sortperm(x)
@@ -75,7 +74,7 @@ function Base.sortperm(c::StructVector{T}) where {T<:Union{Tuple, NamedTuple}}
     return p
 end
 
-Base.sort!(c::StructArray{<:Union{Tuple, NamedTuple}}) = permute!(c, sortperm(c))
+Base.sort!(c::StructArray{<:Union{Tuple, NamedTuple}}) = (Base.permute!!(c, sortperm(c)); c)
 Base.sort(c::StructArray{<:Union{Tuple, NamedTuple}}) = c[sortperm(c)]
 
 # Given an ordering `p`, return a vector `v` such that `Perm(Forward, v)` is

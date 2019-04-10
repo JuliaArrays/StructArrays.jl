@@ -37,13 +37,6 @@ end
     @test all(v.b .== v_pooled.b)
     @test !isa(v_pooled.a, PooledArrays.PooledArray)
     @test isa(v_pooled.b, PooledArrays.PooledArray)
-    @test v_pooled == StructArrays.pool(v)
-    s = WeakRefStrings.StringArray(["a", "b", "c"])
-    @test StructArrays.pool(s) isa PooledArrays.PooledArray{String}
-    @test StructArrays.pool(s)[1] == "a"
-    @test StructArrays.pool(s)[2] == "b"
-    @test StructArrays.pool(s)[3] == "c"
-    @test StructArrays.pool(StructArrays.pool(s)) == StructArrays.pool(s)
 end
 
 @testset "roweq" begin
@@ -81,6 +74,16 @@ end
     t = StructArray(a=[3, 4], b=["c", "d"])
     copyto!(s, t)
     @test s == t
+
+    a = WeakRefStrings.StringVector(["a", "b", "c"])
+    b = PooledArrays.PooledArray(["1", "2", "3"])
+    c = [:a, :b, :c]
+    s = StructArray(a=a, b=b, c=c)
+    ref = StructArrays.refs(s)
+    @test ref[1].a isa WeakRefStrings.WeakRefString{UInt8}
+    @test ref[1].b isa Integer
+    Base.permute!!(ref, sortperm(s))
+    @test issorted(s)
 end
 
 @testset "sortperm" begin
