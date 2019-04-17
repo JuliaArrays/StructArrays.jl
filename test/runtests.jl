@@ -481,10 +481,6 @@ end
     rs = reshape(s, (2, 2))
     @test rs.a == [1 3; 2 4]
     @test rs.b == ["a" "c"; "b" "d"]
-
-    os = reshape(s, -1:2)
-    @test os.a == OffsetArray([1,2,3,4], -2)
-    @test os.b == OffsetArray(["a","b","c","d"], -2)
 end
 
 @testset "lazy" begin

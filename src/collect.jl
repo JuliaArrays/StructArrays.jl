@@ -22,8 +22,13 @@ ArrayInitializer(unwrap = t->false) = ArrayInitializer(unwrap, default_array)
 (s::ArrayInitializer)(S, d) = s.unwrap(S) ? buildfromschema(typ -> s(typ, d), S) : s.default_array(S, d)
 
 _reshape(v, itr) = _reshape(v, itr, Base.IteratorSize(itr))
-_reshape(v, itr, ::Base.HasShape) = reshape(v, axes(itr))
+_reshape(v, itr, ::Base.HasShape) = reshapestructarray(v, axes(itr))
 _reshape(v, itr, ::Union{Base.HasLength, Base.SizeUnknown}) = v
+
+# temporary workaround before it gets easier to support reshape with offset axis
+reshapestructarray(v::AbstractArray, d) = reshape(v, d)
+reshapestructarray(v::StructArray{T}, d) where {T} =
+    StructArray{T}(map(x -> reshapestructarray(x, d), fieldarrays(v)))
 
 """
 `collect_structarray(itr, fr=iterate(itr); initializer = default_initializer)`
