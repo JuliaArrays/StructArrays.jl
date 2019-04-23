@@ -31,8 +31,6 @@ StructArray(c::Pair{P, Q}) where {P, Q} = StructArray{Pair{eltype(P), eltype(Q)}
 StructArray{T}(; kwargs...) where {T} = StructArray{T}(values(kwargs))
 StructArray(; kwargs...) = StructArray(values(kwargs))
 
-@deprecate(StructArray{T}(args...) where {T}, StructArray{T}(args))
-
 _structarray(args::T, ::Nothing) where {T<:Tuple} = StructArray{eltypes(T)}(args)
 _structarray(args::Tuple, names) = _structarray(args, Tuple(names))
 _structarray(args::Tuple, ::Tuple) = _structarray(args, nothing)
@@ -81,8 +79,7 @@ Base.convert(::Type{StructVector}, v::AbstractVector) = StructVector(v)
 Base.convert(::Type{StructVector}, v::StructVector) = v
 
 function Base.similar(::Type{StructArray{T, N, C}}, sz::Dims) where {T, N, C}
-    cols = map_params(typ -> similar(typ, sz), C)
-    StructArray{T}(cols)
+    buildfromschema(typ -> similar(typ, sz), T, C)
 end
 
 Base.similar(s::StructArray, sz::Base.DimOrInd...) = similar(s, Base.to_shape(sz))
@@ -127,10 +124,6 @@ Base.axes(s::StructArray{<:Any, <:Any, <:NamedTuple{(), Tuple{}}}) = (1:0,)
     end
 end
 
-function Base.getindex(s::StructArray{T, N, C}, I::Union{Int, AbstractArray, Colon}...) where {T, N, C}
-    StructArray{T}(map(v -> getindex(v, I...), fieldarrays(s)))
-end
-
 function Base.view(s::StructArray{T, N, C}, I...) where {T, N, C}
     StructArray{T}(map(v -> view(v, I...), fieldarrays(s)))
 end
@@ -140,9 +133,6 @@ function Base.setindex!(s::StructArray, vals, I::Int...)
     @inbounds foreachfield((col, val) -> (col[I...] = val), s, vals)
     s
 end
-
-@inline getfieldindex(v::Tuple, field::Symbol, index::Integer) = getfield(v, index)
-@inline getfieldindex(v, field::Symbol, index::Integer) = getproperty(v, field)
 
 function Base.push!(s::StructArray, vals)
     foreachfield(push!, s, vals)
@@ -155,6 +145,11 @@ function Base.append!(s::StructArray, vals)
 end
 
 Base.copyto!(I::StructArray, J::StructArray) = (foreachfield(copyto!, I, J); I)
+
+function Base.copyto!(I::StructArray, doffs::Integer, J::StructArray, soffs::Integer, n::Integer)
+    foreachfield((dest, src) -> copyto!(dest, doffs, src, soffs, n), I, J)
+    return I
+end
 
 function Base.cat(args::StructArray...; dims)
     f = key -> cat((getproperty(t, key) for t in args)...; dims=dims)

@@ -1,40 +1,32 @@
 import Base: tuple_type_cons, tuple_type_head, tuple_type_tail, tail
 
-eltypes(::Type{T}) where {T} = map_types(eltype, T)
+eltypes(::Type{T}) where {T} = map_params(eltype, T)
 
-map_types(f, ::Type{Tuple{}}) = Tuple{}
-function map_types(f, ::Type{T}) where {T<:Tuple}
-    tuple_type_cons(f(tuple_type_head(T)), map_types(f, tuple_type_tail(T)))
-end
-map_types(f, ::Type{NamedTuple{names, types}}) where {names, types} =
-    NamedTuple{names, map_types(f, types)}
-
-all_types(f, ::Type{Tuple{}}, ::Type{T}) where {T<:Tuple} = false
-all_types(f, ::Type{T}, ::Type{Tuple{}}) where {T<:Tuple} = false
-all_types(f, ::Type{Tuple{}}, ::Type{Tuple{}}) = true
-
-function all_types(f, ::Type{S}, ::Type{T}) where {S<:Tuple, T<:Tuple}
-    f(tuple_type_head(S), tuple_type_head(T)) && all_types(f, tuple_type_tail(S), tuple_type_tail(T))
-end
-
-all_types(f, ::Type{NamedTuple{n1, t1}}, ::Type{NamedTuple{n2, t2}}) where {n1, t1, n2, t2} =
-    all_types(f, t1, t2)
-
-map_params(f, ::Type{Tuple{}}) = ()
+map_params(f, ::Type{Tuple{}}) = Tuple{}
 function map_params(f, ::Type{T}) where {T<:Tuple}
-    (f(tuple_type_head(T)), map_params(f, tuple_type_tail(T))...)
+    tuple_type_cons(f(tuple_type_head(T)), map_params(f, tuple_type_tail(T)))
 end
 map_params(f, ::Type{NamedTuple{names, types}}) where {names, types} =
-    NamedTuple{names}(map_params(f, types))
+    NamedTuple{names, map_params(f, types)}
+
+_map_params(f, ::Type{Tuple{}}) = ()
+function _map_params(f, ::Type{T}) where {T<:Tuple}
+    (f(tuple_type_head(T)), _map_params(f, tuple_type_tail(T))...)
+end
+_map_params(f, ::Type{NamedTuple{names, types}}) where {names, types} =
+    NamedTuple{names}(_map_params(f, types))
 
 buildfromschema(initializer, ::Type{T}) where {T} = buildfromschema(initializer, T, staticschema(T))
 
 function buildfromschema(initializer, ::Type{T}, ::Type{NT}) where {T, NT<:NamedTuple}
-    nt = map_params(initializer, NT)
+    nt = _map_params(initializer, NT)
     StructArray{T}(nt)
 end
 
 Base.@pure SkipConstructor(::Type) = false
+
+@inline getfieldindex(v::Tuple, field::Symbol, index::Integer) = getfield(v, index)
+@inline getfieldindex(v, field::Symbol, index::Integer) = getproperty(v, field)
 
 @generated function foreachfield(::Type{<:NamedTuple{names}}, f, xs...) where {names}
     exprs = Expr[]
@@ -71,13 +63,23 @@ function createtype(::Type{<:Pair}, names, types)
     Pair{tp[1], tp[2]}
 end
 
-iseltype(::S, ::T) where {S, T<:AbstractArray} = iscompatible(S, T)
+"""
+`iscompatible(::Type{S}, ::Type{V}) where {S, V<:AbstractArray}`
 
+Check whether element type `S` can be pushed to a container of type `V`.
+"""
 iscompatible(::Type{S}, ::Type{<:AbstractArray{T}}) where {S, T} = S<:T
+iscompatible(::Type{S}, ::Type{StructArray{T, N, C}}) where {S, T, N, C} = iscompatible(tuple_type(staticschema(S)), tuple_type(C))
 
-function iscompatible(::Type{S}, ::Type{StructArray{T, N, C}}) where {S, T, N, C}
-    all_types(iscompatible, staticschema(S), C)
+iscompatible(::Type{Tuple{}}, ::Type{T}) where {T<:Tuple} = false
+iscompatible(::Type{T}, ::Type{Tuple{}}) where {T<:Tuple} = false
+iscompatible(::Type{Tuple{}}, ::Type{Tuple{}}) = true
+
+function iscompatible(::Type{S}, ::Type{T}) where {S<:Tuple, T<:Tuple}
+    iscompatible(tuple_type_head(S), tuple_type_head(T)) && iscompatible(tuple_type_tail(S), tuple_type_tail(T))
 end
+
+iscompatible(::S, ::T) where {S, T<:AbstractArray} = iscompatible(S, T)
 
 function replace_storage(f, v::AbstractArray{T, N})::AbstractArray{T, N} where {T, N}
     f(v)

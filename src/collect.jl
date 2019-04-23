@@ -63,7 +63,7 @@ function collect_structarray(itr, elem, sz::Union{Base.HasShape, Base.HasLength}
     _reshape(v, itr, sz)
 end
 
-function collect_to_structarray!(dest::AbstractArray{T}, itr, offs, st) where {T}
+function collect_to_structarray!(dest::AbstractArray, itr, offs, st)
     # collect to dest array, checking the type of each result. if a result does not
     # match, widen the result type and re-dispatch.
     i = offs
@@ -71,7 +71,7 @@ function collect_to_structarray!(dest::AbstractArray{T}, itr, offs, st) where {T
         elem = iterate(itr, st)
         elem === nothing && break
         el, st = elem
-        if iseltype(el, dest)
+        if iscompatible(el, dest)
             @inbounds dest[i] = el
             i += 1
         else
@@ -90,13 +90,13 @@ function collect_structarray(itr, elem, ::Base.SizeUnknown; initializer = defaul
     grow_to_structarray!(dest, itr, iterate(itr, st))
 end
 
-function grow_to_structarray!(dest::AbstractArray{T}, itr, elem = iterate(itr)) where {T}
+function grow_to_structarray!(dest::AbstractArray, itr, elem = iterate(itr))
     # collect to dest array, checking the type of each result. if a result does not
     # match, widen the result type and re-dispatch.
     i = length(dest)+1
     while elem !== nothing
         el, st = elem
-        if iseltype(el, dest)
+        if iscompatible(el, dest)
             push!(dest, el)
             elem = iterate(itr, st)
             i += 1
@@ -114,21 +114,25 @@ function to_structarray(::Type{T}, nt::C) where {T, C}
     StructArray{S}(nt)
 end
 
-function widenstructarray(dest::StructArray{T}, i, el::S) where {T, S}
-    fs = fields(S)
-    if fs === fields(T)
-        new_cols = (widenstructarray(fieldarrays(dest)[ind], i, getfieldindex(el, f, ind)) for (ind, f) in enumerate(fs))
-        nt = NamedTuple{fs}(Tuple(new_cols))
+widenstructarray(dest::AbstractArray, i, el::S) where {S} = widenstructarray(dest, i, S)
+
+function widenstructarray(dest::StructArray{T}, i, ::Type{S}) where {T, S}
+    sch = staticschema(S)
+    names = fieldnames(sch)
+    types = ntuple(i -> fieldtype(sch, i), fieldcount(sch))
+    cols = fieldarrays(dest)
+    if names == keys(cols)
+        nt = map((a, b) -> widenstructarray(a, i, b), cols, NamedTuple{names}(types))
         v = to_structarray(T, nt)
     else
-        widenarray(dest, i, el)
+        widenarray(dest, i, S)
     end
 end
 
-widenstructarray(dest::AbstractArray, i, el) = widenarray(dest, i, el)
+widenstructarray(dest::AbstractArray, i, ::Type{S}) where {S} = widenarray(dest, i, S)
 
-function widenarray(dest::AbstractArray{T}, i, el::S) where {S, T}
-    S <: T && return dest
+widenarray(dest::AbstractArray{S}, i, ::Type{S}) where {S} = dest
+function widenarray(dest::AbstractArray{S}, i, ::Type{T}) where {S, T}
     new = similar(dest, Base.promote_typejoin(S, T), length(dest))
     copyto!(new, 1, dest, 1, i-1)
     new
