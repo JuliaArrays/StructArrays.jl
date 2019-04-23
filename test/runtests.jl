@@ -54,13 +54,6 @@ end
     @test !StructArrays.roweq(strs, 2, 3)
 end
 
-@testset "namedtuple" begin
-    @inferred StructArrays.to_namedtuple(1+2im)
-    @test StructArrays.to_namedtuple(1+2im) == (re = 1, im = 2)
-    @test StructArrays.to_namedtuple((a=1,)) == (a=1,)
-    @test StructArrays.to_namedtuple((1, 2, :s)) == (x1=1, x2=2, x3=:s)
-end
-
 @testset "permute" begin
     a = WeakRefStrings.StringVector(["a", "b", "c"])
     b = PooledArrays.PooledArray([1, 2, 3])

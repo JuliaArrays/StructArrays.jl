@@ -25,6 +25,9 @@ end
 
 Base.@pure SkipConstructor(::Type) = false
 
+@inline getfieldindex(v::Tuple, field::Symbol, index::Integer) = getfield(v, index)
+@inline getfieldindex(v, field::Symbol, index::Integer) = getproperty(v, field)
+
 @generated function foreachfield(::Type{<:NamedTuple{names}}, f, xs...) where {names}
     exprs = Expr[]
     for (i, field) in enumerate(names)

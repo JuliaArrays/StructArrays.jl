@@ -134,9 +134,6 @@ function Base.setindex!(s::StructArray, vals, I::Int...)
     s
 end
 
-@inline getfieldindex(v::Tuple, field::Symbol, index::Integer) = getfield(v, index)
-@inline getfieldindex(v, field::Symbol, index::Integer) = getproperty(v, field)
-
 function Base.push!(s::StructArray, vals)
     foreachfield(push!, s, vals)
     return s
@@ -148,6 +145,10 @@ function Base.append!(s::StructArray, vals)
 end
 
 Base.copyto!(I::StructArray, J::StructArray) = (foreachfield(copyto!, I, J); I)
+function Base.copyto!(I::StructArray, dstart::Integer, J::StructArray, args::Integer...)
+    foreachfield((dest, src) -> copyto!(dest, dstart, src, args...), I, J)
+    return I
+end
 
 function Base.cat(args::StructArray...; dims)
     f = key -> cat((getproperty(t, key) for t in args)...; dims=dims)

@@ -114,21 +114,24 @@ function to_structarray(::Type{T}, nt::C) where {T, C}
     StructArray{S}(nt)
 end
 
-function widenstructarray(dest::StructArray{T}, i, el::S) where {T, S}
-    fs = fields(S)
-    if fs === fields(T)
-        new_cols = (widenstructarray(fieldarrays(dest)[ind], i, getfieldindex(el, f, ind)) for (ind, f) in enumerate(fs))
-        nt = NamedTuple{fs}(Tuple(new_cols))
+widenstructarray(dest::AbstractArray, i, el::S) where {S} = widenstructarray(dest, i, S)
+
+function widenstructarray(dest::StructArray{T}, i, ::Type{S}) where {T, S}
+    sch = staticschema(S)
+    names, types = fieldnames(sch), fieldtypes(sch)
+    cols = fieldarrays(dest)
+    if names == keys(cols)
+        nt = map((a, b) -> widenstructarray(a, i, b), cols, NamedTuple{names}(types))
         v = to_structarray(T, nt)
     else
-        widenarray(dest, i, el)
+        widenarray(dest, i, S)
     end
 end
 
-widenstructarray(dest::AbstractArray, i, el) = widenarray(dest, i, el)
+widenstructarray(dest::AbstractArray, i, ::Type{S}) where {S} = widenarray(dest, i, S)
 
-function widenarray(dest::AbstractArray{T}, i, el::S) where {S, T}
-    S <: T && return dest
+widenarray(dest::AbstractArray{S}, i, ::Type{S}) where {S} = dest
+function widenarray(dest::AbstractArray{S}, i, ::Type{T}) where {S, T}
     new = similar(dest, Base.promote_typejoin(S, T), length(dest))
     copyto!(new, 1, dest, 1, i-1)
     new
