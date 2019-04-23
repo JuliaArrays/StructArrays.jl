@@ -124,10 +124,6 @@ Base.axes(s::StructArray{<:Any, <:Any, <:NamedTuple{(), Tuple{}}}) = (1:0,)
     end
 end
 
-function Base.getindex(s::StructArray{T, N, C}, I::Union{Int, AbstractArray, Colon}...) where {T, N, C}
-    StructArray{T}(map(v -> getindex(v, I...), fieldarrays(s)))
-end
-
 function Base.view(s::StructArray{T, N, C}, I...) where {T, N, C}
     StructArray{T}(map(v -> view(v, I...), fieldarrays(s)))
 end
