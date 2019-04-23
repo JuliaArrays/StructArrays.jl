@@ -145,8 +145,9 @@ function Base.append!(s::StructArray, vals)
 end
 
 Base.copyto!(I::StructArray, J::StructArray) = (foreachfield(copyto!, I, J); I)
-function Base.copyto!(I::StructArray, dstart::Integer, J::StructArray, args::Integer...)
-    foreachfield((dest, src) -> copyto!(dest, dstart, src, args...), I, J)
+
+function Base.copyto!(I::StructArray, doffs::Integer, J::StructArray, soffs::Integer, n::Integer)
+    foreachfield((dest, src) -> copyto!(dest, doffs, src, soffs, n), I, J)
     return I
 end
 

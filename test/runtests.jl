@@ -68,6 +68,11 @@ end
     copyto!(s, t)
     @test s == t
 
+    s = StructArray(a=[1, 2], b=["a", "b"])
+    t = StructArray(a=[3, 4], b=["c", "d"])
+    copyto!(s, 1, t, 1, 2)
+    @test s == t
+
     a = WeakRefStrings.StringVector(["a", "b", "c"])
     b = PooledArrays.PooledArray(["1", "2", "3"])
     c = [:a, :b, :c]

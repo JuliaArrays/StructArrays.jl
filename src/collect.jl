@@ -118,7 +118,8 @@ widenstructarray(dest::AbstractArray, i, el::S) where {S} = widenstructarray(des
 
 function widenstructarray(dest::StructArray{T}, i, ::Type{S}) where {T, S}
     sch = staticschema(S)
-    names, types = fieldnames(sch), fieldtypes(sch)
+    names = fieldnames(sch)
+    types = ntuple(i -> fieldtype(sch, i), fieldcount(sch))
     cols = fieldarrays(dest)
     if names == keys(cols)
         nt = map((a, b) -> widenstructarray(a, i, b), cols, NamedTuple{names}(types))
