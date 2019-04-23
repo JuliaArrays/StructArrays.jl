@@ -31,8 +31,6 @@ StructArray(c::Pair{P, Q}) where {P, Q} = StructArray{Pair{eltype(P), eltype(Q)}
 StructArray{T}(; kwargs...) where {T} = StructArray{T}(values(kwargs))
 StructArray(; kwargs...) = StructArray(values(kwargs))
 
-@deprecate(StructArray{T}(args...) where {T}, StructArray{T}(args))
-
 _structarray(args::T, ::Nothing) where {T<:Tuple} = StructArray{eltypes(T)}(args)
 _structarray(args::Tuple, names) = _structarray(args, Tuple(names))
 _structarray(args::Tuple, ::Tuple) = _structarray(args, nothing)
@@ -81,8 +79,7 @@ Base.convert(::Type{StructVector}, v::AbstractVector) = StructVector(v)
 Base.convert(::Type{StructVector}, v::StructVector) = v
 
 function Base.similar(::Type{StructArray{T, N, C}}, sz::Dims) where {T, N, C}
-    cols = map_params(typ -> similar(typ, sz), C)
-    StructArray{T}(cols)
+    buildfromschema(typ -> similar(typ, sz), T, C)
 end
 
 Base.similar(s::StructArray, sz::Base.DimOrInd...) = similar(s, Base.to_shape(sz))
