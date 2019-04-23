@@ -1,25 +1,25 @@
 import Base: tuple_type_cons, tuple_type_head, tuple_type_tail, tail
 
-eltypes(::Type{T}) where {T} = map_types(eltype, T)
+eltypes(::Type{T}) where {T} = map_params(eltype, T)
 
-map_types(f, ::Type{Tuple{}}) = Tuple{}
-function map_types(f, ::Type{T}) where {T<:Tuple}
-    tuple_type_cons(f(tuple_type_head(T)), map_types(f, tuple_type_tail(T)))
-end
-map_types(f, ::Type{NamedTuple{names, types}}) where {names, types} =
-    NamedTuple{names, map_types(f, types)}
-
-map_params(f, ::Type{Tuple{}}) = ()
+map_params(f, ::Type{Tuple{}}) = Tuple{}
 function map_params(f, ::Type{T}) where {T<:Tuple}
-    (f(tuple_type_head(T)), map_params(f, tuple_type_tail(T))...)
+    tuple_type_cons(f(tuple_type_head(T)), map_params(f, tuple_type_tail(T)))
 end
 map_params(f, ::Type{NamedTuple{names, types}}) where {names, types} =
-    NamedTuple{names}(map_params(f, types))
+    NamedTuple{names, map_params(f, types)}
+
+_map_params(f, ::Type{Tuple{}}) = ()
+function _map_params(f, ::Type{T}) where {T<:Tuple}
+    (f(tuple_type_head(T)), _map_params(f, tuple_type_tail(T))...)
+end
+_map_params(f, ::Type{NamedTuple{names, types}}) where {names, types} =
+    NamedTuple{names}(_map_params(f, types))
 
 buildfromschema(initializer, ::Type{T}) where {T} = buildfromschema(initializer, T, staticschema(T))
 
 function buildfromschema(initializer, ::Type{T}, ::Type{NT}) where {T, NT<:NamedTuple}
-    nt = map_params(initializer, NT)
+    nt = _map_params(initializer, NT)
     StructArray{T}(nt)
 end
 
