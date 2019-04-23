@@ -63,7 +63,7 @@ function collect_structarray(itr, elem, sz::Union{Base.HasShape, Base.HasLength}
     _reshape(v, itr, sz)
 end
 
-function collect_to_structarray!(dest::AbstractArray{T}, itr, offs, st) where {T}
+function collect_to_structarray!(dest::AbstractArray, itr, offs, st)
     # collect to dest array, checking the type of each result. if a result does not
     # match, widen the result type and re-dispatch.
     i = offs
@@ -71,7 +71,7 @@ function collect_to_structarray!(dest::AbstractArray{T}, itr, offs, st) where {T
         elem = iterate(itr, st)
         elem === nothing && break
         el, st = elem
-        if iseltype(el, dest)
+        if iscompatible(el, dest)
             @inbounds dest[i] = el
             i += 1
         else
@@ -90,13 +90,13 @@ function collect_structarray(itr, elem, ::Base.SizeUnknown; initializer = defaul
     grow_to_structarray!(dest, itr, iterate(itr, st))
 end
 
-function grow_to_structarray!(dest::AbstractArray{T}, itr, elem = iterate(itr)) where {T}
+function grow_to_structarray!(dest::AbstractArray, itr, elem = iterate(itr))
     # collect to dest array, checking the type of each result. if a result does not
     # match, widen the result type and re-dispatch.
     i = length(dest)+1
     while elem !== nothing
         el, st = elem
-        if iseltype(el, dest)
+        if iscompatible(el, dest)
             push!(dest, el)
             elem = iterate(itr, st)
             i += 1
