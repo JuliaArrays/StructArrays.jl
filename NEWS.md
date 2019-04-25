@@ -5,6 +5,8 @@
 ### Breaking
 
 - `fieldarrays` now returns a tuple of arrays for a `StructArray{<:Tuple}`
+- `push!` now only works if the `StructArray` and the element have the same propertynames
+- the special constructor `StructArray(first_col => last_col)` is no longer supported
 
 ## Version 0.2.0
 
