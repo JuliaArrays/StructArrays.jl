@@ -9,12 +9,12 @@ end
 
 staticschema(::Type{T}) where {T<:Tup} = T
 
-tuple_type(::Type{NamedTuple{names, types}}) where {names, types} = types
-tuple_type(::Type{T}) where {T<:Tuple} = T
+astuple(::Type{NamedTuple{names, types}}) where {names, types} = types
+astuple(::Type{T}) where {T<:Tuple} = T
 
 function fields(::Type{T}) where {T}
     fieldnames(staticschema(T))
 end
 
-strip_types(::Type{<:Tuple}) = Tuple
-strip_types(::Type{<:NamedTuple{names}}) where {names} = NamedTuple{names}
+strip_params(::Type{<:Tuple}) = Tuple
+strip_params(::Type{<:NamedTuple{names}}) where {names} = NamedTuple{names}

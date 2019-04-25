@@ -25,14 +25,18 @@ end
 
 Base.@pure SkipConstructor(::Type) = false
 
-@inline getfieldindex(v::Tuple, field, index) = getfield(v, index)
-@inline getfieldindex(v, field, index) = getproperty(v, field)
+@static if VERSION < v"1.2.0"
+    @inline _getproperty(v::Tuple, field) = getfield(v, field)
+    @inline _getproperty(v, field) = getproperty(v, field)
+else
+    const _getproperty = getproperty
+end
 
 function _foreachfield(names, xs)
     exprs = Expr[]
-    for (ind, field) in enumerate(names)
+    for field in names
         sym = QuoteNode(field)
-        args = [Expr(:call, :getfieldindex, :(getfield(xs, $j)), sym, ind) for j in 1:length(xs)]
+        args = [Expr(:call, :_getproperty, :(getfield(xs, $j)), sym) for j in 1:length(xs)]
         push!(exprs, Expr(:call, :f, args...))
     end
     push!(exprs, :(return nothing))
@@ -57,12 +61,10 @@ createinstance(::Type{T}, args...) where {T<:Union{Tuple, NamedTuple}} = T(args)
     Expr(:block, new_tup, construct)
 end
 
-createtype(::Type{T}, ::Type{C}) where {T<:Tup, C<:Tup} = C
-function createtype(::Type{<:Pair}, ::Type{C}) where {C<:Tup}
-    tp = tuple_type(C).parameters
-    Pair{tp[1], tp[2]}
-end
-createtype(::Type{T}, ::Type{C}) where {T, C<:Tup} = T
+add_params(::Type{T}, ::Type{C}) where {T, C<:Tuple} = T
+add_params(::Type{T}, ::Type{C}) where {T<:Tuple, C<:Tuple} = C
+add_params(::Type{<:NamedTuple{names}}, ::Type{C}) where {names, C<:Tuple} = NamedTuple{names, C}
+add_params(::Type{<:Pair}, ::Type{Tuple{S, T}}) where {S, T} = Pair{S, T}
 
 """
 `iscompatible(::Type{S}, ::Type{V}) where {S, V<:AbstractArray}`
@@ -70,7 +72,7 @@ createtype(::Type{T}, ::Type{C}) where {T, C<:Tup} = T
 Check whether element type `S` can be pushed to a container of type `V`.
 """
 iscompatible(::Type{S}, ::Type{<:AbstractArray{T}}) where {S, T} = S<:T
-iscompatible(::Type{S}, ::Type{StructArray{T, N, C}}) where {S, T, N, C} = iscompatible(tuple_type(staticschema(S)), tuple_type(C))
+iscompatible(::Type{S}, ::Type{StructArray{T, N, C}}) where {S, T, N, C} = iscompatible(astuple(staticschema(S)), astuple(C))
 
 iscompatible(::Type{Tuple{}}, ::Type{T}) where {T<:Tuple} = false
 iscompatible(::Type{T}, ::Type{Tuple{}}) where {T<:Tuple} = false
