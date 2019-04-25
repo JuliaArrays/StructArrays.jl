@@ -25,7 +25,8 @@ end
 
 Base.@pure SkipConstructor(::Type) = false
 
-@inline _getproperty(v::Tuple, field::Integer) = getfield(v, field)
+# Needed pre Julia 1.2
+@inline _getproperty(v::Tuple, field::Int) = getfield(v, field)
 @inline _getproperty(v, field) = getproperty(v, field)
 
 function _foreachfield(names, xs)
