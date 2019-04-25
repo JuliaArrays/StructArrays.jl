@@ -1,7 +1,7 @@
 """
 A type that stores an array of structures as a structure of arrays.
 # Fields:
-- `fieldarrays`: a named tuple of arrays. Also `fieldarrays(x)`
+- `fieldarrays`: a (named) tuple of arrays. Also `fieldarrays(x)`
 """
 struct StructArray{T, N, C<:Tup} <: AbstractArray{T, N}
     fieldarrays::C
@@ -94,7 +94,7 @@ end
 `fieldarrays(s::StructArray)`
 
 Return the field arrays corresponding to the various entry of the struct as a named tuple.
-If the struct has no names (e.g. a tuple) automatic names are assigned (`:x1, :x2, ...`).
+If the struct has no names (e.g. a tuple), return the arrays as a tuple.
 
 ## Examples
 
