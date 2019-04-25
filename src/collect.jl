@@ -109,9 +109,9 @@ function grow_to_structarray!(dest::AbstractArray, itr, elem = iterate(itr))
     return dest
 end
 
-function to_structarray(::Type{T}, nt::C) where {T, C}
-    S = createtype(T, C)
-    StructArray{S}(nt)
+function to_structarray(::Type{T}, nt::C) where {T, C<:Tup}
+    S = createtype(T, eltypes(C))
+    return StructArray{S}(nt)
 end
 
 widenstructarray(dest::AbstractArray, i, el::S) where {S} = widenstructarray(dest, i, S)
@@ -121,11 +121,11 @@ function widenstructarray(dest::StructArray{T}, i, ::Type{S}) where {T, S}
     names = fieldnames(sch)
     types = ntuple(i -> fieldtype(sch, i), fieldcount(sch))
     cols = fieldarrays(dest)
-    if names == keys(cols)
-        nt = map((a, b) -> widenstructarray(a, i, b), cols, NamedTuple{names}(types))
-        v = to_structarray(T, nt)
+    if names == propertynames(cols)
+        nt = map((a, b) -> widenstructarray(a, i, b), cols, strip_types(sch)(types))
+        return to_structarray(T, nt)
     else
-        widenarray(dest, i, S)
+        return widenarray(dest, i, S)
     end
 end
 

@@ -22,7 +22,7 @@ _dims(c::Tup) = length(axes(c[1]))
 _dims(c::Union{Tuple{}, NamedTuple{(), Tuple{}}}) = 1
 
 function StructArray{T}(c::C) where {T, C<:Union{Tup, Pair}}
-    cols = drop_types(staticschema(T))(c)
+    cols = strip_types(staticschema(T))(c)
     StructArray{T, _dims(cols), typeof(cols)}(cols)
 end
 

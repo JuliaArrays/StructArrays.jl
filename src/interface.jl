@@ -15,5 +15,5 @@ function fields(::Type{T}) where {T}
     fieldnames(staticschema(T))
 end
 
-drop_types(::Type{<:Tuple}) = Tuple
-drop_types(::Type{<:NamedTuple{names}}) where {names} = NamedTuple{names}
+strip_types(::Type{<:Tuple}) = Tuple
+strip_types(::Type{<:NamedTuple{names}}) where {names} = NamedTuple{names}

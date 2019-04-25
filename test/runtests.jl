@@ -314,7 +314,7 @@ collect_structarray_rec(t) = collect_structarray(t, initializer = initializer)
 
 @testset "collectnamedtuples" begin
     v = [(a = 1, b = 2), (a = 1, b = 3)]
-    collect_structarray_rec(v) == StructArray((a = Int[1, 1], b = Int[2, 3]))
+    @test collect_structarray_rec(v) == StructArray((a = Int[1, 1], b = Int[2, 3]))
 
     # test inferrability with constant eltype
     itr = [(a = 1, b = 2), (a = 1, b = 2), (a = 1, b = 12)]
