@@ -1,4 +1,5 @@
 const Tup = Union{Tuple, NamedTuple}
+const EmptyTup = Union{Tuple{}, NamedTuple{(), Tuple{}}}
 
 @generated function staticschema(::Type{T}) where {T}
     name_tuple = Expr(:tuple, [QuoteNode(f) for f in fieldnames(T)]...)

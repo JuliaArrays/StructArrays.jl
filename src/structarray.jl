@@ -19,7 +19,7 @@ struct StructArray{T, N, C<:Tup} <: AbstractArray{T, N}
 end
 
 _dims(c::Tup) = length(axes(c[1]))
-_dims(c::Union{Tuple{}, NamedTuple{(), Tuple{}}}) = 1
+_dims(c::EmptyTup) = 1
 
 function StructArray{T}(c::C) where {T, C<:Union{Tup, Pair}}
     cols = strip_types(staticschema(T))(c)
@@ -113,9 +113,9 @@ Base.propertynames(s::StructArray) = propertynames(fieldarrays(s))
 staticschema(::Type{<:StructArray{T}}) where {T} = staticschema(T)
 
 Base.size(s::StructArray) = size(fieldarrays(s)[1])
-Base.size(s::StructArray{<:Any, <:Any, <:NamedTuple{(), Tuple{}}}) = (0,)
+Base.size(s::StructArray{<:Any, <:Any, <:EmptyTup}) = (0,)
 Base.axes(s::StructArray) = axes(fieldarrays(s)[1])
-Base.axes(s::StructArray{<:Any, <:Any, <:NamedTuple{(), Tuple{}}}) = (1:0,)
+Base.axes(s::StructArray{<:Any, <:Any, <:EmptyTup}) = (1:0,)
 
 @generated function Base.getindex(x::StructArray{T, N, C}, I::Int...) where {T, N, C}
     args = [:(getfield(cols, $i)[I...]) for i in 1:fieldcount(C)]
