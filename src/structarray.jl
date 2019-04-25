@@ -3,10 +3,10 @@ A type that stores an array of structures as a structure of arrays.
 # Fields:
 - `fieldarrays`: a named tuple of arrays. Also `fieldarrays(x)`
 """
-struct StructArray{T, N, C<:NamedTuple} <: AbstractArray{T, N}
+struct StructArray{T, N, C<:Tup} <: AbstractArray{T, N}
     fieldarrays::C
 
-    function StructArray{T, N, C}(c) where {T, N, C<:NamedTuple}
+    function StructArray{T, N, C}(c) where {T, N, C<:Tup}
         if length(c) > 0
             ax = axes(c[1])
             length(ax) == N || error("wrong number of dimensions")
@@ -18,12 +18,14 @@ struct StructArray{T, N, C<:NamedTuple} <: AbstractArray{T, N}
     end
 end
 
-_dims(c::NamedTuple) = length(axes(c[1]))
-_dims(c::NamedTuple{(), Tuple{}}) = 1
+_dims(c::Tup) = length(axes(c[1]))
+_dims(c::Union{Tuple{}, NamedTuple{(), Tuple{}}}) = 1
 
-StructArray{T}(c::C) where {T, C<:Tuple} = StructArray{T}(NamedTuple{fields(T)}(c))
-StructArray{T}(c::C) where {T, C<:NamedTuple} = StructArray{T, _dims(c), C}(c)
-StructArray{T}(c::C) where {T, C<:Pair} = StructArray{T}(Tuple(c))
+function StructArray{T}(c::C) where {T, C<:Union{Tup, Pair}}
+    cols = drop_types(staticschema(T))(c)
+    StructArray{T, _dims(cols), typeof(cols)}(cols)
+end
+
 StructArray(c::C) where {C<:NamedTuple} = StructArray{eltypes(C)}(c)
 StructArray(c::Tuple; names = nothing) = _structarray(c, names)
 StructArray(c::Pair{P, Q}) where {P, Q} = StructArray{Pair{eltype(P), eltype(Q)}}(c)
@@ -115,8 +117,8 @@ Base.size(s::StructArray{<:Any, <:Any, <:NamedTuple{(), Tuple{}}}) = (0,)
 Base.axes(s::StructArray) = axes(fieldarrays(s)[1])
 Base.axes(s::StructArray{<:Any, <:Any, <:NamedTuple{(), Tuple{}}}) = (1:0,)
 
-@generated function Base.getindex(x::StructArray{T, N, NamedTuple{names, types}}, I::Int...) where {T, N, names, types}
-    args = [:(getfield(cols, $i)[I...]) for i in 1:length(names)]
+@generated function Base.getindex(x::StructArray{T, N, C}, I::Int...) where {T, N, C}
+    args = [:(getfield(cols, $i)[I...]) for i in 1:fieldcount(C)]
     return quote
         cols = fieldarrays(x)
         @boundscheck checkbounds(x, I...)

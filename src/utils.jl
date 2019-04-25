@@ -18,21 +18,21 @@ _map_params(f, ::Type{NamedTuple{names, types}}) where {names, types} =
 
 buildfromschema(initializer, ::Type{T}) where {T} = buildfromschema(initializer, T, staticschema(T))
 
-function buildfromschema(initializer, ::Type{T}, ::Type{NT}) where {T, NT<:NamedTuple}
+function buildfromschema(initializer, ::Type{T}, ::Type{NT}) where {T, NT<:Tup}
     nt = _map_params(initializer, NT)
     StructArray{T}(nt)
 end
 
 Base.@pure SkipConstructor(::Type) = false
 
-@inline getfieldindex(v::Tuple, field::Symbol, index::Integer) = getfield(v, index)
-@inline getfieldindex(v, field::Symbol, index::Integer) = getproperty(v, field)
+@inline _getproperty(v::Tuple, field::Integer) = getfield(v, field)
+@inline _getproperty(v, field) = getproperty(v, field)
 
-@generated function foreachfield(::Type{<:NamedTuple{names}}, f, xs...) where {names}
+@generated function foreachfield(::Type{<:T}, f, xs...) where {T}
     exprs = Expr[]
-    for (i, field) in enumerate(names)
+    for field in fieldnames(T)
         sym = QuoteNode(field)
-        args = [Expr(:call, :getfieldindex, :(getfield(xs, $j)), sym, i) for j in 1:length(xs)]
+        args = [Expr(:call, :_getproperty, :(getfield(xs, $j)), sym) for j in 1:length(xs)]
         push!(exprs, Expr(:call, :f, args...))
     end
     push!(exprs, :(return nothing))
