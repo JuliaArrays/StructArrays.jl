@@ -420,34 +420,36 @@ end
     @test isequal(StructArrays.fieldarrays(t)[1], [1, missing, 3])
 end
 
+pair_structarray((first, last)) = StructArray{Pair{eltype(first), eltype(last)}}((first, last))
+
 @testset "collectpairs" begin
     v = (i=>i+1 for i in 1:3)
-    @test collect_structarray_rec(v) == StructArray{Pair{Int, Int}}(([1,2,3], [2,3,4]))
+    @test collect_structarray_rec(v) == pair_structarray([1,2,3] => [2,3,4])
     @test eltype(collect_structarray_rec(v)) == Pair{Int, Int}
 
     v = (i == 1 ? (1.2 => i+1) : (i => i+1) for i in 1:3)
-    @test collect_structarray_rec(v) == StructArray{Pair{Real, Int}}(([1.2,2,3], [2,3,4]))
+    @test collect_structarray_rec(v) == pair_structarray([1.2,2,3] => [2,3,4])
     @test eltype(collect_structarray_rec(v)) == Pair{Real, Int}
 
     v = ((a=i,) => (b="a$i",) for i in 1:3)
-    @test collect_structarray_rec(v) == StructArray(StructArray((a = [1,2,3],)) => StructArray((b = ["a1","a2","a3"],)))
+    @test collect_structarray_rec(v) == pair_structarray(StructArray((a = [1,2,3],)) => StructArray((b = ["a1","a2","a3"],)))
     @test eltype(collect_structarray_rec(v)) == Pair{NamedTuple{(:a,), Tuple{Int64}}, NamedTuple{(:b,), Tuple{String}}}
 
     v = (i == 1 ? (a="1",) => (b="a$i",) : (a=i,) => (b="a$i",) for i in 1:3)
-    @test collect_structarray_rec(v) == StructArray(StructArray((a = ["1",2,3],)) => StructArray((b = ["a1","a2","a3"],)))
+    @test collect_structarray_rec(v) == pair_structarray(StructArray((a = ["1",2,3],)) => StructArray((b = ["a1","a2","a3"],)))
     @test eltype(collect_structarray_rec(v)) == Pair{NamedTuple{(:a,), Tuple{Any}}, NamedTuple{(:b,), Tuple{String}}}
 
     # empty
     v = ((a=i,) => (b="a$i",) for i in 0:-1)
-    @test collect_structarray_rec(v) == StructArray(StructArray((a = Int[],)) => StructArray((b = String[],)))
+    @test collect_structarray_rec(v) == pair_structarray(StructArray((a = Int[],)) => StructArray((b = String[],)))
     @test eltype(collect_structarray_rec(v)) == Pair{NamedTuple{(:a,), Tuple{Int}}, NamedTuple{(:b,), Tuple{String}}}
 
     v = Iterators.filter(t -> t.first.a == 4, ((a=i,) => (b="a$i",) for i in 1:3))
-    @test collect_structarray_rec(v) == StructArray(StructArray((a = Int[],)) => StructArray((b = String[],)))
+    @test collect_structarray_rec(v) == pair_structarray(StructArray((a = Int[],)) => StructArray((b = String[],)))
     @test eltype(collect_structarray_rec(v)) == Pair{NamedTuple{(:a,), Tuple{Int}}, NamedTuple{(:b,), Tuple{String}}}
 
     t = collect_structarray_rec((b = 1,) => (a = i,) for i in (2, missing, 3))
-    s = StructArray(StructArray(b = [1,1,1]) => StructArray(a = [2, missing, 3]))
+    s = pair_structarray(StructArray(b = [1,1,1]) => StructArray(a = [2, missing, 3]))
     @test s[1] == t[1]
     @test ismissing(t[2].second.a)
     @test s[3] == t[3]

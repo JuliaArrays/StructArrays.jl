@@ -21,14 +21,13 @@ end
 _dims(c::Tup) = length(axes(c[1]))
 _dims(c::EmptyTup) = 1
 
-function StructArray{T}(c::C) where {T, C<:Union{Tup, Pair}}
+function StructArray{T}(c::C) where {T, C<:Tup}
     cols = strip_types(staticschema(T))(c)
     StructArray{T, _dims(cols), typeof(cols)}(cols)
 end
 
 StructArray(c::C) where {C<:NamedTuple} = StructArray{eltypes(C)}(c)
 StructArray(c::Tuple; names = nothing) = _structarray(c, names)
-StructArray(c::Pair{P, Q}) where {P, Q} = StructArray{Pair{eltype(P), eltype(Q)}}(c)
 
 StructArray{T}(; kwargs...) where {T} = StructArray{T}(values(kwargs))
 StructArray(; kwargs...) = StructArray(values(kwargs))
