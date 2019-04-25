@@ -25,14 +25,15 @@ end
 
 Base.@pure SkipConstructor(::Type) = false
 
-@inline getfieldindex(v::Tuple, field, index) = getfield(v, index)
-@inline getfieldindex(v, field, index) = getproperty(v, field)
+# needed for Julia pre 1.2
+@inline _getproperty(v::Tuple, field) = getfield(v, field)
+@inline _getproperty(v, field) = getproperty(v, field)
 
 function _foreachfield(names, xs)
     exprs = Expr[]
-    for (ind, field) in enumerate(names)
+    for field in names
         sym = QuoteNode(field)
-        args = [Expr(:call, :getfieldindex, :(getfield(xs, $j)), sym, ind) for j in 1:length(xs)]
+        args = [Expr(:call, :_getproperty, :(getfield(xs, $j)), sym) for j in 1:length(xs)]
         push!(exprs, Expr(:call, :f, args...))
     end
     push!(exprs, :(return nothing))
