@@ -1,5 +1,11 @@
 # NEWS
 
+## Version 0.4.0
+
+### Breaking
+
+- `fieldarrays` now returns a tuple of arrays for a `StructArray{<:Tuple}`
+
 ## Version 0.2.0
 
 ### Breaking

@@ -265,7 +265,7 @@ cols_infer() = StructArray(([1, 2], [1.2, 2.3]))
     @inferred g_infer()
     @test g_infer().a.b == ["1"]
     s = @inferred tup_infer()
-    @test Tables.columns(s) == (x1 = [1, 3], x2 = [2, 4])
+    @test fieldarrays(s) == ([1, 3], [2, 4])
     @test s[1] == (1, 2)
     @test s[2] == (3, 4)
     @inferred cols_infer()
@@ -314,7 +314,7 @@ collect_structarray_rec(t) = collect_structarray(t, initializer = initializer)
 
 @testset "collectnamedtuples" begin
     v = [(a = 1, b = 2), (a = 1, b = 3)]
-    collect_structarray_rec(v) == StructArray((a = Int[1, 1], b = Int[2, 3]))
+    @test collect_structarray_rec(v) == StructArray((a = Int[1, 1], b = Int[2, 3]))
 
     # test inferrability with constant eltype
     itr = [(a = 1, b = 2), (a = 1, b = 2), (a = 1, b = 12)]

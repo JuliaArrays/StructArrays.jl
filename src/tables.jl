@@ -1,5 +1,4 @@
 Tables.istable(::Type{<:StructVector}) = true
-Tables.istable(::Type{<:StructVector{<:Tuple}}) = false
 Tables.rowaccess(::Type{<:StructVector}) = true
 Tables.columnaccess(::Type{<:StructVector}) = true
 

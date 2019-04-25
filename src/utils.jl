@@ -18,26 +18,30 @@ _map_params(f, ::Type{NamedTuple{names, types}}) where {names, types} =
 
 buildfromschema(initializer, ::Type{T}) where {T} = buildfromschema(initializer, T, staticschema(T))
 
-function buildfromschema(initializer, ::Type{T}, ::Type{NT}) where {T, NT<:NamedTuple}
+function buildfromschema(initializer, ::Type{T}, ::Type{NT}) where {T, NT<:Tup}
     nt = _map_params(initializer, NT)
     StructArray{T}(nt)
 end
 
 Base.@pure SkipConstructor(::Type) = false
 
-@inline getfieldindex(v::Tuple, field::Symbol, index::Integer) = getfield(v, index)
-@inline getfieldindex(v, field::Symbol, index::Integer) = getproperty(v, field)
+@inline getfieldindex(v::Tuple, field, index) = getfield(v, index)
+@inline getfieldindex(v, field, index) = getproperty(v, field)
 
-@generated function foreachfield(::Type{<:NamedTuple{names}}, f, xs...) where {names}
+function _foreachfield(names, xs)
     exprs = Expr[]
-    for (i, field) in enumerate(names)
+    for (ind, field) in enumerate(names)
         sym = QuoteNode(field)
-        args = [Expr(:call, :getfieldindex, :(getfield(xs, $j)), sym, i) for j in 1:length(xs)]
+        args = [Expr(:call, :getfieldindex, :(getfield(xs, $j)), sym, ind) for j in 1:length(xs)]
         push!(exprs, Expr(:call, :f, args...))
     end
     push!(exprs, :(return nothing))
-    Expr(:block, exprs...)
+    return Expr(:block, exprs...)
 end
+
+@generated foreachfield(::Type{<:NamedTuple{names}}, f, xs...) where {names} = _foreachfield(names, xs)
+@generated foreachfield(::Type{<:NTuple{N, Any}}, f, xs...) where {N} = _foreachfield(Base.OneTo(N), xs)
+
 foreachfield(f, x::T, xs...) where {T} = foreachfield(staticschema(T), f, x, xs...)
 
 function createinstance(::Type{T}, args...) where {T}
@@ -53,15 +57,12 @@ createinstance(::Type{T}, args...) where {T<:Union{Tuple, NamedTuple}} = T(args)
     Expr(:block, new_tup, construct)
 end
 
-createtype(::Type{T}, ::Type{NamedTuple{names, types}}) where {T, names, types} = createtype(T, names, eltypes(types))
-
-createtype(::Type{T}, names, types) where {T} = T
-createtype(::Type{T}, names, types) where {T<:Tuple} = types
-createtype(::Type{<:NamedTuple{T}}, names, types) where {T} = NamedTuple{T, types}
-function createtype(::Type{<:Pair}, names, types)
-    tp = types.parameters
+createtype(::Type{T}, ::Type{C}) where {T<:Tup, C<:Tup} = C
+function createtype(::Type{<:Pair}, ::Type{C}) where {C<:Tup}
+    tp = tuple_type(C).parameters
     Pair{tp[1], tp[2]}
 end
+createtype(::Type{T}, ::Type{C}) where {T, C<:Tup} = T
 
 """
 `iscompatible(::Type{S}, ::Type{V}) where {S, V<:AbstractArray}`
