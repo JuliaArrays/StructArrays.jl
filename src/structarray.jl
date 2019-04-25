@@ -22,7 +22,7 @@ _dims(c::Tup) = length(axes(c[1]))
 _dims(c::EmptyTup) = 1
 
 function StructArray{T}(c::C) where {T, C<:Tup}
-    cols = strip_types(staticschema(T))(c)
+    cols = strip_params(staticschema(T))(c)
     StructArray{T, _dims(cols), typeof(cols)}(cols)
 end
 

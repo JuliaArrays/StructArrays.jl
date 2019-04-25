@@ -61,12 +61,10 @@ createinstance(::Type{T}, args...) where {T<:Union{Tuple, NamedTuple}} = T(args)
     Expr(:block, new_tup, construct)
 end
 
-createtype(::Type{T}, ::Type{C}) where {T<:Tup, C<:Tup} = C
-function createtype(::Type{<:Pair}, ::Type{C}) where {C<:Tup}
-    tp = tuple_type(C).parameters
-    Pair{tp[1], tp[2]}
-end
-createtype(::Type{T}, ::Type{C}) where {T, C<:Tup} = T
+add_params(::Type{T}, ::Type{C}) where {T, C<:Tuple} = T
+add_params(::Type{T}, ::Type{C}) where {T<:Tuple, C<:Tuple} = C
+add_params(::Type{<:NamedTuple{names}}, ::Type{C}) where {names, C<:Tuple} = NamedTuple{names, C}
+add_params(::Type{<:Pair}, ::Type{Tuple{S, T}}) where {S, T} = Pair{S, T}
 
 """
 `iscompatible(::Type{S}, ::Type{V}) where {S, V<:AbstractArray}`
@@ -74,7 +72,7 @@ createtype(::Type{T}, ::Type{C}) where {T, C<:Tup} = T
 Check whether element type `S` can be pushed to a container of type `V`.
 """
 iscompatible(::Type{S}, ::Type{<:AbstractArray{T}}) where {S, T} = S<:T
-iscompatible(::Type{S}, ::Type{StructArray{T, N, C}}) where {S, T, N, C} = iscompatible(tuple_type(staticschema(S)), tuple_type(C))
+iscompatible(::Type{S}, ::Type{StructArray{T, N, C}}) where {S, T, N, C} = iscompatible(astuple(staticschema(S)), astuple(C))
 
 iscompatible(::Type{Tuple{}}, ::Type{T}) where {T<:Tuple} = false
 iscompatible(::Type{T}, ::Type{Tuple{}}) where {T<:Tuple} = false
