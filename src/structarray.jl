@@ -109,7 +109,7 @@ fieldarrays(s::StructArray) = getfield(s, :fieldarrays)
 
 Base.getproperty(s::StructArray, key::Symbol) = getfield(fieldarrays(s), key)
 Base.getproperty(s::StructArray, key::Int) = getfield(fieldarrays(s), key)
-Base.propertynames(s::StructArray) = fieldnames(typeof(fieldarrays(s)))
+Base.propertynames(s::StructArray) = propertynames(fieldarrays(s))
 staticschema(::Type{<:StructArray{T}}) where {T} = staticschema(T)
 
 Base.size(s::StructArray) = size(fieldarrays(s)[1])
