@@ -25,9 +25,12 @@ end
 
 Base.@pure SkipConstructor(::Type) = false
 
-# needed for Julia pre 1.2
-@inline _getproperty(v::Tuple, field) = getfield(v, field)
-@inline _getproperty(v, field) = getproperty(v, field)
+@static if VERSION < v"1.2.0"
+    @inline _getproperty(v::Tuple, field) = getfield(v, field)
+    @inline _getproperty(v, field) = getproperty(v, field)
+else
+    const _getproperty = getproperty
+end
 
 function _foreachfield(names, xs)
     exprs = Expr[]
