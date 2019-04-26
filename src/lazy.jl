@@ -10,7 +10,7 @@ for typ in [:Symbol, :Int]
         end
         Base.@propagate_inbounds function Base.setproperty!(c::LazyRow, nm::$typ, val)
             getproperty(getfield(c, 1), nm)[getfield(c, 2)] = val
-            return nothing
+            return
         end
     end
 end
