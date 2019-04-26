@@ -298,7 +298,7 @@ struct S
     S(x) = new(x, x)
 end
 
-StructArrays.SkipConstructor(::Type{<:S}) = true
+StructArrays.createinstance(::Type{<:S}, x, y) = S(x)
 
 @testset "inner" begin
     v = StructArray{S}(([1], [1]))

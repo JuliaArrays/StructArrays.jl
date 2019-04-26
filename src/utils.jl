@@ -23,8 +23,6 @@ function buildfromschema(initializer, ::Type{T}, ::Type{NT}) where {T, NT<:Tup}
     StructArray{T}(nt)
 end
 
-Base.@pure SkipConstructor(::Type) = false
-
 @static if VERSION < v"1.2.0"
     @inline _getproperty(v::Tuple, field) = getfield(v, field)
     @inline _getproperty(v, field) = getproperty(v, field)
@@ -48,18 +46,8 @@ end
 
 foreachfield(f, x::T, xs...) where {T} = foreachfield(staticschema(T), f, x, xs...)
 
-function createinstance(::Type{T}, args...) where {T}
-    SkipConstructor(T) ? unsafe_createinstance(T, args...) : T(args...)
-end
-
+createinstance(::Type{T}, args...) where {T} = T(args...)
 createinstance(::Type{T}, args...) where {T<:Union{Tuple, NamedTuple}} = T(args)
-
-@generated function unsafe_createinstance(::Type{T}, args...) where {T}
-    v = fieldnames(T)
-    new_tup = Expr(:(=), Expr(:tuple, v...), :args)
-    construct = Expr(:new, :T, (:(convert(fieldtype(T, $(Expr(:quote, sym))), $sym)) for sym in v)...)
-    Expr(:block, new_tup, construct)
-end
 
 add_params(::Type{T}, ::Type{C}) where {T, C<:Tuple} = T
 add_params(::Type{T}, ::Type{C}) where {T<:Tuple, C<:Tuple} = C
