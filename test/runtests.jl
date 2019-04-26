@@ -490,8 +490,48 @@ end
     @test all(t -> t.re >= 0, s)
     @test all(t -> t.re >= 0, rows)
     rows[13].re = -12
+    rows[13].im = 0
     @test !all(t -> t.re >= 0, s)
     @test !all(t -> t.re >= 0, rows)
+
+    io = IOBuffer()
+    show(io, rows[13])
+    str = String(take!(io))
+    @test str == "LazyRow(re = -12.0, im = 0.0)"
+
+    io = IOBuffer()
+    Base.showarg(io, rows, true)
+    str = String(take!(io))
+    @test str == "LazyRows(::Array{Float64,2}, ::Array{Float64,2}) with eltype LazyRow{Complex{Float64}}"
+    io = IOBuffer()
+    Base.showarg(io, rows, false)
+    str = String(take!(io))
+    @test str == "LazyRows(::Array{Float64,2}, ::Array{Float64,2})"
+
+    s = StructArray((rand(10, 10), rand(10, 10)))
+    rows = LazyRows(s)
+    @test IndexStyle(rows) isa IndexLinear
+    @test all(t -> StructArrays._getproperty(t, 1) >= 0, s)
+    @test all(t -> getproperty(t, 1) >= 0, rows)
+    setproperty!(rows[13], 1, -12)
+    setproperty!(rows[13], 2, 0)
+    @test !all(t -> StructArrays._getproperty(t, 1) >= 0, s)
+    @test !all(t -> getproperty(t, 1) >= 0, rows)
+
+    io = IOBuffer()
+    show(io, rows[13])
+    str = String(take!(io))
+    @test str == "LazyRow(-12.0, 0.0)"
+
+    io = IOBuffer()
+    Base.showarg(io, rows, true)
+    str = String(take!(io))
+    @test str == "LazyRows(::Array{Float64,2}, ::Array{Float64,2}) with eltype LazyRow{Tuple{Float64,Float64}}"
+    io = IOBuffer()
+    Base.showarg(io, rows, false)
+    str = String(take!(io))
+    @test str == "LazyRows(::Array{Float64,2}, ::Array{Float64,2})"
+
 end
 
 @testset "refs" begin

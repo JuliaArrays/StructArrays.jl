@@ -185,13 +185,12 @@ function Base.reshape(s::StructArray{T}, d::Dims) where {T}
     StructArray{T}(map(x -> reshape(x, d), fieldarrays(s)))
 end
 
-function showfields(io::IO, fields::Tuple)
+function showfields(io::IO, fields::NTuple{N, Any}) where N
     print(io, "(")
-    for field in fields[1:end-1]
-        Base.showarg(io, field, false)
-        print(io, ", ")
+    for (i, field) in enumerate(fields)
+        Base.showarg(io, fields[i], false)
+        i < N && print(io, ", ")
     end
-    Base.showarg(io, last(fields), false)
     print(io, ")")
 end
 
