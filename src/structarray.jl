@@ -185,14 +185,18 @@ function Base.reshape(s::StructArray{T}, d::Dims) where {T}
     StructArray{T}(map(x -> reshape(x, d), fieldarrays(s)))
 end
 
-function Base.showarg(io::IO, s::StructArray{T}, toplevel) where T
-    print(io, "StructArray(")
-    fields = Tuple(fieldarrays(s))
+function showfields(io::IO, fields::Tuple)
+    print(io, "(")
     for field in fields[1:end-1]
         Base.showarg(io, field, false)
         print(io, ", ")
     end
     Base.showarg(io, last(fields), false)
     print(io, ")")
+end
+
+function Base.showarg(io::IO, s::StructArray{T}, toplevel) where T
+    print(io, "StructArray")
+    showfields(io, Tuple(fieldarrays(s)))
     toplevel && print(io, " with eltype ", T)
 end

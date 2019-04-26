@@ -3,9 +3,23 @@ struct LazyRow{T, N, C, I}
     index::I
 end
 
-Base.getproperty(c::LazyRow, nm::Symbol) = getproperty(getfield(c, 1), nm)[getfield(c, 2)]
-Base.setproperty!(c::LazyRow, nm::Symbol, val) = (getproperty(getfield(c, 1), nm)[getfield(c, 2)] = val; nothing)
+for typ in [:Symbol, :Int]
+    @eval begin
+        Base.@propagate_inbounds function Base.getproperty(c::LazyRow, nm::$typ)
+            return getproperty(getfield(c, 1), nm)[getfield(c, 2)]
+        end
+        Base.@propagate_inbounds function Base.setproperty!(c::LazyRow, nm::$typ, val)
+            getproperty(getfield(c, 1), nm)[getfield(c, 2)] = val
+            return nothing
+        end
+    end
+end
 Base.propertynames(c::LazyRow) = propertynames(getfield(c, 1))
+
+function Base.show(io::IO, c::LazyRow)
+    print(io, "LazyRow")
+    show(io, to_tup(c))
+end
 
 staticschema(::Type{<:LazyRow{T}}) where {T} = staticschema(T)
 buildfromschema(f, ::Type{<:LazyRow{T}}) where {T} = buildfromschema(f, T)
@@ -22,9 +36,16 @@ LazyRows(s::S) where {S<:StructArray} = LazyRows(IndexStyle(S), s)
 LazyRows(::IndexLinear, s::StructArray{T, N, C}) where {T, N, C} = LazyRows{T, N, C, Int}(s)
 LazyRows(::IndexCartesian, s::StructArray{T, N, C}) where {T, N, C} = LazyRows{T, N, C, CartesianIndex{N}}(s)
 Base.parent(v::LazyRows) = getfield(v, 1)
+fieldarrays(v::LazyRows) = fieldarrays(parent(v))
 
 Base.size(v::LazyRows) = size(parent(v))
 Base.getindex(v::LazyRows{<:Any, <:Any, <:Any, <:Integer}, i::Integer) = LazyRow(parent(v), i)
 Base.getindex(v::LazyRows{<:Any, <:Any, <:Any, <:CartesianIndex}, i::Integer...) = LazyRow(parent(v), CartesianIndex(i))
 
 Base.IndexStyle(::Type{<:LazyRows{<:Any, <:Any, <:Any, <:Integer}}) = IndexLinear()
+
+function Base.showarg(io::IO, s::LazyRows{T}, toplevel) where T
+    print(io, "LazyRows")
+    showfields(io, Tuple(fieldarrays(s)))
+    toplevel && print(io, " with eltype LazyRow{", T, "}")
+end
