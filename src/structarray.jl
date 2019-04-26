@@ -116,7 +116,7 @@ Base.size(s::StructArray{<:Any, <:Any, <:EmptyTup}) = (0,)
 Base.axes(s::StructArray) = axes(fieldarrays(s)[1])
 Base.axes(s::StructArray{<:Any, <:Any, <:EmptyTup}) = (1:0,)
 
-@generated function Base.getindex(x::StructArray{T, N, C}, I::Int...) where {T, N, C}
+Base.@propagate_inbounds @generated function Base.getindex(x::StructArray{T, N, C}, I::Int...) where {T, N, C}
     args = [:(getfield(cols, $i)[I...]) for i in 1:fieldcount(C)]
     return quote
         cols = fieldarrays(x)
@@ -129,9 +129,9 @@ function Base.view(s::StructArray{T, N, C}, I...) where {T, N, C}
     StructArray{T}(map(v -> view(v, I...), fieldarrays(s)))
 end
 
-function Base.setindex!(s::StructArray, vals, I::Int...)
+Base.@propagate_inbounds function Base.setindex!(s::StructArray, vals, I::Int...)
     @boundscheck checkbounds(s, I...)
-    @inbounds foreachfield((col, val) -> (col[I...] = val), s, vals)
+    foreachfield((col, val) -> (@inbounds col[I...] = val), s, vals)
     s
 end
 
