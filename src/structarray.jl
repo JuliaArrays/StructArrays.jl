@@ -184,3 +184,15 @@ Base.copy(s::StructArray{T,N,C}) where {T,N,C} = StructArray{T,N,C}(C(copy(x) fo
 function Base.reshape(s::StructArray{T}, d::Dims) where {T}
     StructArray{T}(map(x -> reshape(x, d), fieldarrays(s)))
 end
+
+function Base.showarg(io::IO, s::StructArray{T}, toplevel) where T
+    print(io, "StructArray(")
+    fields = Tuple(fieldarrays(s))
+    for field in fields[1:end-1]
+        Base.showarg(io, field, false)
+        print(io, ", ")
+    end
+    Base.showarg(io, last(fields), false)
+    print(io, ")")
+    toplevel && print(io, " with eltype ", T)
+end
