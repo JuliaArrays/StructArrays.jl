@@ -255,7 +255,6 @@ end
 end
 
 f_infer() = StructArray{ComplexF64}((rand(2,2), rand(2,2)))
-
 g_infer() = StructArray([(a=(b="1",), c=2)], unwrap = t -> t <: NamedTuple)
 tup_infer() = StructArray([(1, 2), (3, 4)])
 cols_infer() = StructArray(([1, 2], [1.2, 2.3]))
@@ -269,6 +268,11 @@ cols_infer() = StructArray(([1, 2], [1.2, 2.3]))
     @test s[1] == (1, 2)
     @test s[2] == (3, 4)
     @inferred cols_infer()
+end
+
+@testset "to_(named)tuple" begin
+    @test StructArrays.to_tup((1, 2, 3)) == (1, 2, 3)
+    @test StructArrays.to_tup(2 + 3im) == (re = 2, im = 3)
 end
 
 @testset "propertynames" begin
@@ -490,8 +494,47 @@ end
     @test all(t -> t.re >= 0, s)
     @test all(t -> t.re >= 0, rows)
     rows[13].re = -12
+    rows[13].im = 0
     @test !all(t -> t.re >= 0, s)
     @test !all(t -> t.re >= 0, rows)
+
+    io = IOBuffer()
+    show(io, rows[13])
+    str = String(take!(io))
+    @test str == "LazyRow(re = -12.0, im = 0.0)"
+
+    io = IOBuffer()
+    Base.showarg(io, rows, true)
+    str = String(take!(io))
+    @test str == "LazyRows(::Array{Float64,2}, ::Array{Float64,2}) with eltype LazyRow{Complex{Float64}}"
+    io = IOBuffer()
+    Base.showarg(io, rows, false)
+    str = String(take!(io))
+    @test str == "LazyRows(::Array{Float64,2}, ::Array{Float64,2})"
+
+    s = StructArray((rand(10, 10), rand(10, 10)))
+    rows = LazyRows(s)
+    @test IndexStyle(rows) isa IndexLinear
+    @test all(t -> StructArrays._getproperty(t, 1) >= 0, s)
+    @test all(t -> getproperty(t, 1) >= 0, rows)
+    setproperty!(rows[13], 1, -12)
+    setproperty!(rows[13], 2, 0)
+    @test !all(t -> StructArrays._getproperty(t, 1) >= 0, s)
+    @test !all(t -> getproperty(t, 1) >= 0, rows)
+
+    io = IOBuffer()
+    show(io, rows[13])
+    str = String(take!(io))
+    @test str == "LazyRow(-12.0, 0.0)"
+
+    io = IOBuffer()
+    Base.showarg(io, rows, true)
+    str = String(take!(io))
+    @test str == "LazyRows(::Array{Float64,2}, ::Array{Float64,2}) with eltype LazyRow{Tuple{Float64,Float64}}"
+    io = IOBuffer()
+    Base.showarg(io, rows, false)
+    str = String(take!(io))
+    @test str == "LazyRows(::Array{Float64,2}, ::Array{Float64,2})"
 end
 
 @testset "refs" begin
