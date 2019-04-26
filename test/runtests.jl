@@ -258,8 +258,6 @@ f_infer() = StructArray{ComplexF64}((rand(2,2), rand(2,2)))
 g_infer() = StructArray([(a=(b="1",), c=2)], unwrap = t -> t <: NamedTuple)
 tup_infer() = StructArray([(1, 2), (3, 4)])
 cols_infer() = StructArray(([1, 2], [1.2, 2.3]))
-to_tuple_infer() = StructArrays.to_tup((1, 2, 3))
-to_namedtuple_infer() = StructArrays.to_tup(2+3im)
 
 @testset "inferrability" begin
     @inferred f_infer()
@@ -270,10 +268,11 @@ to_namedtuple_infer() = StructArrays.to_tup(2+3im)
     @test s[1] == (1, 2)
     @test s[2] == (3, 4)
     @inferred cols_infer()
-    tup = @inferred to_tuple_infer()
-    @test tup == (1, 2, 3)
-    nt = @inferred to_namedtuple_infer()
-    @test nt == (re = 2, im = 3)
+end
+
+@testset "to_(named)tuple" begin
+    @test StructArrays.to_tup((1, 2, 3)) == (1, 2, 3)
+    @test StructArrays.to_tup(2 + 3im) == (re = 2, im = 3)
 end
 
 @testset "propertynames" begin
