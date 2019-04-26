@@ -505,3 +505,15 @@ end
     @test StructArrays.refs(s) isa WeakRefStrings.StringArray{Union{WeakRefStrings.WeakRefString{UInt8}, Missing}}
     @test all(isequal.(s, StructArrays.refs(s)))
 end
+
+@testset "show" begin
+    s = StructArray(Complex{Int64}[1+im, 2-im])
+    io = IOBuffer()
+    Base.showarg(io, s, true)
+    str = String(take!(io))
+    @test str == "StructArray(::Array{Int64,1}, ::Array{Int64,1}) with eltype Complex{Int64}"
+    io = IOBuffer()
+    Base.showarg(io, s, false)
+    str = String(take!(io))
+    @test str == "StructArray(::Array{Int64,1}, ::Array{Int64,1})"
+end
