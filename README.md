@@ -17,7 +17,7 @@ julia> using StructArrays, Random
 julia> Random.seed!(4);
 
 julia> s = StructArray{ComplexF64}((rand(2,2), rand(2,2)))
-2×2 StructArray{Complex{Float64},2,NamedTuple{(:re, :im),Tuple{Array{Float64,2},Array{Float64,2}}}}:
+2×2 StructArray(::Array{Float64,2}, ::Array{Float64,2}) with eltype Complex{Float64}:
  0.680079+0.625239im   0.92407+0.267358im
  0.874437+0.737254im  0.929336+0.804478im
 
@@ -37,7 +37,7 @@ Note that the same approach can be used directly from an `Array` of complex numb
 
 ```julia
 julia> StructArray([1+im, 3-2im])
-2-element StructArray{Complex{Int64},1,NamedTuple{(:re, :im),Tuple{Array{Int64,1},Array{Int64,1}}}}:
+2-element StructArray(::Array{Int64,1}, ::Array{Int64,1}) with eltype Complex{Int64}:
  1 + 1im
  3 - 2im
 ```
@@ -48,7 +48,7 @@ One can also create a `StructArrray` from an iterable of structs without creatin
 
 ```julia
 julia> StructArray(log(j+2.0*im) for j in 1:10)
-10-element StructArray{Complex{Float64},1,NamedTuple{(:re, :im),Tuple{Array{Float64,1},Array{Float64,1}}}}:
+10-element StructArray(::Array{Float64,1}, ::Array{Float64,1}) with eltype Complex{Float64}:
  0.8047189562170501 + 1.1071487177940904im
  1.0397207708399179 + 0.7853981633974483im
  1.2824746787307684 + 0.5880026035475675im
@@ -65,14 +65,14 @@ Another option is to create an uninitialized `StructArray` and then fill it with
 
 ```julia
 julia> s = StructArray{ComplexF64}(undef, 2, 2)
-2×2 StructArray{Complex{Float64},2,NamedTuple{(:re, :im),Tuple{Array{Float64,2},Array{Float64,2}}}}:
+2×2 StructArray(::Array{Float64,2}, ::Array{Float64,2}) with eltype Complex{Float64}:
  6.91646e-310+6.91646e-310im  6.91646e-310+6.91646e-310im
  6.91646e-310+6.91646e-310im  6.91646e-310+6.91646e-310im
 
 julia> rand!(s)
-2×2 StructArray{Complex{Float64},2,NamedTuple{(:re, :im),Tuple{Array{Float64,2},Array{Float64,2}}}}:
-  0.446415+0.671453im  0.0797964+0.675723im
- 0.0340059+0.420472im   0.907252+0.808263im
+2×2 StructArray(::Array{Float64,2}, ::Array{Float64,2}) with eltype Complex{Float64}:
+ 0.680079+0.874437im  0.625239+0.737254im
+  0.92407+0.929336im  0.267358+0.804478im
 ```
 
 ### Using custom array types
@@ -87,39 +87,53 @@ julia> a = CuArray(rand(Float32, 10));
 julia> b = CuArray(rand(Float32, 10));
 
 julia> StructArray{ComplexF32}((a, b))
-10-element StructArray{Complex{Float32},1,NamedTuple{(:re, :im),Tuple{CuArray{Float32,1},CuArray{Float32,1}}}}:
-   0.7539003f0 + 0.5406891f0im
-   0.2818451f0 + 0.60345674f0im
-   0.3271774f0 + 0.56674314f0im
-   0.6943406f0 + 0.8360009f0im
-   0.9609026f0 + 0.27519035f0im
- 0.051933408f0 + 0.93443274f0im
-  0.51335454f0 + 0.90320504f0im
-   0.6588727f0 + 0.16270757f0im
-  0.20075476f0 + 0.6591008f0im
-  0.58832633f0 + 0.45309567f0im
+10-element StructArray(::CuArray{Float32,1}, ::CuArray{Float32,1}) with eltype Complex{Float32}:
+  0.19555175f0 + 0.9604322f0im
+  0.68348145f0 + 0.5778245f0im
+  0.69664395f0 + 0.79825306f0im
+ 0.118531585f0 + 0.3031248f0im
+  0.80057466f0 + 0.8964418f0im
+  0.63772964f0 + 0.2923274f0im
+  0.65374136f0 + 0.7932533f0im
+   0.6043732f0 + 0.65964353f0im
+   0.1106627f0 + 0.090207934f0im
+    0.707458f0 + 0.1700114f0im
 
 julia> c = CuArray(rand(ComplexF32, 10));
 
 julia> StructArray(c)
-10-element StructArray{Complex{Float32},1,NamedTuple{(:re, :im),Tuple{CuArray{Float32,1},CuArray{Float32,1}}}}:
-  0.76695776f0 + 0.31588173f0im
-   0.9804857f0 + 0.15740407f0im
-  0.85849273f0 + 0.51903546f0im
- 0.106796384f0 + 0.9493377f0im
-  0.38152885f0 + 0.8419838f0im
-   0.8892112f0 + 0.5276251f0im
-  0.11579132f0 + 0.79168653f0im
-  0.16804445f0 + 0.40545344f0im
-  0.42822742f0 + 0.61150527f0im
-  0.29996157f0 + 0.94151044f0im
+10-element StructArray(::Array{Float32,1}, ::Array{Float32,1}) with eltype Complex{Float32}:
+  0.7176411f0 + 0.864058f0im
+   0.252609f0 + 0.14824867f0im
+ 0.26842773f0 + 0.9084332f0im
+ 0.33128333f0 + 0.5106474f0im
+  0.6509278f0 + 0.87059164f0im
+  0.9522146f0 + 0.053706646f0im
+   0.899577f0 + 0.63242567f0im
+   0.325814f0 + 0.59225655f0im
+ 0.56267905f0 + 0.21927536f0im
+ 0.49719965f0 + 0.754143f0im
+```
+
+If you already have your data in a `StructArray` with field arrays of a given format (say plain `Array`) you can change them with `replace_storage`:
+
+```julia
+julia> s = StructArray([1.0+im, 2.0-im])
+2-element StructArray(::Array{Float64,1}, ::Array{Float64,1}) with eltype Complex{Float64}:
+ 1.0 + 1.0im
+ 2.0 - 1.0im
+
+julia> replace_storage(CuArray, s)
+2-element StructArray(::CuArray{Float64,1}, ::CuArray{Float64,1}) with eltype Complex{Float64}:
+ 1.0 + 1.0im
+ 2.0 - 1.0im
 ```
 
 ## Example usage to store a data table
 
 ```julia
 julia> t = StructArray((a = [1, 2], b = ["x", "y"]))
-2-element StructArray{NamedTuple{(:a, :b),Tuple{Int64,String}},1,NamedTuple{(:a, :b),Tuple{Array{Int64,1},Array{String,1}}}}:
+2-element StructArray(::Array{Int64,1}, ::Array{String,1}) with eltype NamedTuple{(:a, :b),Tuple{Int64,String}}:
  (a = 1, b = "x")
  (a = 2, b = "y")
 
@@ -132,7 +146,7 @@ julia> t.a
  2
 
 julia> push!(t, (a = 3, b = "z"))
-3-element StructArray{NamedTuple{(:a, :b),Tuple{Int64,String}},1,NamedTuple{(:a, :b),Tuple{Array{Int64,1},Array{String,1}}}}:
+3-element StructArray(::Array{Int64,1}, ::Array{String,1}) with eltype NamedTuple{(:a, :b),Tuple{Int64,String}}:
  (a = 1, b = "x")
  (a = 2, b = "y")
  (a = 3, b = "z")
@@ -143,6 +157,8 @@ julia> push!(t, (a = 3, b = "z"))
 StructArrays also provides a `LazyRow` wrapper for lazy row iteration. `LazyRow(t, i)` does not materialize the i-th row but returns a lazy wrapper around it on which `getproperty` does the correct thing. This is useful when the row has many fields only some of which are necessary. It also allows changing columns in place.
 
 ```julia
+julia> t = StructArray((a = [1, 2], b = ["x", "y"]));
+
 julia> LazyRow(t, 2).a
 2
 
@@ -150,8 +166,7 @@ julia> LazyRow(t, 2).a = 123
 123
 
 julia> t
-2-element StructArray{NamedTuple{(:a, :b),Tuple{Int64,String}},1,NamedTuple{(:a, :b),Tu
-ple{Array{Int64,1},Array{String,1}}}}:
+2-element StructArray(::Array{Int64,1}, ::Array{String,1}) with eltype NamedTuple{(:a, :b),Tuple{Int64,String}}:
  (a = 1, b = "x")
  (a = 123, b = "y")
 ```

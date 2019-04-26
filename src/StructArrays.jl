@@ -5,6 +5,7 @@ using PooledArrays: PooledArray
 
 export StructArray, StructVector, LazyRow, LazyRows
 export collect_structarray, fieldarrays
+export replace_storage
 
 include("interface.jl")
 include("structarray.jl")

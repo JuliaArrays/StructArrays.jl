@@ -106,10 +106,10 @@ julia> s = StructArray(a=1:3, b = fill("string", 3));
 julia> s_pooled = StructArrays.replace_storage(s) do v
            isbitstype(eltype(v)) ? v : convert(PooledArray, v)
        end
-10-element StructArray{NamedTuple{(:a, :b),Tuple{Int64,String}},1,NamedTuple{(:a, :b),Tuple{UnitRange{Int64},PooledArray{String,UInt8,1,Array{UInt8,1}}}}}:
- (a = 1, b = "string") 
- (a = 2, b = "string") 
- (a = 3, b = "string") 
+3-element StructArray(::UnitRange{Int64}, ::PooledArray{String,UInt8,1,Array{UInt8,1}}) with eltype NamedTuple{(:a, :b),Tuple{Int64,String}}:
+ (a = 1, b = "string")
+ (a = 2, b = "string")
+ (a = 3, b = "string")
 ```
 """
 function replace_storage(f, s::StructArray{T}) where T
