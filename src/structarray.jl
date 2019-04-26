@@ -116,13 +116,18 @@ Base.size(s::StructArray{<:Any, <:Any, <:EmptyTup}) = (0,)
 Base.axes(s::StructArray) = axes(fieldarrays(s)[1])
 Base.axes(s::StructArray{<:Any, <:Any, <:EmptyTup}) = (1:0,)
 
-Base.@propagate_inbounds @generated function Base.getindex(x::StructArray{T, N, C}, I::Int...) where {T, N, C}
-    args = [:(getfield(cols, $i)[I...]) for i in 1:fieldcount(C)]
-    return quote
-        cols = fieldarrays(x)
-        @boundscheck checkbounds(x, I...)
-        @inbounds $(Expr(:call, :createinstance, :T, args...))
+get_ith(cols::NamedTuple, I...) = get_ith(Tuple(cols), I...)
+function get_ith(cols::NTuple{N, Any}, I...) where N
+    ntuple(N) do i
+        @inbounds res = getfield(cols, i)[I...]
+        return res
     end
+end
+
+Base.@propagate_inbounds function Base.getindex(x::StructArray{T, N, C}, I::Int...) where {T, N, C}
+    cols = fieldarrays(x)
+    @boundscheck checkbounds(x, I...)
+    return createinstance(T, get_ith(cols, I...)...)
 end
 
 function Base.view(s::StructArray{T, N, C}, I...) where {T, N, C}
