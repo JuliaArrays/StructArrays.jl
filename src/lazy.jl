@@ -1,5 +1,5 @@
 struct LazyRow{T, N, C, I}
-    columns::StructArray{T, N, C} # a `Columns` object
+    columns::StructArray{T, N, C, I} # a `Columns` object
     index::I
 end
 
@@ -30,19 +30,17 @@ iscompatible(::Type{<:LazyRow{S}}, ::Type{StructArray{T, N, C}}) where {S, T, N,
 (s::ArrayInitializer)(::Type{<:LazyRow{T}}, d) where {T} = buildfromschema(typ -> s(typ, d), T)
 
 struct LazyRows{T, N, C, I} <: AbstractArray{LazyRow{T, N, C, I}, N}
-    columns::StructArray{T, N, C}
+    columns::StructArray{T, N, C, I}
 end
-LazyRows(s::S) where {S<:StructArray} = LazyRows(IndexStyle(S), s)
-LazyRows(::IndexLinear, s::StructArray{T, N, C}) where {T, N, C} = LazyRows{T, N, C, Int}(s)
-LazyRows(::IndexCartesian, s::StructArray{T, N, C}) where {T, N, C} = LazyRows{T, N, C, CartesianIndex{N}}(s)
 Base.parent(v::LazyRows) = getfield(v, 1)
 fieldarrays(v::LazyRows) = fieldarrays(parent(v))
 
 Base.size(v::LazyRows) = size(parent(v))
-Base.getindex(v::LazyRows{<:Any, <:Any, <:Any, <:Integer}, i::Integer) = LazyRow(parent(v), i)
-Base.getindex(v::LazyRows{<:Any, <:Any, <:Any, <:CartesianIndex}, i::Integer...) = LazyRow(parent(v), CartesianIndex(i))
+Base.getindex(v::LazyRows{<:Any, <:Any, <:Any, Int}, i::Int) = LazyRow(parent(v), i)
+Base.getindex(v::LazyRows{<:Any, <:Any, <:Any, CartesianIndex{N}}, i::Vararg{Int, N}) where {N} = LazyRow(parent(v), CartesianIndex(i))
 
-Base.IndexStyle(::Type{<:LazyRows{<:Any, <:Any, <:Any, <:Integer}}) = IndexLinear()
+_best_index(::Type{LazyRows{T, N, C, I}}) where {T, N, C, I} = I
+Base.IndexStyle(::Type{L}) where {L<:LazyRows} = _indexstyle(_best_index(L))
 
 function Base.showarg(io::IO, s::LazyRows{T}, toplevel) where T
     print(io, "LazyRows")

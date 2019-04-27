@@ -3,7 +3,7 @@ A type that stores an array of structures as a structure of arrays.
 # Fields:
 - `fieldarrays`: a (named) tuple of arrays. Also `fieldarrays(x)`
 """
-struct StructArray{T, N, C<:Tup} <: AbstractArray{T, N}
+struct StructArray{T, N, C<:Tup, I} <: AbstractArray{T, N}
     fieldarrays::C
 
     function StructArray{T, N, C}(c) where {T, N, C<:Tup}
@@ -14,9 +14,17 @@ struct StructArray{T, N, C<:Tup} <: AbstractArray{T, N}
                 axes(c[i]) == ax || error("all field arrays must have same shape")
             end
         end
-        new{T, N, C}(c)
+        new{T, N, C, _best_index(c...)}(c)
     end
 end
+
+_best_index() = Int
+_best_index(col::AbstractArray, cols::AbstractArray...) = _best_index(IndexStyle(col, cols...), col)
+_best_index(::IndexLinear, ::AbstractArray) = Int
+_best_index(::IndexCartesian, ::AbstractArray{T, N}) where {T, N} = CartesianIndex{N}
+_best_index(::Type{StructArray{T, N, C, I}}) where {T, N, C, I} = I
+_indexstyle(::Type{Int}) = IndexLinear()
+_indexstyle(::Type{CartesianIndex{N}}) where {N} = IndexCartesian()
 
 _dims(c::Tup) = length(axes(c[1]))
 _dims(c::EmptyTup) = 1
@@ -37,17 +45,11 @@ _structarray(args::Tuple, names) = _structarray(args, Tuple(names))
 _structarray(args::Tuple, ::Tuple) = _structarray(args, nothing)
 _structarray(args::NTuple{N, Any}, names::NTuple{N, Symbol}) where {N} = StructArray(NamedTuple{names}(args))
 
-const StructVector{T, C<:Tup} = StructArray{T, 1, C}
+const StructVector{T, C<:Tup, I} = StructArray{T, 1, C, I}
 StructVector{T}(args...; kwargs...) where {T} = StructArray{T}(args...; kwargs...)
 StructVector(args...; kwargs...) = StructArray(args...; kwargs...)
 
-_indexstyle(::Type{Tuple{}}) = IndexStyle(Union{})
-_indexstyle(::Type{T}) where {T<:Tuple} = IndexStyle(IndexStyle(tuple_type_head(T)), _indexstyle(tuple_type_tail(T)))
-_indexstyle(::Type{NamedTuple{names, types}}) where {names, types} = _indexstyle(types)
-
-function Base.IndexStyle(::Type{StructArray{T, N, C}}) where {T, N, C}
-    _indexstyle(C)
-end
+Base.IndexStyle(::Type{S}) where {S<:StructArray} = _indexstyle(_best_index(S))
 
 _undef_array(::Type{T}, sz; unwrap = t -> false) where {T} = unwrap(T) ? StructArray{T}(undef, sz; unwrap = unwrap) : Array{T}(undef, sz)
 
@@ -124,19 +126,31 @@ function get_ith(cols::NTuple{N, Any}, I...) where N
     end
 end
 
-Base.@propagate_inbounds function Base.getindex(x::StructArray{T, N, C}, I::Int...) where {T, N, C}
+Base.@propagate_inbounds function Base.getindex(x::StructArray{T, <:Any, <:Any, CartesianIndex{N}}, I::Vararg{Int, N}) where {T, N}
     cols = fieldarrays(x)
     @boundscheck checkbounds(x, I...)
     return createinstance(T, get_ith(cols, I...)...)
+end
+
+Base.@propagate_inbounds function Base.getindex(x::StructArray{T, <:Any, <:Any, Int}, I::Int) where {T}
+    cols = fieldarrays(x)
+    @boundscheck checkbounds(x, I)
+    return createinstance(T, get_ith(cols, I)...)
 end
 
 function Base.view(s::StructArray{T, N, C}, I...) where {T, N, C}
     StructArray{T}(map(v -> view(v, I...), fieldarrays(s)))
 end
 
-Base.@propagate_inbounds function Base.setindex!(s::StructArray, vals, I::Int...)
+Base.@propagate_inbounds function Base.setindex!(s::StructArray{<:Any, <:Any, <:Any, CartesianIndex{N}}, vals, I::Vararg{Int, N}) where {N}
     @boundscheck checkbounds(s, I...)
     foreachfield((col, val) -> (@inbounds col[I...] = val), s, vals)
+    s
+end
+
+Base.@propagate_inbounds function Base.setindex!(s::StructArray{<:Any, <:Any, <:Any, Int}, vals, I::Int)
+    @boundscheck checkbounds(s, I)
+    foreachfield((col, val) -> (@inbounds col[I] = val), s, vals)
     s
 end
 
