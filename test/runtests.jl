@@ -35,10 +35,10 @@ end
     @test _promote_typejoin(Tuple{}, Tuple{}) == Tuple{}
     @test _promote_typejoin(Tuple{Int}, Tuple{Int, Int}) == Tuple{Int, Vararg{Int, N} where N}
 
-    @test StructArrays.astuple(Tuple{Int}) = Tuple{Int}
-    @test StructArrays.strip_params(Tuple{Int}) = Tuple
-    @test StructArrays.astuple(NamedTuple{(:a,), Tuple{Float64}}) = Tuple{Float64}
-    @test StructArrays.strip_params(NamedTuple{(:a,), Tuple{Float64}}) = NamedTuple{(:a,)}
+    @test StructArrays.astuple(Tuple{Int}) == Tuple{Int}
+    @test StructArrays.strip_params(Tuple{Int}) == Tuple
+    @test StructArrays.astuple(NamedTuple{(:a,), Tuple{Float64}}) == Tuple{Float64}
+    @test StructArrays.strip_params(NamedTuple{(:a,), Tuple{Float64}}) == NamedTuple{(:a,)}
 end
 
 @testset "indexstyle" begin
