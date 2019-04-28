@@ -113,12 +113,12 @@ widenstructarray(dest::AbstractArray, i, el::S) where {S} = widenstructarray(des
 
 function widenstructarray(dest::StructArray{T}, i, ::Type{S}) where {T, S}
     sch = staticschema(S)
-    names = fieldnames(sch)
-    types = ntuple(i -> fieldtype(sch, i), fieldcount(sch))
-    cols = fieldarrays(dest)
-    if names == propertynames(cols)
+    ST = _promote_typejoin(S, T)
+    if isconcretetype(ST) 
+        names = fieldnames(sch)
+        types = ntuple(i -> fieldtype(sch, i), fieldcount(sch))
+        cols = fieldarrays(dest)
         nt = map((a, b) -> widenstructarray(a, i, b), cols, strip_params(sch)(types))
-        ST = _promote_typejoin(S, T)
         return StructArray{ST}(nt)
     else
         return widenarray(dest, i, S)
