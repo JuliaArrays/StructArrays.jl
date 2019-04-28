@@ -171,12 +171,6 @@ function Base.copyto!(I::StructArray, doffs::Integer, J::StructArray, soffs::Int
     return I
 end
 
-function Base.cat(args::StructArray...; dims)
-    f = key -> cat((getproperty(t, key) for t in args)...; dims=dims)
-    T = mapreduce(eltype, promote_type, args)
-    StructArray{T}(map(f, fields(eltype(args[1]))))
-end
-
 function Base.resize!(s::StructArray, i::Integer)
     for a in fieldarrays(s)
         resize!(a, i)
@@ -188,12 +182,12 @@ function Base.empty!(s::StructArray)
     foreachfield(empty!, s)
 end
 
-for op in [:hcat, :vcat]
+for op in [:cat, :hcat, :vcat]
     @eval begin
-        function Base.$op(args::StructArray...)
-            f = key -> $op((getproperty(t, key) for t in args)...)
+        function Base.$op(args::StructArray...; kwargs...)
+            f = key -> $op((getproperty(t, key) for t in args)...; kwargs...)
             T = mapreduce(eltype, promote_type, args)
-            StructArray{T}(map(f, fields(eltype(args[1]))))
+            StructArray{T}(map(f, propertynames(args[1])))
         end
     end
 end
