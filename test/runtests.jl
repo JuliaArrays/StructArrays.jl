@@ -530,11 +530,13 @@ end
     @test sa.a == fill(1, -2:7)
 end
 
-@testset "concrete" begin
-    @test StructArrays._isconcretetype(ComplexF64)
-    @test !StructArrays._isconcretetype(Complex)
-    @test StructArrays._isconcretetype(Tuple{Union{Int, Missing}})
-    @test !StructArrays._isconcretetype(Tuple{Int, Vararg{Int, N}} where {N})
+@testset "hasfields" begin
+    @test StructArrays.hasfields(ComplexF64)
+    @test !StructArrays.hasfields(Any)
+    @test StructArrays.hasfields(Tuple{Union{Int, Missing}})
+    @test StructArrays.hasfields(typeof((a=1,)))
+    @test !StructArrays.hasfields(NamedTuple)
+    @test !StructArrays.hasfields(Tuple{Int, Vararg{Int, N}} where {N})
 end
 
 @testset "reshape" begin
