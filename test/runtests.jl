@@ -1,5 +1,5 @@
 using StructArrays
-using StructArrays: staticschema
+using StructArrays: staticschema, iscompatible, _promote_typejoin
 using OffsetArrays: OffsetArray
 import Tables, PooledArrays, WeakRefStrings
 using Test
@@ -17,6 +17,23 @@ end
     t = StructArray(a = 1:10, b = rand(Bool, 10))
     @test StructArrays.propertynames(t) == (:a, :b)
     @test StructArrays.propertynames(StructArrays.fieldarrays(t)) == (:a, :b)
+end
+
+@testset "utils" begin
+    t = StructArray(rand(ComplexF64, 2, 2))
+    T = staticschema(typeof(t))
+    @test StructArrays.eltypes(T) == NamedTuple{(:re, :im), Tuple{Float64, Float64}}
+    @test StructArrays.map_params(eltype, T) == NamedTuple{(:re, :im), Tuple{Float64, Float64}}
+    @test StructArrays.map_params(eltype, StructArrays.astuple(T)) == Tuple{Float64, Float64}
+    @test !iscompatible(typeof((1, 2)), typeof(([1],)))
+    @test iscompatible(typeof((1, 2)), typeof(([1], [2])))
+    @test !iscompatible(typeof((1, 2)), typeof(([1.1], [2])))
+    @test iscompatible(typeof(()), typeof(()))
+    @test _promote_typejoin(Tuple{Int, Missing}, Tuple{Int, Int}) == Tuple{Int, Union{Int, Missing}}
+    @test _promote_typejoin(Pair{Int, Missing}, Pair{Int, Int}) == Pair{Int, Union{Int, Missing}}
+    @test _promote_typejoin(NamedTuple{(:a, :b), Tuple{Int, Missing}}, NamedTuple{(:a, :b), Tuple{Int, Int}}) == NamedTuple{(:a, :b), Tuple{Int, Union{Int, Missing}}}
+    @test _promote_typejoin(Tuple{}, Tuple{}) == Tuple{}
+    @test _promote_typejoin(Tuple{Int}, Tuple{Int, Int}) == Tuple{Int, Vararg{Int, N} where N}
 end
 
 @testset "indexstyle" begin
@@ -524,6 +541,7 @@ end
     @test getproperty(rows, 1) isa Matrix{Float64}
     @test getproperty(rows, :re) isa Matrix{Float64}
     @test IndexStyle(rows) isa IndexCartesian
+    @test IndexStyle(typeof(rows)) isa IndexCartesian
     @test all(t -> t.re >= 0, s)
     @test all(t -> t.re >= 0, rows)
     rows[13].re = -12
@@ -537,6 +555,7 @@ end
     @test getproperty(rows, 1) isa Matrix{Float64}
     @test getproperty(rows, :re) isa Matrix{Float64}
     @test IndexStyle(rows) isa IndexLinear
+    @test IndexStyle(typeof(rows)) isa IndexLinear
     @test all(t -> t.re >= 0, s)
     @test all(t -> t.re >= 0, rows)
     rows[13].re = -12
@@ -563,6 +582,7 @@ end
     s = StructArray((rand(10, 10), rand(10, 10)))
     rows = LazyRows(s)
     @test IndexStyle(rows) isa IndexLinear
+    @test IndexStyle(typeof(rows)) isa IndexLinear
     @test all(t -> StructArrays._getproperty(t, 1) >= 0, s)
     @test all(t -> getproperty(t, 1) >= 0, rows)
     setproperty!(rows[13], 1, -12)
