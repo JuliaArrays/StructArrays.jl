@@ -130,3 +130,12 @@ astuple(::Type{T}) where {T<:Tuple} = T
 
 strip_params(::Type{<:Tuple}) = Tuple
 strip_params(::Type{<:NamedTuple{names}}) where {names} = NamedTuple{names}
+
+hasfields(::Type{<:Tup}) = false
+hasfields(::Type{<:NTuple{N, Any}}) where {N} = true
+hasfields(::Type{<:NamedTuple{names}}) where {names} = true
+hasfields(::Type{T}) where {T} = !isabstracttype(T)
+hasfields(::Type{Union{T, Missing}}) where {T} = false
+hasfields(::Type{Missing}) = true
+hasfields(::Type{Union{T, Nothing}}) where {T} = false
+hasfields(::Type{Nothing}) = true

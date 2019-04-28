@@ -1,8 +1,3 @@
-hasfields(::Type{<:NTuple{N, Any}}) where {N} = true
-hasfields(::Type{<:Tup}) = false
-hasfields(::Type{<:NamedTuple{names}}) where {names} = true
-hasfields(::Type{T}) where {T} = !isabstracttype(T)
-
 default_array(::Type{S}, d) where {S} = Array{S}(undef, d)
 
 struct StructArrayInitializer{F, G}
@@ -117,9 +112,8 @@ end
 widenstructarray(dest::AbstractArray{S}, i, el::T) where {S, T} = widenstructarray(dest, i, _promote_typejoin(S, T))
 
 function widenstructarray(dest::StructArray, i, ::Type{T}) where {T}
-    hasfields(T) || return widenarray(dest, i, T)
     sch = staticschema(T)
-    fieldnames(sch) == propertynames(dest) || return widenarray(dest, i, T)
+    sch !== nothing && fieldnames(sch) == propertynames(dest) || return widenarray(dest, i, T)
     types = ntuple(x -> fieldtype(sch, x), fieldcount(sch))
     cols = Tuple(fieldarrays(dest))
     newcols = map((a, b) -> widenstructarray(a, i, b), cols, types)
