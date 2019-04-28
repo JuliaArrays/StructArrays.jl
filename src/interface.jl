@@ -9,8 +9,5 @@ end
 
 staticschema(::Type{T}) where {T<:Tup} = T
 
-astuple(::Type{NamedTuple{names, types}}) where {names, types} = types
-astuple(::Type{T}) where {T<:Tuple} = T
-
-strip_params(::Type{<:Tuple}) = Tuple
-strip_params(::Type{<:NamedTuple{names}}) where {names} = NamedTuple{names}
+createinstance(::Type{T}, args...) where {T} = T(args...)
+createinstance(::Type{T}, args...) where {T<:Union{Tuple, NamedTuple}} = T(args)

@@ -46,9 +46,6 @@ end
 
 foreachfield(f, x::T, xs...) where {T} = foreachfield(staticschema(T), f, x, xs...)
 
-createinstance(::Type{T}, args...) where {T} = T(args...)
-createinstance(::Type{T}, args...) where {T<:Union{Tuple, NamedTuple}} = T(args)
-
 add_params(::Type{T}, ::Type{C}) where {T, C<:Tuple} = T
 add_params(::Type{T}, ::Type{C}) where {T<:Tuple, C<:Tuple} = C
 add_params(::Type{<:NamedTuple{names}}, ::Type{C}) where {names, C<:Tuple} = NamedTuple{names, C}
@@ -112,3 +109,9 @@ function to_tup(c, fields::NTuple{N, Symbol}) where N
     return NamedTuple{fields}(t)
 end
 to_tup(c, fields::NTuple{N, Int}) where {N} = ntuple(i -> _getproperty(c, fields[i]), N)
+
+astuple(::Type{NamedTuple{names, types}}) where {names, types} = types
+astuple(::Type{T}) where {T<:Tuple} = T
+
+strip_params(::Type{<:Tuple}) = Tuple
+strip_params(::Type{<:NamedTuple{names}}) where {names} = NamedTuple{names}
