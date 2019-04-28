@@ -109,27 +109,23 @@ function grow_to_structarray!(dest::AbstractArray, itr, elem = iterate(itr))
     return dest
 end
 
-widenstructarray(dest::AbstractArray, i, el::S) where {S} = widenstructarray(dest, i, S)
+widenstructarray(dest::AbstractArray{T}, i, el::S) where {T, S} = widenstructarray(dest, i, _promote_typejoin(S, T))
 
 function widenstructarray(dest::StructArray{T}, i, ::Type{S}) where {T, S}
+    (S<:Tup) || isconcretetype(S) || return widenarray(dest, i, S)
     sch = staticschema(S)
-    ST = _promote_typejoin(S, T)
-    if isconcretetype(ST) 
-        names = fieldnames(sch)
-        types = ntuple(i -> fieldtype(sch, i), fieldcount(sch))
-        cols = fieldarrays(dest)
-        nt = map((a, b) -> widenstructarray(a, i, b), cols, strip_params(sch)(types))
-        return StructArray{ST}(nt)
-    else
-        return widenarray(dest, i, S)
-    end
+    fieldnames(sch) == propertynames(dest) || return widenarray(dest, i, S)
+    types = ntuple(x -> fieldtype(sch, x), fieldcount(sch))
+    cols = Tuple(fieldarrays(dest))
+    newcols = map((a, b) -> widenstructarray(a, i, b), cols, types)
+    return StructArray{S}(newcols)
 end
 
 widenstructarray(dest::AbstractArray, i, ::Type{S}) where {S} = widenarray(dest, i, S)
 
 widenarray(dest::AbstractArray{S}, i, ::Type{S}) where {S} = dest
 function widenarray(dest::AbstractArray{S}, i, ::Type{T}) where {S, T}
-    new = similar(dest, Base.promote_typejoin(S, T), length(dest))
+    new = similar(dest, T, length(dest))
     copyto!(new, 1, dest, 1, i-1)
     new
 end
