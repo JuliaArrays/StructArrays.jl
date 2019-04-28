@@ -1,4 +1,5 @@
 using StructArrays
+using StructArrays: staticschema
 using OffsetArrays: OffsetArray
 import Tables, PooledArrays, WeakRefStrings
 using Test
@@ -515,8 +516,26 @@ end
 end
 
 @testset "lazy" begin
+    s = StructArray{ComplexF64}((rand(10, 10), view(rand(100, 100), 1:10, 1:10)))
+    rows = LazyRows(s)
+    @test propertynames(rows) == (:re, :im)
+    @test propertynames(rows[1]) == (:re, :im)
+    @test staticschema(typeof(rows)) == staticschema(eltype(rows)) == staticschema(ComplexF64)
+    @test getproperty(rows, 1) isa Matrix{Float64}
+    @test getproperty(rows, :re) isa Matrix{Float64}
+    @test IndexStyle(rows) isa IndexCartesian
+    @test all(t -> t.re >= 0, s)
+    @test all(t -> t.re >= 0, rows)
+    rows[13].re = -12
+    rows[13].im = 0
+
     s = StructArray(rand(ComplexF64, 10, 10))
     rows = LazyRows(s)
+    @test propertynames(rows) == (:re, :im)
+    @test propertynames(rows[1]) == (:re, :im)
+    @test staticschema(typeof(rows)) == staticschema(eltype(rows)) == staticschema(ComplexF64)
+    @test getproperty(rows, 1) isa Matrix{Float64}
+    @test getproperty(rows, :re) isa Matrix{Float64}
     @test IndexStyle(rows) isa IndexLinear
     @test all(t -> t.re >= 0, s)
     @test all(t -> t.re >= 0, rows)
@@ -525,6 +544,8 @@ end
     @test !all(t -> t.re >= 0, s)
     @test !all(t -> t.re >= 0, rows)
 
+    @test !all(t -> t.re >= 0, s)
+    @test !all(t -> t.re >= 0, rows)
     io = IOBuffer()
     show(io, rows[13])
     str = String(take!(io))
