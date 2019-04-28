@@ -46,18 +46,13 @@ end
 
 foreachfield(f, x::T, xs...) where {T} = foreachfield(staticschema(T), f, x, xs...)
 
-add_params(::Type{T}, ::Type{C}) where {T, C<:Tuple} = T
-add_params(::Type{T}, ::Type{C}) where {T<:Tuple, C<:Tuple} = C
-add_params(::Type{<:NamedTuple{names}}, ::Type{C}) where {names, C<:Tuple} = NamedTuple{names, C}
-add_params(::Type{<:Pair}, ::Type{Tuple{S, T}}) where {S, T} = Pair{S, T}
-
 """
 `iscompatible(::Type{S}, ::Type{V}) where {S, V<:AbstractArray}`
 
 Check whether element type `S` can be pushed to a container of type `V`.
 """
 iscompatible(::Type{S}, ::Type{<:AbstractArray{T}}) where {S, T} = S<:T
-iscompatible(::Type{S}, ::Type{StructArray{T, N, C}}) where {S, T, N, C} = iscompatible(astuple(staticschema(S)), astuple(C))
+iscompatible(::Type{S}, ::Type{<:StructArray{<:Any, <:Any, C}}) where {S, C} = iscompatible(astuple(staticschema(S)), astuple(C))
 
 iscompatible(::Type{Tuple{}}, ::Type{T}) where {T<:Tuple} = false
 iscompatible(::Type{T}, ::Type{Tuple{}}) where {T<:Tuple} = false
@@ -68,6 +63,26 @@ function iscompatible(::Type{S}, ::Type{T}) where {S<:Tuple, T<:Tuple}
 end
 
 iscompatible(::S, ::T) where {S, T<:AbstractArray} = iscompatible(S, T)
+
+function _promote_typejoin(::Type{S}, ::Type{T}) where {S<:NTuple{N, Any}, T<:NTuple{N, Any}} where N
+    head = _promote_typejoin(Base.tuple_type_head(S), Base.tuple_type_head(T))
+    tail = _promote_typejoin(Base.tuple_type_tail(S), Base.tuple_type_tail(T))
+    return Base.tuple_type_cons(head, tail)
+end
+
+_promote_typejoin(::Type{Tuple{}}, ::Type{Tuple{}}) = Tuple{}
+function _promote_typejoin(::Type{NamedTuple{names, types}}, ::Type{NamedTuple{names, types′}}) where {names, types, types′}
+    T = _promote_typejoin(types, types′)
+    return NamedTuple{names, T}
+end
+
+_promote_typejoin(::Type{S}, ::Type{T}) where {S, T} = Base.promote_typejoin(S, T)
+
+function _promote_typejoin(::Type{Pair{A, B}}, ::Type{Pair{A′, B′}}) where {A, A′, B, B′}
+    C = _promote_typejoin(A, A′)
+    D = _promote_typejoin(B, B′)
+    return Pair{C, D}
+end
 
 function replace_storage(f, v::AbstractArray{T, N})::AbstractArray{T, N} where {T, N}
     f(v)

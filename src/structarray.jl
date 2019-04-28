@@ -81,7 +81,7 @@ Base.convert(::Type{StructArray}, v::StructArray) = v
 Base.convert(::Type{StructVector}, v::AbstractVector) = StructVector(v)
 Base.convert(::Type{StructVector}, v::StructVector) = v
 
-function Base.similar(::Type{StructArray{T, N, C}}, sz::Dims) where {T, N, C}
+function Base.similar(::Type{<:StructArray{T, <:Any, C}}, sz::Dims) where {T, C}
     buildfromschema(typ -> similar(typ, sz), T, C)
 end
 
