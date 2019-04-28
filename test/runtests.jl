@@ -312,8 +312,11 @@ end
     @test Tables.columns(s).a == [1]
     @test Tables.columns(s).b == ["test"]
     @test Tables.istable(s)
+    @test Tables.istable(typeof(s))
     @test Tables.rowaccess(s)
+    @test Tables.rowaccess(typeof(s))
     @test Tables.columnaccess(s)
+    @test Tables.columnaccess(typeof(s))
 end
 
 struct S
