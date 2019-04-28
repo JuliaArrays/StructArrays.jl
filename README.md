@@ -182,7 +182,7 @@ julia> map(t -> t.b ^ t.a, LazyRows(t))
 
 ## Advanced: structures with non-standard data layout
 
-StructArrays support structures with non-standard data layout (where `getproperty` has been overloaded or where the constructors are non-standard). The user is required to provide an overloaded `staticscheme` for their type (to give the names and types of the properties of a given type) as well as a `createinstance` method. Here is an example of a type `MyType` that has as properties either its field `data` or properties of its field `rest` (which is a named tuple):
+StructArrays support structures with non-standard data layout (where `getproperty` has been overloaded or where the constructors are non-standard). The user is required to provide an overloaded `staticschema` for their type (to give the names and types of the properties of a given type) as well as a `createinstance` method. Here is an example of a type `MyType` that has as properties either its field `data` or properties of its field `rest` (which is a named tuple):
 
 ```julia
 using StructArrays

@@ -24,8 +24,7 @@ end
 staticschema(::Type{<:LazyRow{T}}) where {T} = staticschema(T)
 buildfromschema(f, ::Type{<:LazyRow{T}}) where {T} = buildfromschema(f, T)
 
-iscompatible(::Type{<:LazyRow{S}}, ::Type{StructArray{T, N, C}}) where {S, T, N, C} =
-    iscompatible(S, StructArray{T, N, C})
+iscompatible(::Type{<:LazyRow{R}}, ::Type{S}) where {R, S<:StructArray} = iscompatible(R, S)
 
 (s::ArrayInitializer)(::Type{<:LazyRow{T}}, d) where {T} = buildfromschema(typ -> s(typ, d), T)
 

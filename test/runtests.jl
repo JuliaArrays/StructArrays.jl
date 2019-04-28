@@ -20,11 +20,25 @@ end
 
 @testset "indexstyle" begin
     @inferred IndexStyle(StructArray(a=rand(10,10), b=view(rand(100,100), 1:10, 1:10)))
-    T = typeof(StructArray(a=rand(10,10), b=view(rand(100,100), 1:10, 1:10)))
+    s = StructArray(a=rand(10,10), b=view(rand(100,100), 1:10, 1:10))
+    T = typeof(s)
     @test IndexStyle(T) === IndexCartesian()
+    @test StructArrays._best_index(T) == CartesianIndex{2}
+    @test s[100] == s[10, 10] == (a=s.a[10,10], b=s.b[10,10])
+    s[100] = (a=1, b=1)
+    @test s[100] == s[10, 10] == (a=1, b=1)
+    s[10, 10] = (a=0, b=0)
+    @test s[100] == s[10, 10] == (a=0, b=0)
     @inferred IndexStyle(StructArray(a=rand(10,10), b=rand(10,10)))
-    T = typeof(StructArray(a=rand(10,10), b=rand(10,10)))
+    s = StructArray(a=rand(10,10), b=rand(10,10))
+    T = typeof(s)
     @test IndexStyle(T) === IndexLinear()
+    @test StructArrays._best_index(T) == Int
+    @test s[100] == s[10, 10] == (a=s.a[10,10], b=s.b[10,10])
+    s[100] = (a=1, b=1)
+    @test s[100] == s[10, 10] == (a=1, b=1)
+    s[10, 10] = (a=0, b=0)
+    @test s[100] == s[10, 10] == (a=0, b=0)
 end
 
 @testset "replace_storage" begin
