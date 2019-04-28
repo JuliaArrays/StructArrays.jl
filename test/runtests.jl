@@ -66,6 +66,13 @@ end
     @test StructArrays.roweq(strs, 1, 2)
     @test !StructArrays.roweq(strs, 1, 3)
     @test !StructArrays.roweq(strs, 2, 3)
+
+    a = ["a", "c", "z", "a"]
+    b = PooledArrays.PooledArray(["p", "y", "a", "x"])
+    t = StructArray((a, b))
+    @test StructArrays.rowcmp(s, 4, t, 4) == 0
+    @test StructArrays.rowcmp(s, 1, t, 1) == 1
+    @test StructArrays.rowcmp(s, 2, t, 3) == -1
 end
 
 @testset "permute" begin
@@ -144,6 +151,9 @@ end
     a = [1, 2, 1, 1, 0, 9, -100]
     b = [-2, 12, 1, 1, 0, 11, 9]
     itr = StructArrays.GroupJoinPerm(a, b)
+    @test Base.IteratorSize(itr) == Base.SizeUnknown()
+    @test Base.IteratorEltype(itr) == Base.HasEltype()
+    @test eltype(itr) == Tuple{UnitRange{Int}, UnitRange{Int}}
     s = StructArray(itr)
     as, bs = fieldarrays(s)
     @test as == [1:1, 1:0, 2:2, 3:5, 6:6, 7:7, 1:0, 1:0]
