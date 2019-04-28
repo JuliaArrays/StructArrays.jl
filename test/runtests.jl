@@ -530,6 +530,13 @@ end
     @test sa.a == fill(1, -2:7)
 end
 
+@testset "concrete" begin
+    @test StructArrays._isconcretetype(ComplexF64)
+    @test !StructArrays._isconcretetype(Complex)
+    @test StructArrays._isconcretetype(Tuple{Union{Int, Missing}})
+    @test !StructArrays._isconcretetype(Tuple{Int, Vararg{Int, N}} where {N})
+end
+
 @testset "reshape" begin
     s = StructArray(a=[1,2,3,4], b=["a","b","c","d"])
     rs = reshape(s, (2, 2))

@@ -1,3 +1,7 @@
+# Needed to allow Tuple{Union{Int, Missing}}
+_isconcretetype(::Type{<:NTuple{N, Any}}) where {N} = true
+_isconcretetype(::Type{T}) where {T} = isconcretetype(T)
+
 default_array(::Type{S}, d) where {S} = Array{S}(undef, d)
 
 struct StructArrayInitializer{F, G}
@@ -112,7 +116,7 @@ end
 widenstructarray(dest::AbstractArray{T}, i, el::S) where {T, S} = widenstructarray(dest, i, _promote_typejoin(S, T))
 
 function widenstructarray(dest::StructArray{T}, i, ::Type{S}) where {T, S}
-    (S<:Tup) || isconcretetype(S) || return widenarray(dest, i, S)
+    _isconcretetype(S) || return widenarray(dest, i, S)
     sch = staticschema(S)
     fieldnames(sch) == propertynames(dest) || return widenarray(dest, i, S)
     types = ntuple(x -> fieldtype(sch, x), fieldcount(sch))
