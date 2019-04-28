@@ -34,6 +34,12 @@ end
 Base.parent(v::LazyRows) = getfield(v, 1)
 fieldarrays(v::LazyRows) = fieldarrays(parent(v))
 
+Base.getproperty(s::LazyRows, key::Symbol) = getproperty(parent(s), key)
+Base.getproperty(s::LazyRows, key::Int) = getproperty(parent(s), key)
+Base.propertynames(c::LazyRows) = propertynames(parent(c))
+
+staticschema(::Type{LazyRows{T, N, C, I}}) where {T, N, C, I} = staticschema(StructArray{T, N, C, I})
+
 Base.size(v::LazyRows) = size(parent(v))
 Base.getindex(v::LazyRows{<:Any, <:Any, <:Any, Int}, i::Int) = LazyRow(parent(v), i)
 Base.getindex(v::LazyRows{<:Any, <:Any, <:Any, CartesianIndex{N}}, i::Vararg{Int, N}) where {N} = LazyRow(parent(v), CartesianIndex(i))

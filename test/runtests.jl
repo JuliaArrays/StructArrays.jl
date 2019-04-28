@@ -1,4 +1,5 @@
 using StructArrays
+using StructArrays: staticschema, iscompatible, _promote_typejoin
 using OffsetArrays: OffsetArray
 import Tables, PooledArrays, WeakRefStrings
 using Test
@@ -16,6 +17,28 @@ end
     t = StructArray(a = 1:10, b = rand(Bool, 10))
     @test StructArrays.propertynames(t) == (:a, :b)
     @test StructArrays.propertynames(StructArrays.fieldarrays(t)) == (:a, :b)
+end
+
+@testset "utils" begin
+    t = StructArray(rand(ComplexF64, 2, 2))
+    T = staticschema(typeof(t))
+    @test StructArrays.eltypes(T) == NamedTuple{(:re, :im), Tuple{Float64, Float64}}
+    @test StructArrays.map_params(eltype, T) == NamedTuple{(:re, :im), Tuple{Float64, Float64}}
+    @test StructArrays.map_params(eltype, StructArrays.astuple(T)) == Tuple{Float64, Float64}
+    @test !iscompatible(typeof((1, 2)), typeof(([1],)))
+    @test iscompatible(typeof((1, 2)), typeof(([1], [2])))
+    @test !iscompatible(typeof((1, 2)), typeof(([1.1], [2])))
+    @test iscompatible(typeof(()), typeof(()))
+    @test _promote_typejoin(Tuple{Int, Missing}, Tuple{Int, Int}) == Tuple{Int, Union{Int, Missing}}
+    @test _promote_typejoin(Pair{Int, Missing}, Pair{Int, Int}) == Pair{Int, Union{Int, Missing}}
+    @test _promote_typejoin(NamedTuple{(:a, :b), Tuple{Int, Missing}}, NamedTuple{(:a, :b), Tuple{Int, Int}}) == NamedTuple{(:a, :b), Tuple{Int, Union{Int, Missing}}}
+    @test _promote_typejoin(Tuple{}, Tuple{}) == Tuple{}
+    @test _promote_typejoin(Tuple{Int}, Tuple{Int, Int}) == Tuple{Int, Vararg{Int, N} where N}
+
+    @test StructArrays.astuple(Tuple{Int}) == Tuple{Int}
+    @test StructArrays.strip_params(Tuple{Int}) == Tuple
+    @test StructArrays.astuple(NamedTuple{(:a,), Tuple{Float64}}) == Tuple{Float64}
+    @test StructArrays.strip_params(NamedTuple{(:a,), Tuple{Float64}}) == NamedTuple{(:a,)}
 end
 
 @testset "indexstyle" begin
@@ -66,6 +89,13 @@ end
     @test StructArrays.roweq(strs, 1, 2)
     @test !StructArrays.roweq(strs, 1, 3)
     @test !StructArrays.roweq(strs, 2, 3)
+
+    a = ["a", "c", "z", "a"]
+    b = PooledArrays.PooledArray(["p", "y", "a", "x"])
+    t = StructArray((a, b))
+    @test StructArrays.rowcmp(s, 4, t, 4) == 0
+    @test StructArrays.rowcmp(s, 1, t, 1) == 1
+    @test StructArrays.rowcmp(s, 2, t, 3) == -1
 end
 
 @testset "permute" begin
@@ -144,6 +174,9 @@ end
     a = [1, 2, 1, 1, 0, 9, -100]
     b = [-2, 12, 1, 1, 0, 11, 9]
     itr = StructArrays.GroupJoinPerm(a, b)
+    @test Base.IteratorSize(itr) == Base.SizeUnknown()
+    @test Base.IteratorEltype(itr) == Base.HasEltype()
+    @test eltype(itr) == Tuple{UnitRange{Int}, UnitRange{Int}}
     s = StructArray(itr)
     as, bs = fieldarrays(s)
     @test as == [1:1, 1:0, 2:2, 3:5, 6:6, 7:7, 1:0, 1:0]
@@ -302,8 +335,11 @@ end
     @test Tables.columns(s).a == [1]
     @test Tables.columns(s).b == ["test"]
     @test Tables.istable(s)
+    @test Tables.istable(typeof(s))
     @test Tables.rowaccess(s)
+    @test Tables.rowaccess(typeof(s))
     @test Tables.columnaccess(s)
+    @test Tables.columnaccess(typeof(s))
 end
 
 struct S
@@ -502,9 +538,29 @@ end
 end
 
 @testset "lazy" begin
+    s = StructArray{ComplexF64}((rand(10, 10), view(rand(100, 100), 1:10, 1:10)))
+    rows = LazyRows(s)
+    @test propertynames(rows) == (:re, :im)
+    @test propertynames(rows[1]) == (:re, :im)
+    @test staticschema(typeof(rows)) == staticschema(eltype(rows)) == staticschema(ComplexF64)
+    @test getproperty(rows, 1) isa Matrix{Float64}
+    @test getproperty(rows, :re) isa Matrix{Float64}
+    @test IndexStyle(rows) isa IndexCartesian
+    @test IndexStyle(typeof(rows)) isa IndexCartesian
+    @test all(t -> t.re >= 0, s)
+    @test all(t -> t.re >= 0, rows)
+    rows[13].re = -12
+    rows[13].im = 0
+
     s = StructArray(rand(ComplexF64, 10, 10))
     rows = LazyRows(s)
+    @test propertynames(rows) == (:re, :im)
+    @test propertynames(rows[1]) == (:re, :im)
+    @test staticschema(typeof(rows)) == staticschema(eltype(rows)) == staticschema(ComplexF64)
+    @test getproperty(rows, 1) isa Matrix{Float64}
+    @test getproperty(rows, :re) isa Matrix{Float64}
     @test IndexStyle(rows) isa IndexLinear
+    @test IndexStyle(typeof(rows)) isa IndexLinear
     @test all(t -> t.re >= 0, s)
     @test all(t -> t.re >= 0, rows)
     rows[13].re = -12
@@ -512,6 +568,8 @@ end
     @test !all(t -> t.re >= 0, s)
     @test !all(t -> t.re >= 0, rows)
 
+    @test !all(t -> t.re >= 0, s)
+    @test !all(t -> t.re >= 0, rows)
     io = IOBuffer()
     show(io, rows[13])
     str = String(take!(io))
@@ -529,6 +587,7 @@ end
     s = StructArray((rand(10, 10), rand(10, 10)))
     rows = LazyRows(s)
     @test IndexStyle(rows) isa IndexLinear
+    @test IndexStyle(typeof(rows)) isa IndexLinear
     @test all(t -> StructArrays._getproperty(t, 1) >= 0, s)
     @test all(t -> getproperty(t, 1) >= 0, rows)
     setproperty!(rows[13], 1, -12)
