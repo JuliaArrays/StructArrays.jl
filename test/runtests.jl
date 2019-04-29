@@ -532,25 +532,15 @@ end
 
 @testset "hasfields" begin
     @test StructArrays.hasfields(ComplexF64)
-    @inferred staticschema(ComplexF64)
     @test !StructArrays.hasfields(Any)
-    @inferred staticschema(Any)
     @test StructArrays.hasfields(Tuple{Union{Int, Missing}})
-    @inferred staticschema(Tuple{Union{Int, Missing}})
     @test StructArrays.hasfields(typeof((a=1,)))
-    @inferred staticschema(typeof((a=1,)))
     @test !StructArrays.hasfields(NamedTuple)
-    @inferred staticschema(NamedTuple)
     @test !StructArrays.hasfields(Tuple{Int, Vararg{Int, N}} where {N})
-    @inferred staticschema(Tuple{Int, Vararg{Int, N}} where {N})
     @test StructArrays.hasfields(Missing)
-    @inferred staticschema(Missing)
     @test !StructArrays.hasfields(Union{Tuple{Int}, Missing})
-    @inferred staticschema(Union{Tuple{Int}, Missing})
     @test StructArrays.hasfields(Nothing)
-    @inferred staticschema(Nothing)
     @test !StructArrays.hasfields(Union{Tuple{Int}, Nothing})
-    @inferred staticschema(Union{Tuple{Int}, Nothing})
 end
 
 @testset "reshape" begin

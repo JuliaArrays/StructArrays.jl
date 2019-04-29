@@ -112,7 +112,7 @@ end
 widenstructarray(dest::AbstractArray{S}, i, el::T) where {S, T} = widenstructarray(dest, i, _promote_typejoin(S, T))
 
 function widenstructarray(dest::StructArray, i, ::Type{T}) where {T}
-    sch = staticschema(T)
+    sch = hasfields(T) ? staticschema(T) : nothing
     sch !== nothing && fieldnames(sch) == propertynames(dest) || return widenarray(dest, i, T)
     types = ntuple(x -> fieldtype(sch, x), fieldcount(sch))
     cols = Tuple(fieldarrays(dest))
