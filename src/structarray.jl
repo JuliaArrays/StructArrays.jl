@@ -51,10 +51,21 @@ StructVector(args...; kwargs...) = StructArray(args...; kwargs...)
 
 Base.IndexStyle(::Type{S}) where {S<:StructArray} = _indexstyle(_best_index(S))
 
-_undef_array(::Type{T}, sz; unwrap = t -> false) where {T} = unwrap(T) ? StructArray{T}(undef, sz; unwrap = unwrap) : Array{T}(undef, sz)
+function _undef_array(::Type{T}, sz; unwrap = t -> false) where {T}
+    if unwrap(T)
+        return StructArray{T}(undef, sz; unwrap = unwrap)
+    else
+        return Array{T}(undef, sz)
+    end
+end
 
-_similar(v::AbstractArray, ::Type{Z}; unwrap = t -> false) where {Z} =
-    unwrap(Z) ? buildfromschema(typ -> _similar(v, typ; unwrap = unwrap), Z) : similar(v, Z)
+function _similar(v::AbstractArray, ::Type{Z}; unwrap = t -> false) where {Z}
+    if unwrap(Z)
+        return buildfromschema(typ -> _similar(v, typ; unwrap = unwrap), Z)
+    else
+        return similar(v, Z)
+    end
+end
 
 function StructArray{T}(::Base.UndefInitializer, sz::Dims; unwrap = t -> false) where {T}
     buildfromschema(typ -> _undef_array(typ, sz; unwrap = unwrap), T)
@@ -65,7 +76,10 @@ function similar_structarray(v::AbstractArray, ::Type{Z}; unwrap = t -> false) w
     buildfromschema(typ -> _similar(v, typ; unwrap = unwrap), Z)
 end
 
-StructArray(v; unwrap = t -> false) = collect_structarray(v; initializer = StructArrayInitializer(unwrap))
+function StructArray(v; unwrap = t -> false)::StructArray
+    collect_structarray(v; initializer = StructArrayInitializer(unwrap))
+end
+
 function StructArray(v::AbstractArray{T}; unwrap = t -> false) where {T}
     s = similar_structarray(v, T; unwrap = unwrap)
     for i in eachindex(v)

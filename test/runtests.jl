@@ -530,6 +530,19 @@ end
     @test sa.a == fill(1, -2:7)
 end
 
+@testset "hasfields" begin
+    @test StructArrays.hasfields(ComplexF64)
+    @test !StructArrays.hasfields(Any)
+    @test StructArrays.hasfields(Tuple{Union{Int, Missing}})
+    @test StructArrays.hasfields(typeof((a=1,)))
+    @test !StructArrays.hasfields(NamedTuple)
+    @test !StructArrays.hasfields(Tuple{Int, Vararg{Int, N}} where {N})
+    @test StructArrays.hasfields(Missing)
+    @test !StructArrays.hasfields(Union{Tuple{Int}, Missing})
+    @test StructArrays.hasfields(Nothing)
+    @test !StructArrays.hasfields(Union{Tuple{Int}, Nothing})
+end
+
 @testset "reshape" begin
     s = StructArray(a=[1,2,3,4], b=["a","b","c","d"])
     rs = reshape(s, (2, 2))
