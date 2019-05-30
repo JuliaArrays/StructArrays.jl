@@ -1,5 +1,8 @@
 import Base: tuple_type_cons, tuple_type_head, tuple_type_tail, tail
 
+_indexstyle(::Type{Int}) = IndexLinear()
+_indexstyle(::Type{CartesianIndex{N}}) where {N} = IndexCartesian()
+
 eltypes(::Type{T}) where {T} = map_params(eltype, T)
 
 map_params(f, ::Type{Tuple{}}) = Tuple{}

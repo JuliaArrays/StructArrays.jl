@@ -44,8 +44,8 @@ Base.size(v::LazyRows) = size(parent(v))
 Base.getindex(v::LazyRows{<:Any, <:Any, <:Any, Int}, i::Int) = LazyRow(parent(v), i)
 Base.getindex(v::LazyRows{<:Any, <:Any, <:Any, CartesianIndex{N}}, i::Vararg{Int, N}) where {N} = LazyRow(parent(v), CartesianIndex(i))
 
-_best_index(::Type{LazyRows{T, N, C, I}}) where {T, N, C, I} = I
-Base.IndexStyle(::Type{L}) where {L<:LazyRows} = _indexstyle(_best_index(L))
+best_index(::Type{LazyRows{T, N, C, I}}) where {T, N, C, I} = I
+Base.IndexStyle(::Type{L}) where {L<:LazyRows} = _indexstyle(best_index(L))
 
 function Base.showarg(io::IO, s::LazyRows{T}, toplevel) where T
     print(io, "LazyRows")
