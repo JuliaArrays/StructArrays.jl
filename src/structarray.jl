@@ -14,24 +14,23 @@ struct StructArray{T, N, C<:Tup, I} <: AbstractArray{T, N}
                 axes(c[i]) == ax || error("all field arrays must have same shape")
             end
         end
-        new{T, N, C, _best_index(c...)}(c)
+        new{T, N, C, index_type(C)}(c)
     end
 end
 
-_best_index() = Int
-_best_index(col::AbstractArray, cols::AbstractArray...) = _best_index(IndexStyle(col, cols...), col)
-_best_index(::IndexLinear, ::AbstractArray) = Int
-_best_index(::IndexCartesian, ::AbstractArray{T, N}) where {T, N} = CartesianIndex{N}
-_best_index(::Type{StructArray{T, N, C, I}}) where {T, N, C, I} = I
-_indexstyle(::Type{Int}) = IndexLinear()
-_indexstyle(::Type{CartesianIndex{N}}) where {N} = IndexCartesian()
+index_type(::Type{NamedTuple{names, types}}) where {names, types} = index_type(types)
+index_type(::Type{Tuple{}}) = Int
+function index_type(::Type{T}) where {T<:Tuple}
+    S, U = tuple_type_head(T), tuple_type_tail(T)
+    IndexStyle(S) isa IndexCartesian ? CartesianIndex{ndims(S)} : index_type(U) 
+end
 
-_dims(c::Tup) = length(axes(c[1]))
-_dims(c::EmptyTup) = 1
+index_type(::Type{StructArray{T, N, C, I}}) where {T, N, C, I} = I
 
 function StructArray{T}(c::C) where {T, C<:Tup}
     cols = strip_params(staticschema(T))(c)
-    StructArray{T, _dims(cols), typeof(cols)}(cols)
+    N = isempty(cols) ? 1 : ndims(cols[1]) 
+    StructArray{T, N, typeof(cols)}(cols)
 end
 
 StructArray(c::C) where {C<:NamedTuple} = StructArray{eltypes(C)}(c)
@@ -49,7 +48,9 @@ const StructVector{T, C<:Tup, I} = StructArray{T, 1, C, I}
 StructVector{T}(args...; kwargs...) where {T} = StructArray{T}(args...; kwargs...)
 StructVector(args...; kwargs...) = StructArray(args...; kwargs...)
 
-Base.IndexStyle(::Type{S}) where {S<:StructArray} = _indexstyle(_best_index(S))
+function Base.IndexStyle(::Type{S}) where {S<:StructArray}
+    index_type(S) === Int ? IndexLinear() : IndexCartesian()
+end
 
 function _undef_array(::Type{T}, sz; unwrap = t -> false) where {T}
     if unwrap(T)
