@@ -45,7 +45,9 @@ Base.getindex(v::LazyRows{<:Any, <:Any, <:Any, Int}, i::Int) = LazyRow(parent(v)
 Base.getindex(v::LazyRows{<:Any, <:Any, <:Any, CartesianIndex{N}}, i::Vararg{Int, N}) where {N} = LazyRow(parent(v), CartesianIndex(i))
 
 index_type(::Type{LazyRows{T, N, C, I}}) where {T, N, C, I} = I
-Base.IndexStyle(::Type{L}) where {L<:LazyRows} = _indexstyle(index_type(L))
+function Base.IndexStyle(::Type{L}) where {L<:LazyRows}
+    index_type(L) === Int ? IndexLinear() : IndexCartesian()
+end
 
 function Base.showarg(io::IO, s::LazyRows{T}, toplevel) where T
     print(io, "LazyRows")

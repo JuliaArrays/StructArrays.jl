@@ -27,12 +27,10 @@ end
 
 index_type(::Type{StructArray{T, N, C, I}}) where {T, N, C, I} = I
 
-_dims(c::Tup) = length(axes(c[1]))
-_dims(c::EmptyTup) = 1
-
 function StructArray{T}(c::C) where {T, C<:Tup}
     cols = strip_params(staticschema(T))(c)
-    StructArray{T, _dims(cols), typeof(cols)}(cols)
+    N = isempty(cols) ? 1 : ndims(cols[1]) 
+    StructArray{T, N, typeof(cols)}(cols)
 end
 
 StructArray(c::C) where {C<:NamedTuple} = StructArray{eltypes(C)}(c)
@@ -50,7 +48,9 @@ const StructVector{T, C<:Tup, I} = StructArray{T, 1, C, I}
 StructVector{T}(args...; kwargs...) where {T} = StructArray{T}(args...; kwargs...)
 StructVector(args...; kwargs...) = StructArray(args...; kwargs...)
 
-Base.IndexStyle(::Type{S}) where {S<:StructArray} = _indexstyle(index_type(S))
+function Base.IndexStyle(::Type{S}) where {S<:StructArray}
+    index_type(S) === Int ? IndexLinear() : IndexCartesian()
+end
 
 function _undef_array(::Type{T}, sz; unwrap = t -> false) where {T}
     if unwrap(T)
