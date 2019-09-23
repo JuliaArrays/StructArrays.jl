@@ -28,19 +28,49 @@ else
     const _getproperty = getproperty
 end
 
-function _foreachfield(names, xs)
+function _sstuple(::Type{<:NTuple{N, Any}}) where {N}
+    ntuple(j->Symbol(j), N)
+end
+
+function _sstuple(::Type{NT}) where {NT<:NamedTuple}
+    _map_params(x->_sstuple(staticschema(x)), NT)
+end
+
+function _getcolproperties!(exprs, s, es=[])
+    if typeof(s) <: Symbol
+        push!(exprs, es)
+        return
+    end
+    for key in keys(s)
+        _getcolproperties!(exprs, getproperty(s,key), vcat(es, key))
+    end
+end
+
+@generated function foreachfield(::Type{T}, f, xs...) where {T<:Tup}
+    # TODO get columnsproperties directly from T without converting to the
+    # tuple s.
+    s = _sstuple(T)
+    columnsproperties = []
+    _getcolproperties!(columnsproperties, s)
+
     exprs = Expr[]
-    for field in names
-        sym = QuoteNode(field)
-        args = [Expr(:call, :_getproperty, :(getfield(xs, $j)), sym) for j in 1:length(xs)]
+    for col in columnsproperties
+        args = Expr[]
+        for prop in col
+            sym = QuoteNode(prop)
+            if length(args) == 0
+                args = [Expr(:call, :_getproperty, :(getfield(xs, $j)), sym) for j in 1:length(xs)]
+            else
+                for j in 1:length(xs)
+                    args[j] = Expr(:call, :_getproperty, args[j], sym)
+                end
+            end
+        end
         push!(exprs, Expr(:call, :f, args...))
     end
     push!(exprs, :(return nothing))
     return Expr(:block, exprs...)
 end
-
-@generated foreachfield(::Type{<:NamedTuple{names}}, f, xs...) where {names} = _foreachfield(names, xs)
-@generated foreachfield(::Type{<:NTuple{N, Any}}, f, xs...) where {N} = _foreachfield(Base.OneTo(N), xs)
 
 foreachfield(f, x::T, xs...) where {T} = foreachfield(staticschema(T), f, x, xs...)
 
