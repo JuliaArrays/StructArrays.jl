@@ -17,6 +17,10 @@ include("sort.jl")
 include("groupjoin.jl")
 include("lazy.jl")
 
+# Use Adapt allows for automatic conversion of CPU to GPU StructArrays
+import Adapt
+Adapt.adapt_storage(to, s::StructArray) = replace_storage(x->Adapt.adapt(to, x), s)
+
 function __init__()
     Requires.@require Tables="bd369af6-aec1-5ad0-b16a-f7cc5008161c" include("tables.jl")
     Requires.@require WeakRefStrings="ea10d353-3f73-51f8-a26c-33c1cb351aa5" begin
