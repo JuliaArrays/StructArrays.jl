@@ -14,11 +14,6 @@ include("collect.jl")
 include("sort.jl")
 include("groupjoin.jl")
 include("lazy.jl")
-using Tables, WeakRefStrings
 include("tables.jl")
-function refs(a::WeakRefStrings.StringArray{T}) where {T}
-    S = Union{WeakRefStrings.WeakRefString{UInt8}, typeintersect(T, Missing)}
-    convert(WeakRefStrings.StringArray{S}, a)
-end
 
 end # module

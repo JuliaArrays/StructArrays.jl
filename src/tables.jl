@@ -1,3 +1,5 @@
+using Tables: Tables
+
 Tables.istable(::Type{<:StructVector}) = true
 Tables.rowaccess(::Type{<:StructVector}) = true
 Tables.columnaccess(::Type{<:StructVector}) = true
