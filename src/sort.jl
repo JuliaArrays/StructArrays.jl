@@ -1,6 +1,11 @@
 using Base.Sort, Base.Order
+using WeakRefStrings: WeakRefString, StringArray
 
 refs(v::PooledArray) = v.refs
+function refs(a::StringArray{T}) where {T}
+    S = Union{WeakRefString{UInt8}, typeintersect(T, Missing)}
+    convert(StringArray{S}, a)
+end
 refs(v::AbstractArray) = v
 refs(v::StructArray) = StructArray(map(refs, fieldarrays(v)))
 
