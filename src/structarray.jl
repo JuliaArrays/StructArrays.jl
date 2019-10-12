@@ -22,14 +22,14 @@ index_type(::Type{NamedTuple{names, types}}) where {names, types} = index_type(t
 index_type(::Type{Tuple{}}) = Int
 function index_type(::Type{T}) where {T<:Tuple}
     S, U = tuple_type_head(T), tuple_type_tail(T)
-    IndexStyle(S) isa IndexCartesian ? CartesianIndex{ndims(S)} : index_type(U) 
+    IndexStyle(S) isa IndexCartesian ? CartesianIndex{ndims(S)} : index_type(U)
 end
 
 index_type(::Type{StructArray{T, N, C, I}}) where {T, N, C, I} = I
 
 function StructArray{T}(c::C) where {T, C<:Tup}
     cols = strip_params(staticschema(T))(c)
-    N = isempty(cols) ? 1 : ndims(cols[1]) 
+    N = isempty(cols) ? 1 : ndims(cols[1])
     StructArray{T, N, typeof(cols)}(cols)
 end
 
@@ -227,3 +227,10 @@ function Base.showarg(io::IO, s::StructArray{T}, toplevel) where T
     showfields(io, Tuple(fieldarrays(s)))
     toplevel && print(io, " with eltype ", T)
 end
+
+# broadcast
+import Base.Broadcast: BroadcastStyle, ArrayStyle, Broadcasted
+
+BroadcastStyle(::Type{<:StructArray}) = ArrayStyle{StructArray}()
+Base.similar(bc::Broadcasted{ArrayStyle{StructArray}}, ::Type{ElType}) where {N,ElType} =
+    similar(StructArray{ElType}, axes(bc))

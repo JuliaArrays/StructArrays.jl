@@ -646,3 +646,8 @@ end
     str = String(take!(io))
     @test str == "StructArray(::Array{Int64,1}, ::Array{Int64,1})"
 end
+
+@testset "broadcast" begin
+    s = StructArray{ComplexF64}((rand(2,2), rand(2,2)))
+    @test isa(s .+ s, StructArray)
+end
