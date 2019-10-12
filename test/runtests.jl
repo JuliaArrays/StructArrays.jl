@@ -714,3 +714,8 @@ Adapt.adapt_storage(::ArrayConverter, xs::AbstractArray) = convert(Array, xs)
     @test t.b.c isa Array
     @test t.b.d isa Array
 end
+
+@testset "broadcast" begin
+    s = StructArray{ComplexF64}((rand(2,2), rand(2,2)))
+    @test isa(s .+ s, StructArray)
+end
