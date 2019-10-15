@@ -646,3 +646,9 @@ end
     str = String(take!(io))
     @test str == "StructArray(::Array{Int64,1}, ::Array{Int64,1})"
 end
+
+@testset "OffsetArray zero" begin
+    s = StructArray{ComplexF64}((rand(2), rand(2)))
+    soff = OffsetArray(s, 0:1)
+    @test isa(zero(soff).parent, StructArray)
+end
