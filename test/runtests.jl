@@ -1091,3 +1091,9 @@ end
     C = map(zero, NamedTuple{(:a, :b, :c)}(map(zero, fieldtypes(types))))
     @test A === C
 end
+
+@testset "OffsetArray zero" begin
+    s = StructArray{ComplexF64}((rand(2), rand(2)))
+    soff = OffsetArray(s, 0:1)
+    @test isa(zero(soff).parent, StructArray)
+end
