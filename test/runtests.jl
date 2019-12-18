@@ -375,7 +375,7 @@ collect_structarray_rec(t) = collect_structarray(t, initializer = initializer)
     el, st = iterate(itr)
     dest = initializer(typeof(el), (3,))
     dest[1] = el
-    @inferred StructArrays.collect_to_structarray!(dest, itr, 2, st)
+    @inferred StructArrays._collect_to_structarray!(dest, itr, 2, st)
 
     v = [(a = 1, b = 2), (a = 1.2, b = 3)]
     @test collect_structarray_rec(v) == StructArray((a = [1, 1.2], b = Int[2, 3]))

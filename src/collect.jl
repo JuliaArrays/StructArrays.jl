@@ -59,11 +59,11 @@ function collect_structarray(itr, elem, sz::Union{Base.HasShape, Base.HasLength}
     S = typeof(el)
     dest = initializer(S, (length(itr),))
     dest[1] = el
-    v = collect_to_structarray!(dest, itr, 2, i)
+    v = _collect_to_structarray!(dest, itr, 2, i)
     _reshape(v, itr, sz)
 end
 
-function collect_to_structarray!(dest::AbstractArray, itr, offs, st)
+function _collect_to_structarray!(dest::AbstractArray, itr, offs, st)
     # collect to dest array, checking the type of each result. if a result does not
     # match, widen the result type and re-dispatch.
     i = offs
@@ -77,7 +77,7 @@ function collect_to_structarray!(dest::AbstractArray, itr, offs, st)
         else
             new = widenstructarray(dest, i, el)
             @inbounds new[i] = el
-            return collect_to_structarray!(new, itr, i+1, st)
+            return _collect_to_structarray!(new, itr, i+1, st)
         end
     end
     return dest
