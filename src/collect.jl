@@ -128,3 +128,41 @@ function widenarray(dest::AbstractArray, i, ::Type{T}) where T
     copyto!(new, 1, dest, 1, i-1)
     new
 end
+
+"""
+`collect_to_structarray!(dest, itr) -> dest′`
+
+Try to append `itr` into a vector `dest`.  Widen element type of
+`dest` if it cannot hold the elements of `itr`.  That is to say,
+
+```julia
+vcat(dest, StructVector(itr)) == collect_to_structarray!(dest, itr)
+```
+
+holds.  Note that `dest′` may or may not be the same object as `dest`.
+The state of `dest` is unpredictable after `collect_to_structarray!`
+is called (e.g., it may contain just half of the elements from `itr`).
+"""
+collect_to_structarray!(dest::AbstractVector, itr) =
+    _collect_or_grow!(dest, itr, Base.IteratorSize(itr))
+
+function _collect_or_grow!(dest::AbstractVector, itr, ::Union{Base.HasShape, Base.HasLength})
+    n = length(itr)  # itr may be stateful so do this first
+    fr = iterate(itr)
+    fr === nothing && return dest
+    el, st = fr
+    i = lastindex(dest) + 1
+    if iscompatible(el, dest)
+        resize!(dest, length(dest) + n)
+        dest[i] = el
+        return _collect_to_structarray!(dest, itr, i + 1, st)
+    else
+        new = widenstructarray(dest, i, el)
+        resize!(new, length(dest) + n)
+        @inbounds new[i] = el
+        return _collect_to_structarray!(new, itr, i + 1, st)
+    end
+end
+
+_collect_or_grow!(dest::AbstractVector, itr, ::Base.SizeUnknown) =
+    grow_to_structarray!(dest, itr)
