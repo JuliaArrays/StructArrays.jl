@@ -22,6 +22,7 @@ ArrayInitializer(unwrap = t->false) = ArrayInitializer(unwrap, default_array)
 
 (s::ArrayInitializer)(S, d) = s.unwrap(S) ? buildfromschema(typ -> s(typ, d), S) : s.default_array(S, d)
 (s::ArrayInitializer)(::Type{Union{}}, d) = s.default_array(Union{}, d)
+
 _reshape(v, itr) = _reshape(v, itr, Base.IteratorSize(itr))
 _reshape(v, itr, ::Base.HasShape) = reshapestructarray(v, axes(itr))
 _reshape(v, itr, ::Union{Base.HasLength, Base.SizeUnknown}) = v
@@ -31,12 +32,6 @@ reshapestructarray(v::AbstractArray, d) = reshape(v, d)
 reshapestructarray(v::StructArray{T}, d) where {T} =
     StructArray{T}(map(x -> reshapestructarray(x, d), fieldarrays(v)))
 
-function collect_empty_structarray(itr::T; initializer = default_initializer) where {T}
-    S = Core.Compiler.return_type(first, Tuple{T})
-    res = initializer(S, (0,))
-    _reshape(res, itr)
-end
-
 """
 `collect_structarray(itr, fr=iterate(itr); initializer = default_initializer)`
 
@@ -45,30 +40,38 @@ a function `(S, d) -> v` that associates to a type and a size an array of eltype
 and size `d`. By default `initializer` returns a `StructArray` of `Array` but custom array types
 may be used. `fr` represents the moment in the iteration of `itr` from which to start collecting.
 """
-collect_structarray(itr; initializer = default_initializer) =
-    _collect_structarray(itr, Base.IteratorSize(itr); initializer = initializer)
-
-function _collect_structarray(itr, sz::Union{Base.HasShape, Base.HasLength};
-                              initializer = default_initializer)
-    len = length(itr)
+function collect_structarray(itr; initializer = default_initializer)
+    len = Base.IteratorSize(itr) === Base.SizeUnknown() ? 1 : length(itr)
     elem = iterate(itr)
-    elem === nothing && return initializer(Union{}, (0,))
+    return _collect_structarray(itr, elem, len;
+                               initializer = default_initializer)
+end
+
+function _collect_structarray(itr, ::Nothing, len;
+                             initializer = default_initializer)
+    res = initializer(Union{}, (0,))
+    _reshape(res, itr)
+end
+
+function _collect_structarray(itr, elem, len;
+                             initializer = default_initializer)
     el, st = elem
     S = typeof(el)
     dest = initializer(S, (len,))
     dest[1] = el
-    v = collect_to_structarray!(dest, itr, 2, st, initializer = initializer)
-    _reshape(v, itr, sz)
+    _collect_structarray!(dest, itr, st, Base.IteratorSize(itr),
+                          initializer = initializer)
 end
 
-function _collect_structarray(itr, ::Base.SizeUnknown; initializer = default_initializer)
-    elem = iterate(itr)
-    elem === nothing && return initializer(Union{}, (0,))
-    el, st = elem
-    S = typeof(el)
-    dest = initializer(S, (1,))
-    dest[1] = el
-    grow_to_structarray!(dest, itr, iterate(itr, st), initializer = initializer)
+function _collect_structarray!(dest, itr, st, sz::Union{Base.HasShape, Base.HasLength};
+                              initializer = default_initializer)
+    v = collect_to_structarray!(dest, itr, 2, st, initializer = initializer)
+    return _reshape(v, itr, sz)
+end
+
+function _collect_structarray!(dest, itr, st, ::Base.SizeUnknown;
+                              initializer = default_initializer)
+    return grow_to_structarray!(dest, itr, iterate(itr, st), initializer = initializer)
 end
 
 function collect_to_structarray!(dest::AbstractArray, itr, offs, st;
