@@ -1,5 +1,5 @@
 using StructArrays
-using StructArrays: staticschema, iscompatible, _promote_typejoin
+using StructArrays: staticschema, iscompatible, _promote_typejoin, append!!
 using OffsetArrays: OffsetArray
 import Tables, PooledArrays, WeakRefStrings
 using Test
@@ -375,7 +375,7 @@ collect_structarray_rec(t) = collect_structarray(t, initializer = initializer)
     el, st = iterate(itr)
     dest = initializer(typeof(el), (3,))
     dest[1] = el
-    @inferred StructArrays._collect_to_structarray!(dest, itr, 2, st)
+    @inferred StructArrays.collect_to_structarray!(dest, itr, 2, st)
 
     v = [(a = 1, b = 2), (a = 1.2, b = 3)]
     @test collect_structarray_rec(v) == StructArray((a = [1, 1.2], b = Int[2, 3]))
@@ -647,7 +647,7 @@ end
     @test str == "StructArray(::Array{Int64,1}, ::Array{Int64,1})"
 end
 
-@testset "collect_to_structarray!" begin
+@testset "append!!" begin
     dest_examples = [
         ("mutate", StructVector(a = [1], b = [2])),
         ("widen", StructVector(a = [1], b = [nothing])),
@@ -664,6 +664,6 @@ end
     @testset "$destlabel $itrlabel" for (destlabel, dest) in dest_examples,
                                         (itrlabel, makeitr) in itr_examples
 
-        @test vcat(dest, StructVector(makeitr())) == collect_to_structarray!(copy(dest), makeitr())
+        @test vcat(dest, StructVector(makeitr())) == append!!(copy(dest), makeitr())
     end
 end

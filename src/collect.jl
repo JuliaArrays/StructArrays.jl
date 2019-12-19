@@ -59,11 +59,11 @@ function collect_structarray(itr, elem, sz::Union{Base.HasShape, Base.HasLength}
     S = typeof(el)
     dest = initializer(S, (length(itr),))
     dest[1] = el
-    v = _collect_to_structarray!(dest, itr, 2, i)
+    v = collect_to_structarray!(dest, itr, 2, i)
     _reshape(v, itr, sz)
 end
 
-function _collect_to_structarray!(dest::AbstractArray, itr, offs, st)
+function collect_to_structarray!(dest::AbstractArray, itr, offs, st)
     # collect to dest array, checking the type of each result. if a result does not
     # match, widen the result type and re-dispatch.
     i = offs
@@ -77,7 +77,7 @@ function _collect_to_structarray!(dest::AbstractArray, itr, offs, st)
         else
             new = widenstructarray(dest, i, el)
             @inbounds new[i] = el
-            return _collect_to_structarray!(new, itr, i+1, st)
+            return collect_to_structarray!(new, itr, i+1, st)
         end
     end
     return dest
@@ -130,23 +130,23 @@ function widenarray(dest::AbstractArray, i, ::Type{T}) where T
 end
 
 """
-`collect_to_structarray!(dest, itr) -> dest′`
+`append!!(dest, itr) -> dest′`
 
 Try to append `itr` into a vector `dest`.  Widen element type of
 `dest` if it cannot hold the elements of `itr`.  That is to say,
 
 ```julia
-vcat(dest, StructVector(itr)) == collect_to_structarray!(dest, itr)
+vcat(dest, StructVector(itr)) == append!!(dest, itr)
 ```
 
 holds.  Note that `dest′` may or may not be the same object as `dest`.
-The state of `dest` is unpredictable after `collect_to_structarray!`
+The state of `dest` is unpredictable after `append!!`
 is called (e.g., it may contain just half of the elements from `itr`).
 """
-collect_to_structarray!(dest::AbstractVector, itr) =
-    _collect_or_grow!(dest, itr, Base.IteratorSize(itr))
+append!!(dest::AbstractVector, itr) =
+    _append!!(dest, itr, Base.IteratorSize(itr))
 
-function _collect_or_grow!(dest::AbstractVector, itr, ::Union{Base.HasShape, Base.HasLength})
+function _append!!(dest::AbstractVector, itr, ::Union{Base.HasShape, Base.HasLength})
     n = length(itr)  # itr may be stateful so do this first
     fr = iterate(itr)
     fr === nothing && return dest
@@ -154,15 +154,15 @@ function _collect_or_grow!(dest::AbstractVector, itr, ::Union{Base.HasShape, Bas
     i = lastindex(dest) + 1
     if iscompatible(el, dest)
         resize!(dest, length(dest) + n)
-        dest[i] = el
-        return _collect_to_structarray!(dest, itr, i + 1, st)
+        @inbounds dest[i] = el
+        return collect_to_structarray!(dest, itr, i + 1, st)
     else
         new = widenstructarray(dest, i, el)
         resize!(new, length(dest) + n)
         @inbounds new[i] = el
-        return _collect_to_structarray!(new, itr, i + 1, st)
+        return collect_to_structarray!(new, itr, i + 1, st)
     end
 end
 
-_collect_or_grow!(dest::AbstractVector, itr, ::Base.SizeUnknown) =
+_append!!(dest::AbstractVector, itr, ::Base.SizeUnknown) =
     grow_to_structarray!(dest, itr)
