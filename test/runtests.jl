@@ -658,8 +658,7 @@ end
         ("SizeUnknown", () -> (x for x in itr if isodd(x.a))),
         # Broken due to https://github.com/JuliaArrays/StructArrays.jl/issues/100:
         # ("empty", (x for x in itr if false)),
-        # Broken due to https://github.com/JuliaArrays/StructArrays.jl/issues/99:
-        # ("stateful", () -> Iterators.Stateful(itr)),
+        ("stateful", () -> Iterators.Stateful(itr)),
     ]
     @testset "$destlabel $itrlabel" for (destlabel, dest) in dest_examples,
                                         (itrlabel, makeitr) in itr_examples
