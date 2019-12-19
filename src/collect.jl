@@ -152,16 +152,10 @@ function _append!!(dest::AbstractVector, itr, ::Union{Base.HasShape, Base.HasLen
     fr === nothing && return dest
     el, st = fr
     i = lastindex(dest) + 1
-    if iscompatible(el, dest)
-        resize!(dest, length(dest) + n)
-        @inbounds dest[i] = el
-        return collect_to_structarray!(dest, itr, i + 1, st)
-    else
-        new = widenstructarray(dest, i, el)
-        resize!(new, length(dest) + n)
-        @inbounds new[i] = el
-        return collect_to_structarray!(new, itr, i + 1, st)
-    end
+    new = iscompatible(el, dest) ? dest : widenstructarray(dest, i, el)
+    resize!(new, length(dest) + n)
+    @inbounds new[i] = el
+    return collect_to_structarray!(new, itr, i + 1, st)
 end
 
 _append!!(dest::AbstractVector, itr, ::Base.SizeUnknown) =
