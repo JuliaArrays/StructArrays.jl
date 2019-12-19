@@ -404,11 +404,11 @@ collect_structarray_rec(t) = collect_structarray(t, initializer = initializer)
     # empty
     itr = Iterators.filter(t -> t > 10, 1:8)
     tuple_itr = ((a = i+1, b = i-1) for i in itr)
-    @test collect_structarray_rec(tuple_itr) == StructArray((a = Int[], b = Int[]))
+    @test collect_structarray_rec(tuple_itr) == Union{}[]
 
     itr = (i for i in 0:-1)
     tuple_itr = ((a = i+1, b = i-1) for i in itr)
-    @test collect_structarray_rec(tuple_itr) == StructArray((a = Int[], b = Int[]))
+    @test collect_structarray_rec(tuple_itr) == Union{}[]
 end
 
 @testset "collecttuples" begin
@@ -439,11 +439,11 @@ end
     # empty
     itr = Iterators.filter(t -> t > 10, 1:8)
     tuple_itr = ((i+1, i-1) for i in itr)
-    @test collect_structarray_rec(tuple_itr) == StructArray((Int[], Int[]))
+    @test collect_structarray_rec(tuple_itr) == Union{}[]
 
     itr = (i for i in 0:-1)
     tuple_itr = ((i+1, i-1) for i in itr)
-    @test collect_structarray_rec(tuple_itr) == StructArray((Int[], Int[]))
+    @test collect_structarray_rec(tuple_itr) == Union{}[]
 end
 
 @testset "collectscalars" begin
@@ -463,11 +463,11 @@ end
     #empty
     itr = Iterators.filter(t -> t > 10, 1:8)
     tuple_itr = (exp(i) for i in itr)
-    @test collect_structarray_rec(tuple_itr) == Float64[]
+    @test collect_structarray_rec(tuple_itr) == Union{}[]
 
     itr = (i for i in 0:-1)
     tuple_itr = (exp(i) for i in itr)
-    @test collect_structarray_rec(tuple_itr) == Float64[]
+    @test collect_structarray_rec(tuple_itr) == Union{}[]
 
     t = collect_structarray_rec((a = i,) for i in (1, missing, 3))
     @test StructArrays.fieldarrays(t)[1] isa Array{Union{Int, Missing}}
@@ -495,12 +495,12 @@ pair_structarray((first, last)) = StructArray{Pair{eltype(first), eltype(last)}}
 
     # empty
     v = ((a=i,) => (b="a$i",) for i in 0:-1)
-    @test collect_structarray_rec(v) == pair_structarray(StructArray((a = Int[],)) => StructArray((b = String[],)))
-    @test eltype(collect_structarray_rec(v)) == Pair{NamedTuple{(:a,), Tuple{Int}}, NamedTuple{(:b,), Tuple{String}}}
+    @test collect_structarray_rec(v) == Union{}[]
+    @test eltype(collect_structarray_rec(v)) == Union{}
 
     v = Iterators.filter(t -> t.first.a == 4, ((a=i,) => (b="a$i",) for i in 1:3))
-    @test collect_structarray_rec(v) == pair_structarray(StructArray((a = Int[],)) => StructArray((b = String[],)))
-    @test eltype(collect_structarray_rec(v)) == Pair{NamedTuple{(:a,), Tuple{Int}}, NamedTuple{(:b,), Tuple{String}}}
+    @test collect_structarray_rec(v) == Union{}[]
+    @test eltype(collect_structarray_rec(v)) == Union{}
 
     t = collect_structarray_rec((b = 1,) => (a = i,) for i in (2, missing, 3))
     s = pair_structarray(StructArray(b = [1,1,1]) => StructArray(a = [2, missing, 3]))
@@ -656,8 +656,7 @@ end
     itr_examples = [
         ("HasLength", () -> itr),
         ("SizeUnknown", () -> (x for x in itr if isodd(x.a))),
-        # Broken due to https://github.com/JuliaArrays/StructArrays.jl/issues/100:
-        # ("empty", (x for x in itr if false)),
+        ("empty", (x for x in itr if false)),
         ("stateful", () -> Iterators.Stateful(itr)),
     ]
     @testset "$destlabel $itrlabel" for (destlabel, dest) in dest_examples,
