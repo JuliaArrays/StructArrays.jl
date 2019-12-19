@@ -3,7 +3,7 @@
 [![Build Status](https://travis-ci.org/JuliaArrays/StructArrays.jl.svg?branch=master)](https://travis-ci.org/JuliaArrays/StructArrays.jl)
 [![codecov.io](http://codecov.io/github/JuliaArrays/StructArrays.jl/coverage.svg?branch=master)](http://codecov.io/github/JuliaArrays/StructArrays.jl?branch=master)
 
-This package introduces the type `StructArray` which is an `AbstractArray` whose elements are `struct` (for example `NamedTuples`,  or `ComplexF64`, or a custom user defined `struct`). While a `StructArray` iterates `structs`, the layout is column based (meaning each field of the `struct` is stored in a seprate `Array`).
+This package introduces the type `StructArray` which is an `AbstractArray` whose elements are `struct` (for example `NamedTuples`,  or `ComplexF64`, or a custom user defined `struct`). While a `StructArray` iterates `structs`, the layout is column based (meaning each field of the `struct` is stored in a separate `Array`).
 
 `Base.getproperty` or the dot syntax can be used to access columns, whereas rows can be accessed with `getindex`.
 
