@@ -214,14 +214,16 @@ StructArray(s)
 
 ## Advanced: mutate-or-widen style accumulation
 
-StructArrays provides `grow_to_structarray!(dest, src)` which works like `append!(dest, src)` if `dest` can contain all element types in `src` iterator; i.e., it _mutates_ `dest` in-place:
+StructArrays provides a function `StructArrays.append!!(dest, src)` (unexported) for "mutate-or-widen" style accumulation.  This function can be used via [`BangBang.append!!`](https://tkf.github.io/BangBang.jl/dev/#BangBang.append!!-Tuple{Any,Any}) and [`BangBang.push!!`](https://tkf.github.io/BangBang.jl/dev/#BangBang.push!!-Tuple{Any,Any,Any,Vararg{Any,N}%20where%20N}) as well.
+
+`StructArrays.append!!` works like `append!(dest, src)` if `dest` can contain all element types in `src` iterator; i.e., it _mutates_ `dest` in-place:
 
 ```julia
 julia> dest = StructVector((a=[1], b=[2]))
 1-element StructArray(::Array{Int64,1}, ::Array{Int64,1}) with eltype NamedTuple{(:a, :b),Tuple{Int64,Int64}}:
  (a = 1, b = 2)
 
-julia> StructArrays.grow_to_structarray!(dest, [(a = 3, b = 4)])
+julia> StructArrays.append!!(dest, [(a = 3, b = 4)])
 2-element StructArray(::Array{Int64,1}, ::Array{Int64,1}) with eltype NamedTuple{(:a, :b),Tuple{Int64,Int64}}:
  (a = 1, b = 2)
  (a = 3, b = 4)
@@ -230,10 +232,10 @@ julia> ans === dest
 true
 ```
 
-Unlike `append!`, `grow_to_structarray!` can _widen_ element type of `dest` array element types:
+Unlike `append!`, `append!!` can also _widen_ element type of `dest` array element types:
 
 ```julia
-julia> StructArrays.grow_to_structarray!(dest, [(a = missing, b = 6)])
+julia> StructArrays.append!!(dest, [(a = missing, b = 6)])
 3-element StructArray(::Array{Union{Missing, Int64},1}, ::Array{Int64,1}) with eltype NamedTuple{(:a, :b),Tuple{Union{Missing, Int64},Int64}}:
  NamedTuple{(:a, :b),Tuple{Union{Missing, Int64},Int64}}((1, 2))
  NamedTuple{(:a, :b),Tuple{Union{Missing, Int64},Int64}}((3, 4))
@@ -243,6 +245,6 @@ julia> ans === dest
 false
 ```
 
-Since the original array `dest` cannot hold input, notice that a new array is created (`ans !== dest`).
+Since the original array `dest` cannot hold the input, a new array is created (`ans !== dest`).
 
-Combined with [function barriers](https://docs.julialang.org/en/latest/manual/performance-tips/#kernel-functions-1), `grow_to_structarray!` is a useful building block for `collect`-like functions.
+Combined with [function barriers](https://docs.julialang.org/en/latest/manual/performance-tips/#kernel-functions-1), `append!!` is a useful building block for implementing `collect`-like functions.
