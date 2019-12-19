@@ -54,12 +54,13 @@ function _collect_structarray(itr, elem, len; initializer = default_initializer)
     el, st = elem
     S = typeof(el)
     dest = initializer(S, (len,))
-    @inbounds dest[1] = el
+    offs = firstindex(dest)
+    @inbounds dest[offs] = el
     return _collect_structarray!(dest, itr, st, Base.IteratorSize(itr))
 end
 
 function _collect_structarray!(dest, itr, st, ::Union{Base.HasShape, Base.HasLength})
-    v = collect_to_structarray!(dest, itr, 2, st)
+    v = collect_to_structarray!(dest, itr, firstindex(dest) + 1, st)
     return _reshape(v, itr)
 end
 
