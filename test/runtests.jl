@@ -1,5 +1,5 @@
 using StructArrays
-using StructArrays: staticschema, iscompatible, _promote_typejoin
+using StructArrays: staticschema, iscompatible, _promote_typejoin, append!!
 using OffsetArrays: OffsetArray
 import Tables, PooledArrays, WeakRefStrings
 using Test
@@ -645,4 +645,25 @@ end
     Base.showarg(io, s, false)
     str = String(take!(io))
     @test str == "StructArray(::Array{Int64,1}, ::Array{Int64,1})"
+end
+
+@testset "append!!" begin
+    dest_examples = [
+        ("mutate", StructVector(a = [1], b = [2])),
+        ("widen", StructVector(a = [1], b = [nothing])),
+    ]
+    itr = [(a = 1, b = 2), (a = 1, b = 2), (a = 1, b = 12)]
+    itr_examples = [
+        ("HasLength", () -> itr),
+        ("SizeUnknown", () -> (x for x in itr if isodd(x.a))),
+        # Broken due to https://github.com/JuliaArrays/StructArrays.jl/issues/100:
+        # ("empty", (x for x in itr if false)),
+        # Broken due to https://github.com/JuliaArrays/StructArrays.jl/issues/99:
+        # ("stateful", () -> Iterators.Stateful(itr)),
+    ]
+    @testset "$destlabel $itrlabel" for (destlabel, dest) in dest_examples,
+                                        (itrlabel, makeitr) in itr_examples
+
+        @test vcat(dest, StructVector(makeitr())) == append!!(copy(dest), makeitr())
+    end
 end
