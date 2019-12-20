@@ -54,7 +54,7 @@ function _collect_structarray(itr, elem, len; initializer = default_initializer)
     el, st = elem
     S = typeof(el)
     dest = initializer(S, (len,))
-    dest[1] = el
+    @inbounds dest[1] = el
     return _collect_structarray!(dest, itr, st, Base.IteratorSize(itr))
 end
 
@@ -78,7 +78,7 @@ function collect_to_structarray!(dest::AbstractArray, itr, offs, st)
             @inbounds dest[i] = el
             i += 1
         else
-            new = widenstructarray(dest, i, el)
+            new = widen(dest, i, el)
             @inbounds new[i] = el
             return collect_to_structarray!(new, itr, i+1, st)
         end
@@ -97,7 +97,7 @@ function grow_to_structarray!(dest::AbstractArray, itr, elem = iterate(itr))
             elem = iterate(itr, st)
             i += 1
         else
-            new = widenstructarray(dest, i, el)
+            new = widen(dest, i, el)
             push!(new, el)
             return grow_to_structarray!(new, itr, iterate(itr, st))
         end
@@ -105,21 +105,22 @@ function grow_to_structarray!(dest::AbstractArray, itr, elem = iterate(itr))
     return dest
 end
 
-widenstructarray(dest::AbstractArray{S}, i, el::T) where {S, T} = widenstructarray(dest, i, _promote_typejoin(S, T))
+# Widen `dest` to contain `el` and copy until index `i-1`
+widen(dest::AbstractArray{S}, i, el::T) where {S, T} = _widenstructarray(dest, i, _promote_typejoin(S, T))
 
-function widenstructarray(dest::StructArray, i, ::Type{T}) where {T}
+function _widenstructarray(dest::StructArray, i, ::Type{T}) where {T}
     sch = hasfields(T) ? staticschema(T) : nothing
-    sch !== nothing && fieldnames(sch) == propertynames(dest) || return widenarray(dest, i, T)
+    sch !== nothing && fieldnames(sch) == propertynames(dest) || return _widenarray(dest, i, T)
     types = ntuple(x -> fieldtype(sch, x), fieldcount(sch))
     cols = Tuple(fieldarrays(dest))
-    newcols = map((a, b) -> widenstructarray(a, i, b), cols, types)
+    newcols = map((a, b) -> _widenstructarray(a, i, b), cols, types)
     return StructArray{T}(newcols)
 end
 
-widenstructarray(dest::AbstractArray, i, ::Type{T}) where {T} = widenarray(dest, i, T)
+_widenstructarray(dest::AbstractArray, i, ::Type{T}) where {T} = _widenarray(dest, i, T)
 
-widenarray(dest::AbstractArray{T}, i, ::Type{T}) where {T} = dest
-function widenarray(dest::AbstractArray, i, ::Type{T}) where T
+_widenarray(dest::AbstractArray{T}, i, ::Type{T}) where {T} = dest
+function _widenarray(dest::AbstractArray, i, ::Type{T}) where T
     new = similar(dest, T, length(dest))
     copyto!(new, 1, dest, 1, i-1)
     new
@@ -148,7 +149,7 @@ function _append!!(dest::AbstractVector, itr, ::Union{Base.HasShape, Base.HasLen
     fr === nothing && return dest
     el, st = fr
     i = lastindex(dest) + 1
-    new = iscompatible(el, dest) ? dest : widenstructarray(dest, i, el)
+    new = iscompatible(el, dest) ? dest : widen(dest, i, el)
     resize!(new, length(dest) + n)
     @inbounds new[i] = el
     return collect_to_structarray!(new, itr, i + 1, st)
