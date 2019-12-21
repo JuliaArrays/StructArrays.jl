@@ -232,7 +232,7 @@ julia> ans === dest
 true
 ```
 
-Unlike `append!`, `append!!` can also _widen_ element type of `dest` array element types:
+Unlike `append!`, `append!!` can also _widen_ element type of `dest` array:
 
 ```julia
 julia> StructArrays.append!!(dest, [(a = missing, b = 6)])
