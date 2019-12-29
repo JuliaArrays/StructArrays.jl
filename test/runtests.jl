@@ -2,6 +2,7 @@ using StructArrays
 using StructArrays: staticschema, iscompatible, _promote_typejoin, append!!
 using OffsetArrays: OffsetArray
 import Tables, PooledArrays, WeakRefStrings
+using DataAPI: refarray, refvalue
 using Test
 
 @testset "index" begin
@@ -121,9 +122,7 @@ end
     b = PooledArrays.PooledArray(["1", "2", "3"])
     c = [:a, :b, :c]
     s = StructArray(a=a, b=b, c=c)
-    ref = StructArrays.refarray(s)
-    @test ref[1].a isa WeakRefStrings.WeakRefString{UInt8}
-    @test ref[1].b isa Integer
+    ref = refarray(s)
     Base.permute!!(ref, sortperm(s))
     @test issorted(s)
 end
@@ -625,14 +624,24 @@ end
 
 @testset "refarray" begin
     s = PooledArrays.PooledArray(["a", "b", "c", "c"])
-    @test StructArrays.refarray(s) == UInt8.([1, 2, 3, 3])
+    @test refarray(s) == UInt8.([1, 2, 3, 3])
 
     s = WeakRefStrings.StringArray(["a", "b"])
-    @test StructArrays.refarray(s) isa WeakRefStrings.StringArray{WeakRefStrings.WeakRefString{UInt8}}
-    @test all(isequal.(s, StructArrays.refarray(s)))
+    @test refarray(s) isa WeakRefStrings.StringArray{WeakRefStrings.WeakRefString{UInt8}}
+    @test all(isequal.(s, refarray(s)))
     s = WeakRefStrings.StringArray(["a", missing])
-    @test StructArrays.refarray(s) isa WeakRefStrings.StringArray{Union{WeakRefStrings.WeakRefString{UInt8}, Missing}}
-    @test all(isequal.(s, StructArrays.refarray(s)))
+    @test refarray(s) isa WeakRefStrings.StringArray{Union{WeakRefStrings.WeakRefString{UInt8}, Missing}}
+    @test all(isequal.(s, refarray(s)))
+    a = WeakRefStrings.StringVector(["a", "b", "c"])
+    b = PooledArrays.PooledArray(["1", "2", "3"])
+    c = [:a, :b, :c]
+    s = StructArray(a=a, b=b, c=c)
+    ref = refarray(s)
+    @test ref[1].a isa WeakRefStrings.WeakRefString{UInt8}
+    @test ref[1].b isa Integer
+    for i in 1:3
+        @test refvalue(s, ref[i]) == s[i]
+    end
 end
 
 @testset "show" begin
