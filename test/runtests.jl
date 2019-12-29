@@ -121,7 +121,7 @@ end
     b = PooledArrays.PooledArray(["1", "2", "3"])
     c = [:a, :b, :c]
     s = StructArray(a=a, b=b, c=c)
-    ref = StructArrays.refs(s)
+    ref = StructArrays.refarray(s)
     @test ref[1].a isa WeakRefStrings.WeakRefString{UInt8}
     @test ref[1].b isa Integer
     Base.permute!!(ref, sortperm(s))
@@ -623,16 +623,16 @@ end
     @test str == "LazyRows(::Array{Float64,2}, ::Array{Float64,2})"
 end
 
-@testset "refs" begin
+@testset "refarray" begin
     s = PooledArrays.PooledArray(["a", "b", "c", "c"])
-    @test StructArrays.refs(s) == UInt8.([1, 2, 3, 3])
+    @test StructArrays.refarray(s) == UInt8.([1, 2, 3, 3])
 
     s = WeakRefStrings.StringArray(["a", "b"])
-    @test StructArrays.refs(s) isa WeakRefStrings.StringArray{WeakRefStrings.WeakRefString{UInt8}}
-    @test all(isequal.(s, StructArrays.refs(s)))
+    @test StructArrays.refarray(s) isa WeakRefStrings.StringArray{WeakRefStrings.WeakRefString{UInt8}}
+    @test all(isequal.(s, StructArrays.refarray(s)))
     s = WeakRefStrings.StringArray(["a", missing])
-    @test StructArrays.refs(s) isa WeakRefStrings.StringArray{Union{WeakRefStrings.WeakRefString{UInt8}, Missing}}
-    @test all(isequal.(s, StructArrays.refs(s)))
+    @test StructArrays.refarray(s) isa WeakRefStrings.StringArray{Union{WeakRefStrings.WeakRefString{UInt8}, Missing}}
+    @test all(isequal.(s, StructArrays.refarray(s)))
 end
 
 @testset "show" begin
