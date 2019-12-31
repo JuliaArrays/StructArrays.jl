@@ -528,14 +528,14 @@ end
     @test axes(sa) == (-2:7,)
     @test sa.a == fill(1, -2:7)
 
-    zero_origin(T, d) = OffsetArray{T}(undef, map(n -> 0:n-1, d))
+    zero_origin(T, d) = OffsetArray{T}(undef, map(r -> r .- 1, d))
     sa = collect_structarray(
         [(a = 1,), (a = 2,), (a = 3,)],
         initializer = StructArrays.StructArrayInitializer(t -> false, zero_origin),
     )
     @test sa isa StructArray
     @test collect(sa.a) == 1:3
-    @test_broken sa.a isa OffsetArray
+    @test sa.a isa OffsetArray
 
     sa = collect_structarray(
         (x for x in [(a = 1,), (a = 2,), (a = 3,)] if true),

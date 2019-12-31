@@ -51,7 +51,7 @@ function _collect_structarray(itr, elem, ax; initializer = default_initializer)
     dest = initializer(S, something(ax, (Base.OneTo(1),)))
     offs = first(LinearIndices(dest))
     @inbounds dest[offs] = el
-    return _collect_structarray!(dest, itr, st, Base.IteratorSize(itr))
+    return _collect_structarray!(dest, itr, st, ax)
 end
 
 function _collect_structarray!(dest, itr, st, ax)
