@@ -1,4 +1,4 @@
-default_array(::Type{S}, d) where {S} = Array{S}(undef, d)
+default_array(::Type{S}, d::NTuple{N, Any}) where {S, N} = similar(Array{S, N}, d)
 
 struct StructArrayInitializer{F, G}
     unwrap::F
@@ -21,14 +21,10 @@ ArrayInitializer(unwrap = t->false) = ArrayInitializer(unwrap, default_array)
 
 (s::ArrayInitializer)(S, d) = s.unwrap(S) ? buildfromschema(typ -> s(typ, d), S) : s.default_array(S, d)
 
-_reshape(v, itr) = _reshape(v, itr, Base.IteratorSize(itr))
-_reshape(v, itr, ::Base.HasShape) = reshapestructarray(v, axes(itr))
-_reshape(v, itr, ::Union{Base.HasLength, Base.SizeUnknown}) = v
-
-# temporary workaround before it gets easier to support reshape with offset axis
-reshapestructarray(v::AbstractArray, d) = reshape(v, d)
-reshapestructarray(v::StructArray{T}, d) where {T} =
-    StructArray{T}(map(x -> reshapestructarray(x, d), fieldarrays(v)))
+_axes(itr) = _axes(itr, Base.IteratorSize(itr))
+_axes(itr, ::Base.SizeUnknown) = nothing
+_axes(itr, ::Base.HasLength) = (Base.OneTo(length(itr)),)
+_axes(itr, ::Base.HasShape) = axes(itr)
 
 """
 `collect_structarray(itr; initializer = default_initializer)`
@@ -39,31 +35,31 @@ and size `d`. By default `initializer` returns a `StructArray` of `Array` but cu
 may be used.
 """
 function collect_structarray(itr; initializer = default_initializer)
-    len = Base.IteratorSize(itr) === Base.SizeUnknown() ? 1 : length(itr)
+    ax = _axes(itr)
     elem = iterate(itr)
-    _collect_structarray(itr, elem, len; initializer = initializer)
+    _collect_structarray(itr, elem, ax; initializer = initializer)
 end
 
-function _collect_structarray(itr::T, ::Nothing, len; initializer = default_initializer) where {T}
+function _collect_structarray(itr::T, ::Nothing, ax; initializer = default_initializer) where {T}
     S = Core.Compiler.return_type(first, Tuple{T})
-    res = initializer(S, (0,))
-    _reshape(res, itr)
+    return initializer(S, something(ax, (Base.OneTo(0),)))
 end
 
-function _collect_structarray(itr, elem, len; initializer = default_initializer)
+function _collect_structarray(itr, elem, ax; initializer = default_initializer)
     el, st = elem
     S = typeof(el)
-    dest = initializer(S, (len,))
-    @inbounds dest[1] = el
-    return _collect_structarray!(dest, itr, st, Base.IteratorSize(itr))
+    dest = initializer(S, something(ax, (Base.OneTo(1),)))
+    offs = first(LinearIndices(dest))
+    @inbounds dest[offs] = el
+    return _collect_structarray!(dest, itr, st, ax)
 end
 
-function _collect_structarray!(dest, itr, st, ::Union{Base.HasShape, Base.HasLength})
-    v = collect_to_structarray!(dest, itr, 2, st)
-    return _reshape(v, itr)
+function _collect_structarray!(dest, itr, st, ax)
+    offs = first(LinearIndices(dest)) + 1
+    return collect_to_structarray!(dest, itr, offs, st)
 end
 
-_collect_structarray!(dest, itr, st, ::Base.SizeUnknown) =
+_collect_structarray!(dest, itr, st, ::Nothing) =
     grow_to_structarray!(dest, itr, iterate(itr, st))
 
 function collect_to_structarray!(dest::AbstractArray, itr, offs, st)
@@ -122,7 +118,7 @@ _widenstructarray(dest::AbstractArray, i, ::Type{T}) where {T} = _widenarray(des
 _widenarray(dest::AbstractArray{T}, i, ::Type{T}) where {T} = dest
 function _widenarray(dest::AbstractArray, i, ::Type{T}) where T
     new = similar(dest, T, length(dest))
-    copyto!(new, 1, dest, 1, i-1)
+    copyto!(new, firstindex(new), dest, firstindex(dest), i-1)
     new
 end
 
