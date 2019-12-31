@@ -169,12 +169,12 @@ Base.@propagate_inbounds function Base.setindex!(s::StructArray{<:Any, <:Any, <:
     s
 end
 
-function Base.push!(s::StructArray, vals)
+function Base.push!(s::StructVector, vals)
     foreachfield(push!, s, vals)
     return s
 end
 
-function Base.append!(s::StructArray, vals)
+function Base.append!(s::StructVector, vals::StructVector)
     foreachfield(append!, s, vals)
     return s
 end

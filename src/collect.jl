@@ -64,7 +64,7 @@ _collect_structarray!(dest, itr, st, ::Nothing) =
 
 function collect_to_structarray!(dest::AbstractArray, itr, offs, st)
     # collect to dest array, checking the type of each result. if a result does not
-    # match, widen the result type and re-dispatch.
+    # match, widen_from_instance the result type and re-dispatch.
     i = offs
     while true
         elem = iterate(itr, st)
@@ -74,7 +74,7 @@ function collect_to_structarray!(dest::AbstractArray, itr, offs, st)
             @inbounds dest[i] = el
             i += 1
         else
-            new = widen(dest, i, el)
+            new = widen_from_instance(dest, i, el)
             @inbounds new[i] = el
             return collect_to_structarray!(new, itr, i+1, st)
         end
@@ -84,7 +84,7 @@ end
 
 function grow_to_structarray!(dest::AbstractArray, itr, elem = iterate(itr))
     # collect to dest array, checking the type of each result. if a result does not
-    # match, widen the result type and re-dispatch.
+    # match, widen_from_instance the result type and re-dispatch.
     i = length(dest)+1
     while elem !== nothing
         el, st = elem
@@ -93,7 +93,7 @@ function grow_to_structarray!(dest::AbstractArray, itr, elem = iterate(itr))
             elem = iterate(itr, st)
             i += 1
         else
-            new = widen(dest, i, el)
+            new = widen_from_instance(dest, i, el)
             push!(new, el)
             return grow_to_structarray!(new, itr, iterate(itr, st))
         end
@@ -102,7 +102,8 @@ function grow_to_structarray!(dest::AbstractArray, itr, elem = iterate(itr))
 end
 
 # Widen `dest` to contain `el` and copy until index `i-1`
-widen(dest::AbstractArray{S}, i, el::T) where {S, T} = _widenstructarray(dest, i, _promote_typejoin(S, T))
+widen_from_instance(dest::AbstractArray{S}, i, el::T) where {S, T} = _widenstructarray(dest, i, _promote_typejoin(S, T))
+widen_from_type(dest::AbstractArray{S}, i, ::Type{T}) where {S, T} = _widenstructarray(dest, i, _promote_typejoin(S, T))
 
 function _widenstructarray(dest::StructArray, i, ::Type{T}) where {T}
     sch = hasfields(T) ? staticschema(T) : nothing
@@ -145,7 +146,7 @@ function _append!!(dest::AbstractVector, itr, ::Union{Base.HasShape, Base.HasLen
     fr === nothing && return dest
     el, st = fr
     i = lastindex(dest) + 1
-    new = iscompatible(el, dest) ? dest : widen(dest, i, el)
+    new = iscompatible(el, dest) ? dest : widen_from_instance(dest, i, el)
     resize!(new, length(dest) + n)
     @inbounds new[i] = el
     return collect_to_structarray!(new, itr, i + 1, st)
@@ -153,3 +154,10 @@ end
 
 _append!!(dest::AbstractVector, itr, ::Base.SizeUnknown) =
     grow_to_structarray!(dest, itr)
+
+# Optimized version when element collection is an `AbstractVector`
+function append!!(dest::V, v::AbstractVector{T}) where {V<:AbstractVector, T}
+    new = iscompatible(T, V) ? dest : widen_from_type(dest, length(dest) + 1, T)
+    return append!(new, v)
+end
+
