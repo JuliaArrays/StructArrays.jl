@@ -102,8 +102,12 @@ function grow_to_structarray!(dest::AbstractArray, itr, elem = iterate(itr))
 end
 
 # Widen `dest` to contain `el` and copy until index `i-1`
-widen_from_instance(dest::AbstractArray{S}, i, el::T) where {S, T} = _widenstructarray(dest, i, _promote_typejoin(S, T))
-widen_from_type(dest::AbstractArray{S}, i, ::Type{T}) where {S, T} = _widenstructarray(dest, i, _promote_typejoin(S, T))
+widen_from_instance(dest::AbstractArray, i, el::T) where {T} = widen_from_type(dest, i, T)
+# Widen `dest` to contain elements of type `T` and copy until index `i-1`
+function widen_from_type(dest::AbstractArray{S}, i, ::Type{T}) where {S, T}
+    U = _promote_typejoin(S, T)
+    return _widenstructarray(dest, i, U)
+end
 
 function _widenstructarray(dest::StructArray, i, ::Type{T}) where {T}
     sch = hasfields(T) ? staticschema(T) : nothing
@@ -156,8 +160,10 @@ _append!!(dest::AbstractVector, itr, ::Base.SizeUnknown) =
     grow_to_structarray!(dest, itr)
 
 # Optimized version when element collection is an `AbstractVector`
-function append!!(dest::V, v::AbstractVector{T}) where {V<:AbstractVector, T}
-    new = iscompatible(T, V) ? dest : widen_from_type(dest, length(dest) + 1, T)
-    return append!(new, v)
+# This only works for julia 1.3 or greater, which has `append!` for `AbstractVector`
+@static if VERSION < v"1.3.0"
+    function append!!(dest::V, v::AbstractVector{T}) where {V<:AbstractVector, T}
+        new = iscompatible(T, V) ? dest : widen_from_type(dest, length(dest) + 1, T)
+        return append!(new, v)
+    end
 end
-
