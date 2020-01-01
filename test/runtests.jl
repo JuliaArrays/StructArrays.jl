@@ -681,6 +681,7 @@ end
     itr = [(a = 1, b = 2), (a = 1, b = 2), (a = 1, b = 12)]
     itr_examples = [
         ("HasLength", () -> itr),
+        ("StructArray", () -> StructArray(itr)),
         ("SizeUnknown", () -> (x for x in itr if isodd(x.a))),
         # Broken due to https://github.com/JuliaArrays/StructArrays.jl/issues/100:
         # ("empty", (x for x in itr if false)),

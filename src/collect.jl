@@ -161,7 +161,7 @@ _append!!(dest::AbstractVector, itr, ::Base.SizeUnknown) =
 
 # Optimized version when element collection is an `AbstractVector`
 # This only works for julia 1.3 or greater, which has `append!` for `AbstractVector`
-@static if VERSION < v"1.3.0"
+@static if VERSION ≥ v"1.3.0"
     function append!!(dest::V, v::AbstractVector{T}) where {V<:AbstractVector, T}
         new = iscompatible(T, V) ? dest : widen_from_type(dest, length(dest) + 1, T)
         return append!(new, v)
