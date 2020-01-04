@@ -135,10 +135,9 @@ Base.axes(s::StructArray{<:Any, <:Any, <:EmptyTup}) = (1:0,)
 
 get_ith(cols::NamedTuple, I...) = get_ith(Tuple(cols), I...)
 @generated function get_ith(cols::NTuple{N, Any}, I...) where N
-    args = ntuple(N) do i
-        :(@inbounds res = getfield(cols, $i)[I...])
-    end
-    :(($(args...),))
+    args = [:(getfield(cols, $i)[I...]) for i in 1:N]
+    tup = Expr(:tuple, args...)
+    return :(@inbounds $tup)
 end
 
 Base.@propagate_inbounds function Base.getindex(x::StructArray{T, <:Any, <:Any, CartesianIndex{N}}, I::Vararg{Int, N}) where {T, N}
