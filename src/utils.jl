@@ -28,19 +28,26 @@ else
     const _getproperty = getproperty
 end
 
-function _foreachfield(names, xs)
+function _foreachfield(names, vars)
     exprs = Expr[]
     for field in names
         sym = QuoteNode(field)
-        args = [Expr(:call, :_getproperty, :(getfield(xs, $j)), sym) for j in 1:length(xs)]
+        args = [Expr(:call, :_getproperty, var, sym) for var in vars]
         push!(exprs, Expr(:call, :f, args...))
     end
     push!(exprs, :(return nothing))
     return Expr(:block, exprs...)
 end
 
-@generated foreachfield(::Type{<:NamedTuple{names}}, f, xs...) where {names} = _foreachfield(names, xs)
-@generated foreachfield(::Type{<:NTuple{N, Any}}, f, xs...) where {N} = _foreachfield(Base.OneTo(N), xs)
+@generated foreachfield(::Type{<:NamedTuple{names}}, f, x) where {names} =
+    _foreachfield(names, (:x,))
+@generated foreachfield(::Type{<:NTuple{N, Any}}, f, x) where {N} =
+    _foreachfield(Base.OneTo(N)), (:x,)
+
+@generated foreachfield(::Type{<:NamedTuple{names}}, f, x, y) where {names} =
+    _foreachfield(names, (:x, :y))
+@generated foreachfield(::Type{<:NTuple{N, Any}}, f, x, y) where {N} =
+    _foreachfield(Base.OneTo(N), (:x, :y))
 
 foreachfield(f, x::T, xs...) where {T} = foreachfield(staticschema(T), f, x, xs...)
 
