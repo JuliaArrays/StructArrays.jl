@@ -10,4 +10,5 @@ end
 staticschema(::Type{T}) where {T<:Tup} = T
 
 createinstance(::Type{T}, args...) where {T} = T(args...)
-createinstance(::Type{T}, args...) where {T<:Union{Tuple, NamedTuple}} = T(args)
+createinstance(::Type{<:Tuple}, args...)  = args
+createinstance(::Type{<:NamedTuple{names}}, args...) where {names} = NamedTuple{names}(args)
