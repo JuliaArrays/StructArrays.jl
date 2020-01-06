@@ -3,6 +3,8 @@ using StructArrays: staticschema, iscompatible, _promote_typejoin, append!!
 using OffsetArrays: OffsetArray
 import Tables, PooledArrays, WeakRefStrings
 using DataAPI: refarray, refvalue
+using Adapt: adapt
+import GPUArrays
 using Test
 
 @testset "index" begin
@@ -699,4 +701,14 @@ end
 
         @test vcat(dest, StructVector(makeitr())) == append!!(copy(dest), makeitr())
     end
+end
+
+@testset "adapt" begin
+    s = StructArray(a = 1:10, b = StructArray(c = 1:10, d = 1:10))
+    t = adapt(Array, s)
+    @test propertynames(t) == (:a, :b)
+    @test s == t
+    @test t.a isa Array
+    @test t.b.c isa Array
+    @test t.b.d isa Array
 end
