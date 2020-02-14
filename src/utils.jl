@@ -134,3 +134,16 @@ hasfields(::Type{<:NTuple{N, Any}}) where {N} = true
 hasfields(::Type{<:NamedTuple{names}}) where {names} = true
 hasfields(::Type{T}) where {T} = !isabstracttype(T)
 hasfields(::Union) = false
+
+_setdiff(a, b) = setdiff(a, b)
+
+@inline _setdiff(::Tuple{}, ::Tuple{}) = ()
+@inline _setdiff(::Tuple{}, ::Tuple) = ()
+@inline _setdiff(a::Tuple, ::Tuple{}) = a
+@inline _setdiff(a::Tuple, b::Tuple) = _setdiff(_exclude(a, b[1]), Base.tail(b))
+@inline _exclude(a, b) = foldl((ys, x) -> x == b ? ys : (ys..., x), a; init = ())
+
+# _foreach(f, xs) = foreach(f, xs)
+_foreach(f, xs::Tuple) = foldl((_, x) -> (f(x); nothing), xs; init = nothing)
+# Note `foreach` is not optimized for tuples yet.
+# See: https://github.com/JuliaLang/julia/pull/31901
