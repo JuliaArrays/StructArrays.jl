@@ -24,7 +24,7 @@ end
 
 @testset "utils" begin
     t = StructArray(rand(ComplexF64, 2, 2))
-    T = staticschema(typeof(t))
+    T = staticschema(eltype(t))
     @test StructArrays.eltypes(T) == NamedTuple{(:re, :im), Tuple{Float64, Float64}}
     @test StructArrays.map_params(eltype, T) == NamedTuple{(:re, :im), Tuple{Float64, Float64}}
     @test StructArrays.map_params(eltype, StructArrays.astuple(T)) == Tuple{Float64, Float64}
@@ -579,7 +579,7 @@ end
     rows = LazyRows(s)
     @test propertynames(rows) == (:re, :im)
     @test propertynames(rows[1]) == (:re, :im)
-    @test staticschema(typeof(rows)) == staticschema(eltype(rows)) == staticschema(ComplexF64)
+    @test staticschema(eltype(rows)) == staticschema(ComplexF64)
     @test getproperty(rows, 1) isa Matrix{Float64}
     @test getproperty(rows, :re) isa Matrix{Float64}
     @test IndexStyle(rows) isa IndexCartesian
@@ -593,7 +593,7 @@ end
     rows = LazyRows(s)
     @test propertynames(rows) == (:re, :im)
     @test propertynames(rows[1]) == (:re, :im)
-    @test staticschema(typeof(rows)) == staticschema(eltype(rows)) == staticschema(ComplexF64)
+    @test staticschema(eltype(rows)) == staticschema(ComplexF64)
     @test getproperty(rows, 1) isa Matrix{Float64}
     @test getproperty(rows, :re) isa Matrix{Float64}
     @test IndexStyle(rows) isa IndexLinear
