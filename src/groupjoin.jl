@@ -1,16 +1,18 @@
 # Important, for broadcast joins we cannot assume c and d have same number of columns:
 # c could have more columns than d
-@generated function rowcmp(c::StructVector, i, d::StructVector{C, D}, j) where {C, D}
-    N = fieldcount(D)
-    ex = :(cmp(getfield(fieldarrays(c),$N)[i], getfield(fieldarrays(d),$N)[j]))
-    for n in N-1:-1:1
-        ex = quote
-            let k = rowcmp(getfield(fieldarrays(c),$n), i, getfield(fieldarrays(d),$n), j)
-                (k == 0) ? ($ex) : k
-            end
-        end
+rowcmp(::Tuple, i, ::Tuple{}, j) = 0
+
+function rowcmp(tc::Tuple, i, td::Tuple, j)
+    c, d = tc[1], td[1]
+    let k = rowcmp(c, i, d, j)
+        (k == 0) ? rowcmp(tail(tc), i, tail(td), j) : k
     end
-    ex
+end
+
+function rowcmp(c::StructVector, i, d::StructVector, j)
+    tc = Tuple(fieldarrays(c))
+    td = Tuple(fieldarrays(d))
+    return rowcmp(tc, i, td, j)
 end
 
 @inline function rowcmp(c::AbstractVector, i, d::AbstractVector, j)
