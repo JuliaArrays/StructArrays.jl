@@ -1,10 +1,8 @@
 Tables.isrowtable(::Type{<:StructArray}) = true
 
 Tables.columnaccess(::Type{<:StructArray}) = true
-Tables.columns(s::StructArray) = s
-
+Tables.columns(s::StructArray) = fieldarrays(s)
 Tables.getcolumn(s::StructArray, i::Int) = getproperty(s, i)
-
 Tables.schema(s::StructArray) = Tables.Schema(staticschema(eltype(s)))
 
 function Base.append!(s::StructVector, rows)
