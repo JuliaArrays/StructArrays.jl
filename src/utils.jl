@@ -36,12 +36,12 @@ function _foreachfield(names, L)
     return Expr(:block, exprs...)
 end
 
-@generated foreachfield(::Type{<:NamedTuple{names}}, f, xs::Vararg{Any, L}) where {names, L} =
+@generated foreachfield_gen(::NamedTuple{names}, f, xs::Vararg{Any, L}) where {names, L} =
     _foreachfield(names, L)
-@generated foreachfield(::Type{<:NTuple{N, Any}}, f, xs::Vararg{Any, L}) where {N, L} =
+@generated foreachfield_gen(::NTuple{N, Any}, f, xs::Vararg{Any, L}) where {N, L} =
     _foreachfield(Base.OneTo(N), L)
 
-foreachfield(f, x::T, xs...) where {T} = foreachfield(staticschema(T), f, x, xs...)
+foreachfield(f, x::StructArray, xs...) = foreachfield_gen(fieldarrays(x), f, x, xs...)
 
 """
 `iscompatible(::Type{S}, ::Type{V}) where {S, V<:AbstractArray}`
