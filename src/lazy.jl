@@ -15,11 +15,12 @@ for typ in [:Symbol, :Int]
     end
 end
 Base.propertynames(c::LazyRow) = propertynames(getfield(c, 1))
-Tables.getcolumn(s::LazyRow, i::Int) = getproperty(s, i)
 
 function Base.show(io::IO, c::LazyRow)
     print(io, "LazyRow")
-    show(io, to_tup(c))
+    columns, index = getfield(c, 1), getfield(c, 2)
+    tup = StructArray(fieldarrays(columns))[index]
+    show(io, tup)
 end
 
 staticschema(::Type{<:LazyRow{T}}) where {T} = staticschema(T)
@@ -35,7 +36,6 @@ end
 Base.parent(v::LazyRows) = getfield(v, 1)
 fieldarrays(v::LazyRows) = fieldarrays(parent(v))
 
-Tables.getcolumn(s::LazyRow, i::Int) = getproperty(s, i)
 Base.getproperty(s::LazyRows, key::Symbol) = getproperty(parent(s), key)
 Base.getproperty(s::LazyRows, key::Int) = getproperty(parent(s), key)
 Base.propertynames(c::LazyRows) = propertynames(parent(c))

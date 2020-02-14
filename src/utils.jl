@@ -115,13 +115,6 @@ function replace_storage(f, s::StructArray{T}) where T
     StructArray{T}(newcols)
 end
 
-to_tup(c::T) where {T} = to_tup(c, fieldnames(staticschema(T)))
-function to_tup(c, fields::NTuple{N, Symbol}) where N
-    t = ntuple(i -> getproperty(c, fields[i]), N)
-    return NamedTuple{fields}(t)
-end
-to_tup(c, fields::NTuple{N, Int}) where {N} = ntuple(i -> getcolumn(c, fields[i]), N)
-
 astuple(::Type{NamedTuple{names, types}}) where {names, types} = types
 astuple(::Type{T}) where {T<:Tuple} = T
 

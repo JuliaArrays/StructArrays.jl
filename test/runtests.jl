@@ -318,11 +318,6 @@ cols_infer() = StructArray(([1, 2], [1.2, 2.3]))
     @inferred cols_infer()
 end
 
-@testset "to_(named)tuple" begin
-    @test StructArrays.to_tup((1, 2, 3)) == (1, 2, 3)
-    @test StructArrays.to_tup(2 + 3im) == (re = 2, im = 3)
-end
-
 @testset "propertynames" begin
     a = StructArray{ComplexF64}((Float64[], Float64[]))
     @test sort(collect(propertynames(a))) == [:im, :re]
