@@ -21,13 +21,6 @@ function buildfromschema(initializer, ::Type{T}, ::Type{NT}) where {T, NT<:Tup}
     StructArray{T}(nt)
 end
 
-@static if VERSION < v"1.2.0"
-    @inline _getproperty(v::Tuple, field) = getfield(v, field)
-    @inline _getproperty(v, field) = getproperty(v, field)
-else
-    const _getproperty = getproperty
-end
-
 function _foreachfield(names, L)
     vars = ntuple(i -> gensym(), L)
     exprs = Expr[]
@@ -36,7 +29,7 @@ function _foreachfield(names, L)
     end
     for field in names
         sym = QuoteNode(field)
-        args = [Expr(:call, :_getproperty, var, sym) for var in vars]
+        args = [Expr(:call, :getcolumn, var, sym) for var in vars]
         push!(exprs, Expr(:call, :f, args...))
     end
     push!(exprs, :(return nothing))
@@ -127,7 +120,7 @@ function to_tup(c, fields::NTuple{N, Symbol}) where N
     t = ntuple(i -> getproperty(c, fields[i]), N)
     return NamedTuple{fields}(t)
 end
-to_tup(c, fields::NTuple{N, Int}) where {N} = ntuple(i -> _getproperty(c, fields[i]), N)
+to_tup(c, fields::NTuple{N, Int}) where {N} = ntuple(i -> getcolumn(c, fields[i]), N)
 
 astuple(::Type{NamedTuple{names, types}}) where {names, types} = types
 astuple(::Type{T}) where {T<:Tuple} = T
@@ -148,8 +141,3 @@ _setdiff(a, b) = setdiff(a, b)
 @inline _setdiff(a::Tuple, ::Tuple{}) = a
 @inline _setdiff(a::Tuple, b::Tuple) = _setdiff(_exclude(a, b[1]), Base.tail(b))
 @inline _exclude(a, b) = foldl((ys, x) -> x == b ? ys : (ys..., x), a; init = ())
-
-# _foreach(f, xs) = foreach(f, xs)
-_foreach(f, xs::Tuple) = foldl((_, x) -> (f(x); nothing), xs; init = nothing)
-# Note `foreach` is not optimized for tuples yet.
-# See: https://github.com/JuliaLang/julia/pull/31901

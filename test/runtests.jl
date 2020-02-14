@@ -626,11 +626,11 @@ end
     rows = LazyRows(s)
     @test IndexStyle(rows) isa IndexLinear
     @test IndexStyle(typeof(rows)) isa IndexLinear
-    @test all(t -> StructArrays._getproperty(t, 1) >= 0, s)
+    @test all(t -> Tables.getcolumn(t, 1) >= 0, s)
     @test all(t -> getproperty(t, 1) >= 0, rows)
     setproperty!(rows[13], 1, -12)
     setproperty!(rows[13], 2, 0)
-    @test !all(t -> StructArrays._getproperty(t, 1) >= 0, s)
+    @test !all(t -> Tables.getcolumn(t, 1) >= 0, s)
     @test !all(t -> getproperty(t, 1) >= 0, rows)
 
     io = IOBuffer()
