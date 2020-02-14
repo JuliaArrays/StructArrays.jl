@@ -38,14 +38,9 @@ Base.eltype(::Type{<:GroupPerm}) = UnitRange{Int}
     return eq
 end
 
-@generated function roweq(c::StructVector{D,C}, i, j) where {D,C}
-    N = fieldcount(C)
-    ex = :(roweq(getfield(fieldarrays(c),1), i, j))
-    for n in 2:N
-        ex = :(($ex) && (roweq(getfield(fieldarrays(c),$n), i, j)))
-    end
-    ex
-end
+roweq(t::Tuple{}, i, j) = true
+roweq(t::Tuple, i, j) = roweq(t[1], i, j) ? roweq(Base.tail(t), i, j) : false
+roweq(s::StructArray, i, j) = roweq(Tuple(fieldarrays(s)), i, j)
 
 function uniquesorted(keys, perm=sortperm(keys))
     (keys[perm[idxs[1]]] for idxs in GroupPerm(keys, perm))
