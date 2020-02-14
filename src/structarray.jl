@@ -134,12 +134,11 @@ Base.axes(s::StructArray) = axes(fieldarrays(s)[1])
 Base.axes(s::StructArray{<:Any, <:Any, <:EmptyTup}) = (1:0,)
 
 get_ith(cols::NamedTuple, I...) = get_ith(Tuple(cols), I...)
-function get_ith(cols::NTuple{N, Any}, I...) where N
-    ntuple(N) do i
-        @inbounds res = getfield(cols, i)[I...]
-        return res
-    end
+function get_ith(cols::Tuple, I...)
+    @inbounds r = first(cols)[I...]
+    return (r, get_ith(Base.tail(cols), I...)...)
 end
+get_ith(::Tuple{}, I...) = ()
 
 Base.@propagate_inbounds function Base.getindex(x::StructArray{T, <:Any, <:Any, CartesianIndex{N}}, I::Vararg{Int, N}) where {T, N}
     cols = fieldarrays(x)
