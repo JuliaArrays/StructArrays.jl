@@ -336,6 +336,10 @@ end
     @test Tables.rowaccess(typeof(s))
     @test Tables.columnaccess(s)
     @test Tables.columnaccess(typeof(s))
+    @test Tables.getcolumn(s, 1) == [1]
+    @test Tables.getcolumn(s, :a) == [1]
+    @test Tables.getcolumn(s, 2) == ["test"]
+    @test Tables.getcolumn(s, :b) == ["test"]
     @test append!(StructArray([1im]), [(re = 111, im = 222)]) ==
         StructArray([1im, 111 + 222im])
     @test append!(StructArray([1im]), (x for x in [(re = 111, im = 222)])) ==
