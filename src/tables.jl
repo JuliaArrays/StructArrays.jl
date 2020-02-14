@@ -1,11 +1,9 @@
-using Tables: Tables
+Tables.isrowtable(::Type{<:StructArray}) = true
 
-Tables.isrowtable(::Type{<:StructVector}) = true
-
-Tables.columnaccess(::Type{<:StructVector}) = true
-Tables.columns(s::StructVector) = fieldarrays(s)
-
-Tables.schema(s::StructVector) = Tables.Schema(staticschema(eltype(s)))
+Tables.columnaccess(::Type{<:StructArray}) = true
+Tables.columns(s::StructArray) = fieldarrays(s)
+Tables.getcolumn(s::StructArray, i::Int) = getproperty(s, i)
+Tables.schema(s::StructArray) = Tables.Schema(staticschema(eltype(s)))
 
 function Base.append!(s::StructVector, rows)
     if Tables.isrowtable(rows) && Tables.columnaccess(rows)
@@ -14,9 +12,7 @@ function Base.append!(s::StructVector, rows)
         table = Tables.columns(rows)
         isempty(_setdiff(propertynames(s), Tables.columnnames(rows))) ||
             _invalid_columns_error(s, rows)
-        _foreach(propertynames(s)) do name
-            append!(getproperty(s, name), Tables.getcolumn(table, name))
-        end
+        foreachfield(append!, s, table)
         return s
     else
         # Otherwise, fallback to a generic implementation expecting

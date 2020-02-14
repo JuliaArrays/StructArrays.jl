@@ -318,11 +318,6 @@ cols_infer() = StructArray(([1, 2], [1.2, 2.3]))
     @inferred cols_infer()
 end
 
-@testset "to_(named)tuple" begin
-    @test StructArrays.to_tup((1, 2, 3)) == (1, 2, 3)
-    @test StructArrays.to_tup(2 + 3im) == (re = 2, im = 3)
-end
-
 @testset "propertynames" begin
     a = StructArray{ComplexF64}((Float64[], Float64[]))
     @test sort(collect(propertynames(a))) == [:im, :re]
@@ -341,6 +336,10 @@ end
     @test Tables.rowaccess(typeof(s))
     @test Tables.columnaccess(s)
     @test Tables.columnaccess(typeof(s))
+    @test Tables.getcolumn(s, 1) == [1]
+    @test Tables.getcolumn(s, :a) == [1]
+    @test Tables.getcolumn(s, 2) == ["test"]
+    @test Tables.getcolumn(s, :b) == ["test"]
     @test append!(StructArray([1im]), [(re = 111, im = 222)]) ==
         StructArray([1im, 111 + 222im])
     @test append!(StructArray([1im]), (x for x in [(re = 111, im = 222)])) ==
@@ -626,11 +625,11 @@ end
     rows = LazyRows(s)
     @test IndexStyle(rows) isa IndexLinear
     @test IndexStyle(typeof(rows)) isa IndexLinear
-    @test all(t -> StructArrays._getproperty(t, 1) >= 0, s)
+    @test all(t -> Tables.getcolumn(t, 1) >= 0, s)
     @test all(t -> getproperty(t, 1) >= 0, rows)
     setproperty!(rows[13], 1, -12)
     setproperty!(rows[13], 2, 0)
-    @test !all(t -> StructArrays._getproperty(t, 1) >= 0, s)
+    @test !all(t -> Tables.getcolumn(t, 1) >= 0, s)
     @test !all(t -> getproperty(t, 1) >= 0, rows)
 
     io = IOBuffer()

@@ -18,7 +18,9 @@ Base.propertynames(c::LazyRow) = propertynames(getfield(c, 1))
 
 function Base.show(io::IO, c::LazyRow)
     print(io, "LazyRow")
-    show(io, to_tup(c))
+    columns, index = getfield(c, 1), getfield(c, 2)
+    tup = StructArray(fieldarrays(columns))[index]
+    show(io, tup)
 end
 
 staticschema(::Type{<:LazyRow{T}}) where {T} = staticschema(T)
