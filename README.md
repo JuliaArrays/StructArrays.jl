@@ -248,3 +248,30 @@ false
 Since the original array `dest` cannot hold the input, a new array is created (`ans !== dest`).
 
 Combined with [function barriers](https://docs.julialang.org/en/latest/manual/performance-tips/#kernel-functions-1), `append!!` is a useful building block for implementing `collect`-like functions.
+
+## Advanced: using StructArrays in CUDA kernels
+
+It is possible to combine StructArrays with [CUDAnative](https://github.com/JuliaGPU/CUDAnative.jl), in order to create CUDA kernels that work on StructArrays directly on the GPU. Make sure you are familiar with the CUDAnative documentation (esp. kernels with plain `CuArray`s) before experimenting with kernels based on `StructArray`s.
+
+```julia
+using CUDAnative, CuArrays, StructArrays
+d = StructArray(a = rand(100), b = rand(100))
+
+# move to GPU
+dd = replace_storage(CuArray, d)
+de = similar(dd)
+
+# a simple kernel, to copy the content of `dd` onto `de`
+function kernel!(dest, src)
+    i = (blockIdx().x-1)*blockDim().x + threadIdx().x
+    if i <= length(dest)
+        dest[i] = src[i]
+    end
+    return nothing
+end
+
+threads = 1024
+blocks = cld(length(dd),threads)
+
+@cuda threads=threads blocks=blocks kernel!(de, dd)
+```
