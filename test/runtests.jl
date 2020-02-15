@@ -24,7 +24,7 @@ end
 
 @testset "utils" begin
     t = StructArray(rand(ComplexF64, 2, 2))
-    T = staticschema(typeof(t))
+    T = staticschema(eltype(t))
     @test StructArrays.eltypes(T) == NamedTuple{(:re, :im), Tuple{Float64, Float64}}
     @test StructArrays.map_params(eltype, T) == NamedTuple{(:re, :im), Tuple{Float64, Float64}}
     @test StructArrays.map_params(eltype, StructArrays.astuple(T)) == Tuple{Float64, Float64}
@@ -336,10 +336,10 @@ end
     @test Tables.rowaccess(typeof(s))
     @test Tables.columnaccess(s)
     @test Tables.columnaccess(typeof(s))
-    @test Tables.getcolumn(s, 1) == [1]
-    @test Tables.getcolumn(s, :a) == [1]
-    @test Tables.getcolumn(s, 2) == ["test"]
-    @test Tables.getcolumn(s, :b) == ["test"]
+    @test Tables.getcolumn(Tables.columns(s), 1) == [1]
+    @test Tables.getcolumn(Tables.columns(s), :a) == [1]
+    @test Tables.getcolumn(Tables.columns(s), 2) == ["test"]
+    @test Tables.getcolumn(Tables.columns(s), :b) == ["test"]
     @test append!(StructArray([1im]), [(re = 111, im = 222)]) ==
         StructArray([1im, 111 + 222im])
     @test append!(StructArray([1im]), (x for x in [(re = 111, im = 222)])) ==
@@ -579,7 +579,7 @@ end
     rows = LazyRows(s)
     @test propertynames(rows) == (:re, :im)
     @test propertynames(rows[1]) == (:re, :im)
-    @test staticschema(typeof(rows)) == staticschema(eltype(rows)) == staticschema(ComplexF64)
+    @test staticschema(eltype(rows)) == staticschema(ComplexF64)
     @test getproperty(rows, 1) isa Matrix{Float64}
     @test getproperty(rows, :re) isa Matrix{Float64}
     @test IndexStyle(rows) isa IndexCartesian
@@ -593,7 +593,7 @@ end
     rows = LazyRows(s)
     @test propertynames(rows) == (:re, :im)
     @test propertynames(rows[1]) == (:re, :im)
-    @test staticschema(typeof(rows)) == staticschema(eltype(rows)) == staticschema(ComplexF64)
+    @test staticschema(eltype(rows)) == staticschema(ComplexF64)
     @test getproperty(rows, 1) isa Matrix{Float64}
     @test getproperty(rows, :re) isa Matrix{Float64}
     @test IndexStyle(rows) isa IndexLinear

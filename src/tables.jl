@@ -1,17 +1,32 @@
+import Tables
+
 Tables.isrowtable(::Type{<:StructArray}) = true
 
 Tables.columnaccess(::Type{<:StructArray}) = true
 Tables.columns(s::StructArray) = fieldarrays(s)
-Tables.getcolumn(s::StructArray, i::Int) = getproperty(s, i)
-Tables.schema(s::StructArray) = Tables.Schema(staticschema(eltype(s)))
+Tables.schema(s::StructArray) = _schema(staticschema(eltype(s)))
+
+_schema(::Type{NT}) where {NT<:NamedTuple} = Tables.Schema(NT)
+# make schema for unnamed case
+function _schema(::Type{T}) where {T<:NTuple{N, Any}} where N
+    return Tables.Schema{ntuple(identity, N), T}
+end
+
+function try_compatible_columns(rows::R, s::StructArray) where {R}
+    Tables.isrowtable(rows) && Tables.columnaccess(rows) || return nothing
+    T = eltype(rows)
+    hasfields(T) || return nothing
+    NT = staticschema(T)
+    _schema(NT) == Tables.schema(rows) || return nothing
+    table = Tables.columns(rows)
+    fieldnames(NT) == propertynames(table) ? table : nothing
+end
 
 function Base.append!(s::StructVector, rows)
-    if Tables.isrowtable(rows) && Tables.columnaccess(rows)
+    table = try_compatible_columns(rows, s)
+    if table !== nothing
         # Input `rows` is a container of rows _and_ satisfies column
         # table interface.  Thus, we can add the input column-by-column.
-        table = Tables.columns(rows)
-        isempty(_setdiff(propertynames(s), Tables.columnnames(rows))) ||
-            _invalid_columns_error(s, rows)
         foreachfield(append!, s, table)
         return s
     else
@@ -19,13 +34,4 @@ function Base.append!(s::StructVector, rows)
         # that `rows` is an iterator:
         return foldl(push!, rows; init = s)
     end
-end
-
-@noinline function _invalid_columns_error(s, rows)
-    missingnames = setdiff!(collect(Tables.columnnames(rows)), propertynames(s))
-    throw(ArgumentError(string(
-        "Cannot append rows from `$(typeof(rows))` to `$(typeof(s))` due to ",
-        "missing column(s):\n",
-        join(missingnames, ", "),
-    )))
 end

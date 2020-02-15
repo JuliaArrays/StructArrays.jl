@@ -21,6 +21,13 @@ function buildfromschema(initializer, ::Type{T}, ::Type{NT}) where {T, NT<:Tup}
     StructArray{T}(nt)
 end
 
+@static if VERSION < v"1.2.0"
+    @inline _getproperty(v::Tuple, field) = getfield(v, field)
+    @inline _getproperty(v, field) = getproperty(v, field)
+else
+    const _getproperty = getproperty
+end
+
 function _foreachfield(names, L)
     vars = ntuple(i -> gensym(), L)
     exprs = Expr[]
@@ -29,19 +36,19 @@ function _foreachfield(names, L)
     end
     for field in names
         sym = QuoteNode(field)
-        args = [Expr(:call, :getcolumn, var, sym) for var in vars]
+        args = [Expr(:call, :_getproperty, var, sym) for var in vars]
         push!(exprs, Expr(:call, :f, args...))
     end
     push!(exprs, :(return nothing))
     return Expr(:block, exprs...)
 end
 
-@generated foreachfield(::Type{<:NamedTuple{names}}, f, xs::Vararg{Any, L}) where {names, L} =
+@generated foreachfield_gen(::NamedTuple{names}, f, xs::Vararg{Any, L}) where {names, L} =
     _foreachfield(names, L)
-@generated foreachfield(::Type{<:NTuple{N, Any}}, f, xs::Vararg{Any, L}) where {N, L} =
+@generated foreachfield_gen(::NTuple{N, Any}, f, xs::Vararg{Any, L}) where {N, L} =
     _foreachfield(Base.OneTo(N), L)
 
-foreachfield(f, x::T, xs...) where {T} = foreachfield(staticschema(T), f, x, xs...)
+foreachfield(f, x::StructArray, xs...) = foreachfield_gen(fieldarrays(x), f, x, xs...)
 
 """
 `iscompatible(::Type{S}, ::Type{V}) where {S, V<:AbstractArray}`
@@ -126,11 +133,3 @@ hasfields(::Type{<:NTuple{N, Any}}) where {N} = true
 hasfields(::Type{<:NamedTuple{names}}) where {names} = true
 hasfields(::Type{T}) where {T} = !isabstracttype(T)
 hasfields(::Union) = false
-
-_setdiff(a, b) = setdiff(a, b)
-
-@inline _setdiff(::Tuple{}, ::Tuple{}) = ()
-@inline _setdiff(::Tuple{}, ::Tuple) = ()
-@inline _setdiff(a::Tuple, ::Tuple{}) = a
-@inline _setdiff(a::Tuple, b::Tuple) = _setdiff(_exclude(a, b[1]), Base.tail(b))
-@inline _exclude(a, b) = foldl((ys, x) -> x == b ? ys : (ys..., x), a; init = ())
