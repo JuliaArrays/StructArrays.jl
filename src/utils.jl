@@ -21,6 +21,13 @@ function buildfromschema(initializer, ::Type{T}, ::Type{NT}) where {T, NT<:Tup}
     StructArray{T}(nt)
 end
 
+@static if VERSION < v"1.2.0"
+    @inline _getproperty(v::Tuple, field) = getfield(v, field)
+    @inline _getproperty(v, field) = getproperty(v, field)
+else
+    const _getproperty = getproperty
+end
+
 function _foreachfield(names, L)
     vars = ntuple(i -> gensym(), L)
     exprs = Expr[]
@@ -29,7 +36,7 @@ function _foreachfield(names, L)
     end
     for field in names
         sym = QuoteNode(field)
-        args = [Expr(:call, :getcolumn, var, sym) for var in vars]
+        args = [Expr(:call, :_getproperty, var, sym) for var in vars]
         push!(exprs, Expr(:call, :f, args...))
     end
     push!(exprs, :(return nothing))
