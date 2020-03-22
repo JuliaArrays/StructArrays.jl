@@ -363,10 +363,10 @@ StructArrays.createinstance(::Type{<:S}, x, y) = S(x)
     @test v[1].y isa Float64
 end
 
-@testset "default_array" begin
-    v = StructArrays.default_array(Missing, (2,))
+@testset "arrayof" begin
+    v = StructArrays.arrayof(Missing, (2,))
     @test v isa Array{Missing, 1}
-    v = StructArrays.default_array(Int, (2,))
+    v = StructArrays.arrayof(Int, (2,))
     @test v isa Array{Int, 1}
 end
 

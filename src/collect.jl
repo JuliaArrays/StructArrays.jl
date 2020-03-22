@@ -1,25 +1,25 @@
-default_array(::Type{S}, d::NTuple{N, Any}) where {S, N} = similar(Array{S, N}, d)
+arrayof(::Type{S}, d::NTuple{N, Any}) where {S, N} = similar(defaultarray(S, N), d)
 
 struct StructArrayInitializer{F, G}
     unwrap::F
-    default_array::G
+    arrayof::G
 end
-StructArrayInitializer(unwrap = t->false) = StructArrayInitializer(unwrap, default_array)
+StructArrayInitializer(unwrap = t->false) = StructArrayInitializer(unwrap, arrayof)
 
 const default_initializer = StructArrayInitializer()
 
 function (s::StructArrayInitializer)(S, d)
-    ai = ArrayInitializer(s.unwrap, s.default_array)
+    ai = ArrayInitializer(s.unwrap, s.arrayof)
     buildfromschema(typ -> ai(typ, d), S)
 end
 
 struct ArrayInitializer{F, G}
     unwrap::F
-    default_array::G
+    arrayof::G
 end
-ArrayInitializer(unwrap = t->false) = ArrayInitializer(unwrap, default_array)
+ArrayInitializer(unwrap = t->false) = ArrayInitializer(unwrap, arrayof)
 
-(s::ArrayInitializer)(S, d) = s.unwrap(S) ? buildfromschema(typ -> s(typ, d), S) : s.default_array(S, d)
+(s::ArrayInitializer)(S, d) = s.unwrap(S) ? buildfromschema(typ -> s(typ, d), S) : s.arrayof(S, d)
 
 _axes(itr) = _axes(itr, Base.IteratorSize(itr))
 _axes(itr, ::Base.SizeUnknown) = nothing
