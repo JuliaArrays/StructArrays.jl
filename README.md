@@ -214,7 +214,7 @@ StructArray(s)
 
 ## Advanced: mutate-or-widen style accumulation
 
-StructArrays provides a function `StructArrays.append!!(dest, src)` (unexported) for "mutate-or-widen" style accumulation.  This function can be used via [`BangBang.append!!`](https://tkf.github.io/BangBang.jl/dev/#BangBang.append!!-Tuple{Any,Any}) and [`BangBang.push!!`](https://tkf.github.io/BangBang.jl/dev/#BangBang.push!!-Tuple{Any,Any,Any,Vararg{Any,N}%20where%20N}) as well.
+StructArrays provides a function `StructArrays.append!!(dest, src)` (unexported) for "mutate-or-widen" style accumulation.  This function can be used via [`BangBang.append!!`](https://juliafolds.github.io/BangBang.jl/dev/#BangBang.append!!) and [`BangBang.push!!`](https://juliafolds.github.io/BangBang.jl/dev/#BangBang.push!!) as well.
 
 `StructArrays.append!!` works like `append!(dest, src)` if `dest` can contain all element types in `src` iterator; i.e., it _mutates_ `dest` in-place:
 
