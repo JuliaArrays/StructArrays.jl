@@ -3,8 +3,7 @@ using StructArrays: staticschema, iscompatible, _promote_typejoin, append!!
 using OffsetArrays: OffsetArray
 import Tables, PooledArrays, WeakRefStrings
 using DataAPI: refarray, refvalue
-using Adapt: adapt
-import GPUArrays
+using Adapt: adapt, Adapt
 using Test
 
 @testset "index" begin
@@ -702,9 +701,13 @@ end
     end
 end
 
+struct ArrayConverter end
+
+Adapt.adapt_storage(::ArrayConverter, xs::AbstractArray) = convert(Array, xs)
+
 @testset "adapt" begin
     s = StructArray(a = 1:10, b = StructArray(c = 1:10, d = 1:10))
-    t = adapt(Array, s)
+    t = adapt(ArrayConverter(), s)
     @test propertynames(t) == (:a, :b)
     @test s == t
     @test t.a isa Array
