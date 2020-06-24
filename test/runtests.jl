@@ -703,11 +703,11 @@ end
 
 struct ArrayConverter end
 
-Adapt.adapt_storage(::Type{<:ArrayConverter}, xs::AbstractArray) = convert(Array, xs)
+Adapt.adapt_storage(::ArrayConverter, xs::AbstractArray) = convert(Array, xs)
 
 @testset "adapt" begin
     s = StructArray(a = 1:10, b = StructArray(c = 1:10, d = 1:10))
-    t = adapt(ArrayConverter, s)
+    t = adapt(ArrayConverter(), s)
     @test propertynames(t) == (:a, :b)
     @test s == t
     @test t.a isa Array
