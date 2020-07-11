@@ -717,5 +717,14 @@ end
 
 @testset "broadcast" begin
     s = StructArray{ComplexF64}((rand(2,2), rand(2,2)))
-    @test isa(s .+ s, StructArray)
+    @test isa(@inferred(s .+ s), StructArray)
+    @test (s .+ s).re == 2*s.re
+    @test (s .+ s).im == 2*s.im
+    @test isa(@inferred(broadcast(t->1, s)), Array)
+    @test all(x->x==1, broadcast(t->1, s))
+    @test isa(@inferred(s .+ 1), StructArray)
+    @test s .+ 1 == StructArray{ComplexF64}((s.re .+ 1, s.im))
+    r = rand(2,2)
+    @test isa(@inferred(s .+ r), StructArray)
+    @test s .+ r == StructArray{ComplexF64}((s.re .+ r, s.im))
 end

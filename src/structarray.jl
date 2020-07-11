@@ -27,6 +27,10 @@ end
 
 index_type(::Type{StructArray{T, N, C, I}}) where {T, N, C, I} = I
 
+array_types(::Type{StructArray{T, N, C, I}}) where {T, N, C, I} = array_types(C)
+array_types(::Type{NamedTuple{names, types}}) where {names, types} = types
+array_types(::Type{TT}) where {TT<:Tuple} = TT
+
 function StructArray{T}(c::C) where {T, C<:Tup}
     cols = strip_params(staticschema(T))(c)
     N = isempty(cols) ? 1 : ndims(cols[1])
@@ -227,8 +231,18 @@ function Base.showarg(io::IO, s::StructArray{T}, toplevel) where T
 end
 
 # broadcast
-import Base.Broadcast: BroadcastStyle, ArrayStyle, Broadcasted
+import Base.Broadcast: BroadcastStyle, ArrayStyle, AbstractArrayStyle, Broadcasted, DefaultArrayStyle
 
-BroadcastStyle(::Type{<:StructArray}) = ArrayStyle{StructArray}()
-Base.similar(bc::Broadcasted{ArrayStyle{StructArray}}, ::Type{ElType}) where {N,ElType} =
-    similar(StructArray{ElType}, axes(bc))
+struct StructArrayStyle{Style} <: AbstractArrayStyle{Any} end
+
+@inline combine_style_types(::Type{A}, args...) where A<:AbstractArray =
+    combine_style_types(BroadcastStyle(A), args...)
+@inline combine_style_types(s::BroadcastStyle, ::Type{A}, args...) where A<:AbstractArray =
+    combine_style_types(Broadcast.result_style(s, BroadcastStyle(A)), args...)
+combine_style_types(s::BroadcastStyle) = s
+
+Base.@pure cst(::Type{SA}) where SA = combine_style_types(array_types(SA).parameters...)
+
+BroadcastStyle(::Type{SA}) where SA<:StructArray = StructArrayStyle{typeof(cst(SA))}()
+Base.similar(bc::Broadcasted{StructArrayStyle{S}}, ::Type{ElType}) where {S<:DefaultArrayStyle,N,ElType} =
+    isstructtype(ElType) ? similar(StructArray{ElType}, axes(bc)) : similar(Array{ElType}, axes(bc))
