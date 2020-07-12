@@ -741,7 +741,5 @@ Base.similar(bc::Broadcast.Broadcasted{Broadcast.ArrayStyle{MyArray}}, ::Type{El
     @test s .+ r == StructArray{ComplexF64}((s.re .+ r, s.im))
 
     s = StructArray{ComplexF64}((MyArray(rand(2,2)), MyArray(rand(2,2))))
-    @test isa(@inferred(s .+ s), MyArray)
-    @test real.((s .+ s)) == 2*s.re
-    @test imag.((s .+ s)) == 2*s.im
+    @test_throws MethodError s .+ s
 end

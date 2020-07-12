@@ -247,5 +247,3 @@ BroadcastStyle(::Type{SA}) where SA<:StructArray = StructArrayStyle{typeof(cst(S
 
 Base.similar(bc::Broadcasted{StructArrayStyle{S}}, ::Type{ElType}) where {S<:DefaultArrayStyle,N,ElType} =
     isstructtype(ElType) ? similar(StructArray{ElType}, axes(bc)) : similar(Array{ElType}, axes(bc))
-Base.similar(bc::Broadcasted{StructArrayStyle{S}}, ::Type{ElType}) where {S<:ArrayStyle{A},N,ElType} where A =
-    similar(A{ElType}, axes(bc))
