@@ -244,5 +244,8 @@ combine_style_types(s::BroadcastStyle) = s
 Base.@pure cst(::Type{SA}) where SA = combine_style_types(array_types(SA).parameters...)
 
 BroadcastStyle(::Type{SA}) where SA<:StructArray = StructArrayStyle{typeof(cst(SA))}()
+
 Base.similar(bc::Broadcasted{StructArrayStyle{S}}, ::Type{ElType}) where {S<:DefaultArrayStyle,N,ElType} =
     isstructtype(ElType) ? similar(StructArray{ElType}, axes(bc)) : similar(Array{ElType}, axes(bc))
+Base.similar(bc::Broadcasted{StructArrayStyle{S}}, ::Type{ElType}) where {S<:ArrayStyle{A},N,ElType} where A =
+    similar(A{ElType}, axes(bc))

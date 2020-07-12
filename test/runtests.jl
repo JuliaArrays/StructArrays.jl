@@ -715,6 +715,18 @@ Adapt.adapt_storage(::ArrayConverter, xs::AbstractArray) = convert(Array, xs)
     @test t.b.d isa Array
 end
 
+struct MyArray{T,N} <: AbstractArray{T,N}
+    A::Array{T,N}
+end
+MyArray{T}(::UndefInitializer, sz::Dims) where T = MyArray(Array{T}(undef, sz))
+Base.IndexStyle(::Type{<:MyArray}) = IndexLinear()
+Base.getindex(A::MyArray, i::Int) = A.A[i]
+Base.setindex!(A::MyArray, val, i::Int) = A.A[i] = val
+Base.size(A::MyArray) = Base.size(A.A)
+Base.BroadcastStyle(::Type{<:MyArray}) = Broadcast.ArrayStyle{MyArray}()
+Base.similar(bc::Broadcast.Broadcasted{Broadcast.ArrayStyle{MyArray}}, ::Type{ElType}) where ElType =
+    MyArray{ElType}(undef, size(bc))
+
 @testset "broadcast" begin
     s = StructArray{ComplexF64}((rand(2,2), rand(2,2)))
     @test isa(@inferred(s .+ s), StructArray)
@@ -727,4 +739,9 @@ end
     r = rand(2,2)
     @test isa(@inferred(s .+ r), StructArray)
     @test s .+ r == StructArray{ComplexF64}((s.re .+ r, s.im))
+
+    s = StructArray{ComplexF64}((MyArray(rand(2,2)), MyArray(rand(2,2))))
+    @test isa(@inferred(s .+ s), MyArray)
+    @test real.((s .+ s)) == 2*s.re
+    @test imag.((s .+ s)) == 2*s.im
 end
