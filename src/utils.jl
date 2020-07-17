@@ -58,12 +58,10 @@ function _foreachfield(names_types, L)
     return Expr(:block, exprs...)
 end
 
-@generated foreachfield_gen(::NT, f, xs::Vararg{Any, L}) where {NT<:NamedTuple, L} =
-    _foreachfield(array_names_types(NT), L)
-@generated foreachfield_gen(::T, f, xs::Vararg{Any, L}) where {T<:Tuple, L} =
-    _foreachfield(array_names_types(T), L)
+@generated foreachfield_gen(::S, f, xs::Vararg{Any, L}) where {S<:StructArray, L} =
+    _foreachfield(array_names_types(S), L)
 
-foreachfield(f, x::StructArray, xs...) = foreachfield_gen(fieldarrays(x), f, x, xs...)
+foreachfield(f, x::StructArray, xs...) = foreachfield_gen(x, f, x, xs...)
 
 """
 `iscompatible(::Type{S}, ::Type{V}) where {S, V<:AbstractArray}`
