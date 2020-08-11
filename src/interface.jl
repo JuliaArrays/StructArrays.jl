@@ -17,3 +17,4 @@ staticschema(::Type{T}) where {T<:Tup} = T
 end
 
 createinstance(::Type{T}, args...) where {T} = bypass_constructor(T, args)
+createinstance(::Type{T}, args...) where {T<:Tup} = T(args)
