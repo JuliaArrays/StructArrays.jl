@@ -9,11 +9,12 @@ end
 
 staticschema(::Type{T}) where {T<:Tup} = T
 
-@generated function bypass_constructor(T, args::NTuple{N, Any}) where {N}
-    vars = ntuple(_ -> gensym(), N)
+@generated function bypass_constructor(type, args)
+    vars = ntuple(_ -> gensym(), fieldcount(args))
     assign = [:($var = getfield(args, $i)) for (i, var) in enumerate(vars)]
-    new = Expr(:new, :T, vars...)
-    return Expr(:block, assign..., new)
+    constructor = isconcretetype(type) ? :new : :call
+    construct = Expr(constructor, :type, vars...)
+    return Expr(:block, assign..., construct)
 end
 
 createinstance(::Type{T}, args...) where {T} = bypass_constructor(T, args)
