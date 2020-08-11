@@ -9,5 +9,11 @@ end
 
 staticschema(::Type{T}) where {T<:Tup} = T
 
-createinstance(::Type{T}, args...) where {T} = T(args...)
-createinstance(::Type{T}, args...) where {T<:Union{Tuple, NamedTuple}} = T(args)
+@generated function bypass_constructor(T, args::NTuple{N, Any}) where {N}
+    vars = ntuple(_ -> gensym(), N)
+    assign = [:($var = getfield(args, $i)) for (i, var) in enumerate(vars)]
+    new = Expr(:new, :T, vars...)
+    return Expr(:block, assign..., new)
+end
+
+createinstance(::Type{T}, args...) where {T} = bypass_constructor(T, args)
