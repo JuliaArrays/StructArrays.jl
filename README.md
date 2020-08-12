@@ -275,3 +275,31 @@ blocks = cld(length(dd),threads)
 
 @cuda threads=threads blocks=blocks kernel!(de, dd)
 ```
+
+## Applying a function on each field array
+
+```julia
+julia> struct Foo
+       a::Int
+       b::String
+       end
+
+julia> s = StructArray([Foo(11, "a"), Foo(22, "b"), Foo(33, "c"), Foo(44, "d"), Foo(55, "e")]);
+
+julia> s
+5-element StructArray(::Vector{Int64}, ::Vector{String}) with eltype Foo:
+ Foo(11, "a")
+ Foo(22, "b")
+ Foo(33, "c")
+ Foo(44, "d")
+ Foo(55, "e")
+
+julia> StructArrays.foreachfield(v -> deleteat!(v, 3), s)
+
+julia> s
+4-element StructArray(::Vector{Int64}, ::Vector{String}) with eltype Foo:
+ Foo(11, "a")
+ Foo(22, "b")
+ Foo(44, "d")
+ Foo(55, "e")
+```
