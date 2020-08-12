@@ -276,7 +276,7 @@ blocks = cld(length(dd),threads)
 @cuda threads=threads blocks=blocks kernel!(de, dd)
 ```
 
-## Deleting a row
+## Applying a function on each field array
 
 ```julia
 julia> struct Foo
