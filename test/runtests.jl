@@ -238,12 +238,13 @@ end
     @test getproperty(t, 2) == [3.0, 2.0]
 end
 
+struct A
+    x::Int
+    y::Int
+    A(x) = new(x, x)
+end
+
 @testset "internal constructor" begin
-    struct A
-        x::Int
-        y::Int
-        A(x) = new(x, x)
-    end
     v = A.([1, 2, 3])
     s = StructArray(v)
     @test s[1] == A(1)
