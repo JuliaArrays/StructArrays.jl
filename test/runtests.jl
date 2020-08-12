@@ -238,6 +238,19 @@ end
     @test getproperty(t, 2) == [3.0, 2.0]
 end
 
+@testset "internal constructor" begin
+    struct A
+        x::Int
+        y::Int
+        A(x) = new(x, x)
+    end
+    v = A.([1, 2, 3])
+    s = StructArray(v)
+    @test s[1] == A(1)
+    @test s[2] == A(2)
+    @test s[3] == A(3)
+end
+
 @testset "kwargs constructor" begin
     a = [1.2]
     b = [2.3]
