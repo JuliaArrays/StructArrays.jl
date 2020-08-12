@@ -146,3 +146,16 @@ hasfields(::Type{<:NTuple{N, Any}}) where {N} = true
 hasfields(::Type{<:NamedTuple{names}}) where {names} = true
 hasfields(::Type{T}) where {T} = !isabstracttype(T)
 hasfields(::Union) = false
+
+"""
+    bypass_constructor(T, args)
+
+Create an instance of type `T` from a tuple of field values `args`, bypassing
+possible internal constructors. `T` should be a concrete type.
+"""
+@generated function bypass_constructor(::Type{T}, args) where {T}
+    vars = ntuple(_ -> gensym(), fieldcount(T))
+    assign = [:($var::$(fieldtype(T, i)) = getfield(args, $i)) for (i, var) in enumerate(vars)]
+    construct = Expr(:new, :T, vars...)
+    Expr(:block, assign..., construct)
+end

@@ -9,5 +9,8 @@ end
 
 staticschema(::Type{T}) where {T<:Tup} = T
 
-createinstance(::Type{T}, args...) where {T} = T(args...)
-createinstance(::Type{T}, args...) where {T<:Union{Tuple, NamedTuple}} = T(args)
+function createinstance(::Type{T}, args...) where {T}
+    isconcretetype(T) ? bypass_constructor(T, args) : T(args...)
+end
+
+createinstance(::Type{T}, args...) where {T<:Tup} = T(args)
