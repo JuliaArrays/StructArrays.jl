@@ -186,33 +186,67 @@ StructArrays support structures with non-standard data layout (where `getpropert
 
 ```julia
 using StructArrays
-struct MyType{NT<:NamedTuple}
-    data::Float64
+
+struct MyType{T, NT<:NamedTuple}
+    data::T
     rest::NT
 end
 
 MyType(x; kwargs...) = MyType(x, values(kwargs))
 
 Base.getproperty(b::MyType, s::Symbol) = s == :data ? getfield(b, 1) : getproperty(getfield(b, 2), s)
-
-getnamestypes(::Type{NamedTuple{names, types}}) where {names, types} = (names, types)
-getnamestypes(::Type{MyType{NT}}) where NT = getnamestypes(NT)
+Base.propertynames(b::MyType) = (:data, propertynames(getfield(b, 2))...)
 
 # explicitly give the "schema" of the object to StructArrays
-function StructArrays.staticschema(::Type{T}) where {T<:MyType}
-    names, types = getnamestypes(T)
-    NamedTuple{(:data, names...), Base.tuple_type_cons(Float64, types)}
+function StructArrays.staticschema(::Type{MyType{T, NamedTuple{names, types}}}) where {T, names, types}
+    NamedTuple{(:data, names...), Base.tuple_type_cons(T, types)}
 end
 
 # generate an instance of MyType type
-function StructArrays.createinstance(::Type{T}, x, args...) where {T<:MyType}
-    names, types = getnamestypes(T)
-    MyType(x, NamedTuple{names, types}(args))
+function StructArrays.createinstance(::Type{MyType{T, NT}}, x, args...) where {T, NT}
+    MyType(x, NT(args))
 end
 
 s = [MyType(rand(), a=1, b=2) for i in 1:10]
 StructArray(s)
 ```
+
+In the above example, our `MyType` was composed of `data` of type `Float64` and `rest` of type `NamedTuple`. In many practical cases where there are custom types involved it's hard for StructArrays to automatically widen the types in case they are heterogeneous. The following example demonstrates a widening method in that scenario.
+
+```julia
+using Tables
+
+# add a source of custom type data
+struct Location{U}
+    x::U
+    y::U
+end
+struct Region{V}
+    area::V
+end
+
+s1 = MyType(Location(1, 0), (place = "Delhi"))
+s2 = MyType(Location(2.5, 1.9), (place = "Mumbai"))
+s3 = MyType(Region([Location(1, 0), Location(2.5, 1.9)]), (place = "North India"))
+
+s = [s1, s2, s3]
+# Now if we try to do StructArray(s)
+# we will get an error
+
+function meta_table(iter)
+    cols = Tables.columntable(iter)
+    meta_table(first(cols), Base.tail(cols)) 
+end
+
+function meta_table(data, rest::NT) where NT<:NamedTuple
+    F = MyType{eltype(data), StructArrays.eltypes(NT)}
+    return StructArray{F}(; data=data, rest...)
+end
+
+meta_table(s)
+```
+
+The above strategy has been tested and implemented in [GeometryBasics.jl](https://github.com/JuliaGeometry/GeometryBasics.jl).
 
 ## Advanced: mutate-or-widen style accumulation
 
@@ -305,69 +339,3 @@ julia> s
  Foo(44, "d")
  Foo(55, "e")
 ```
-
-In the above example "for structures with non-standard data layout" our `MyType` was composed of `data` of type `Float64` and `rest` of type `NamedTuple`. In many practical cases where there are custom types involved it's hard for StructArrays to automatically widen the types in case they are heterogeneous. The following example demonstrates a widening method in that scenario.
-
-```julia
-struct MyType1{T, Names, Types}
-    data::T
-    rest::NamedTuple{Names, Types}
-end
-
-MyType1(x; kwargs...) = MyType1(x, values(kwargs))
-
-# and a source of custom type data
-struct location{U}
-    x::U
-    y::U
-end
-struct region{G<:Array{location}}
-    area::G
-end
-
-function Base.getproperty(x::MyType1, field::Symbol)
-    if field == :data 
-        getfield(x, :data)
-    elseif field == :rest
-        getfield(x, :rest)
-    else
-        getproperty(getfield(x, :rest), field)
-    end
-end
-
-getnamestypes(::Type{MyType1{T, Names, Types}}) where {T, Names, Types} = (T, Names, Types)
-
-# explicitly give the "schema" of the object to StructArrays
-function StructArrays.staticschema(::Type{T}) where {T<:MyType1}
-    K, names, types = getnamestypes(T)
-    NamedTuple{(:data, names...), Base.tuple_type_cons(K, types)}
-end
-
-# generate an instance of MyType type
-function StructArrays.createinstance(::Type{T}, x, args...) where {T<:MyType1}
-    K, names, types = getnamestypes(T)
-    MyType1(x, NamedTuple{names, types}(args))
-end
-
-s1 = MyType1(location(1, 0), (place = "Delhi"))
-s2 = MyType1(location(2.5, 1.9), (place = "Mumbai"))
-s3 = MyType1(region([location(1, 0), location(2.5, 1.9)]), (place = "North India"))
-
-s = [s1, s2, s3]
-# Now if we try to do StructArray(s)
-# we will get an error
-
-function meta_table(iter)
-    cols = Tables.columntable(iter)
-    meta_table(first(cols), Base.tail(cols)) 
-end
-
-function meta_table(data, rest::NamedTuple{names, types}) where {names, types}
-    F = MyType1{eltype(data), names, StructArrays.eltypes(types)}
-    return StructArray{F}(; data=data, rest...)
-end
-
-meta_table(s)
-```
-
-The above example has been tested and implemented in [GeometryBasics.jl](https://github.com/JuliaGeometry/GeometryBasics.jl).
