@@ -225,9 +225,9 @@ struct Region{V}
     area::V
 end
 
-s1 = MyType(Location(1, 0), (place = "Delhi"))
-s2 = MyType(Location(2.5, 1.9), (place = "Mumbai"))
-s3 = MyType(Region([Location(1, 0), Location(2.5, 1.9)]), (place = "North India"))
+s1 = MyType(Location(1, 0), place = "Delhi", rainfall = 200)
+s2 = MyType(Location(2.5, 1.9), place = "Mumbai", rainfall = 1010)
+s3 = MyType(Region([Location(1, 0), Location(2.5, 1.9)]), place = "North India", rainfall = missing)
 
 s = [s1, s2, s3]
 # Now if we try to do StructArray(s)
