@@ -305,6 +305,7 @@ julia> s
  Foo(44, "d")
  Foo(55, "e")
 ```
+
 In the above example "for structures with non-standard data layout" our `MyType` was composed of `data` of type `Float64` and `rest` of type `NamedTuple`. In many practical cases where there are custom types involved it's hard for StructArrays to automatically widen the types incase the input we are receiving is heterogeneous in it's type nature. The following example demonstrates a widening method incase the types received are different.
 ```julia
 struct MyType1{T, Names, Types}
@@ -367,4 +368,5 @@ end
 
 meta_table(s)
 ```
+
 The above example has been tested and implemented in [GeometryBasics.jl](https://github.com/JuliaGeometry/GeometryBasics.jl).
