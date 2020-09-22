@@ -5,12 +5,11 @@ end
 
 for typ in [:Symbol, :Int]
     @eval begin
-        Base.@propagate_inbounds function Base.getproperty(c::LazyRow, nm::$typ)
+        @inline Base.@propagate_inbounds function Base.getproperty(c::LazyRow, nm::$typ)
             return getproperty(getfield(c, 1), nm)[getfield(c, 2)]
         end
-        Base.@propagate_inbounds function Base.setproperty!(c::LazyRow, nm::$typ, val)
+        @inline Base.@propagate_inbounds function Base.setproperty!(c::LazyRow, nm::$typ, val)
             getproperty(getfield(c, 1), nm)[getfield(c, 2)] = val
-            return
         end
     end
 end
