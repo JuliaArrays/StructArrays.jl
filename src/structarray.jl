@@ -109,6 +109,45 @@ const StructVector{T, C<:Tup, I} = StructArray{T, 1, C, I}
 StructVector{T}(args...; kwargs...) where {T} = StructArray{T}(args...; kwargs...)
 StructVector(args...; kwargs...) = StructArray(args...; kwargs...)
 
+"""
+    StructArray{T}(A::AbstractArray; dims)
+
+Construct a `StructArray` from slices of `A` along `dims`.
+
+`T` will be recursively decomposed to fields of `eltype(A)`.
+
+```julia-repl
+julia> X = [1.0 2.0; 3.0 4.0]
+2×2 Array{Float64,2}:
+ 1.0  2.0
+ 3.0  4.0
+
+julia> StructArray{Complex{Float64}}(X; dims=1)
+2-element StructArray(view(::Array{Float64,2}, 1, :), view(::Array{Float64,2}, 2, :)) with eltype Complex{Float64}:
+ 1.0 + 3.0im
+ 2.0 + 4.0im
+
+julia> StructArray{Complex{Float64}}(X; dims=2)
+2-element StructArray(view(::Array{Float64,2}, :, 1), view(::Array{Float64,2}, :, 2)) with eltype Complex{Float64}:
+ 1.0 + 2.0im
+ 3.0 + 4.0im
+```
+"""
+function StructArray{T}(A::AbstractArray; dims) where {T}
+    slices = Iterators.Stateful(eachslice(A; dims=dims))
+    buildfromslices(T, eltype(A), slices)
+end
+function buildfromslices(::Type{T}, ::Type{AT}, slices) where {T,AT}
+    if T == AT
+        return popfirst!(slices)
+    else
+        buildfromschema(T) do FT
+            buildfromslices(FT, AT, slices)
+        end
+    end
+end
+
+
 function Base.IndexStyle(::Type{S}) where {S<:StructArray}
     index_type(S) === Int ? IndexLinear() : IndexCartesian()
 end
