@@ -628,12 +628,19 @@ end
     io = IOBuffer()
     Base.showarg(io, rows, true)
     str = String(take!(io))
-    @test str == "LazyRows(::Array{Float64,2}, ::Array{Float64,2}) with eltype LazyRow{Complex{Float64}}"
+    if VERSION < v"1.6-"
+        @test str == "LazyRows(::Array{Float64,2}, ::Array{Float64,2}) with eltype LazyRow{Complex{Float64}}"
+    else
+        @test str == "LazyRows(::Matrix{Float64}, ::Matrix{Float64}) with eltype LazyRow{ComplexF64}"
+    end
     io = IOBuffer()
     Base.showarg(io, rows, false)
     str = String(take!(io))
-    @test str == "LazyRows(::Array{Float64,2}, ::Array{Float64,2})"
-
+    if VERSION < v"1.6-"
+        @test str == "LazyRows(::Array{Float64,2}, ::Array{Float64,2})"
+    else
+        @test str == "LazyRows(::Matrix{Float64}, ::Matrix{Float64})"
+    end
     s = StructArray((rand(10, 10), rand(10, 10)))
     rows = LazyRows(s)
     @test IndexStyle(rows) isa IndexLinear
@@ -653,11 +660,19 @@ end
     io = IOBuffer()
     Base.showarg(io, rows, true)
     str = String(take!(io))
-    @test str == "LazyRows(::Array{Float64,2}, ::Array{Float64,2}) with eltype LazyRow{Tuple{Float64,Float64}}"
+    if VERSION < v"1.6-"
+        @test str == "LazyRows(::Array{Float64,2}, ::Array{Float64,2}) with eltype LazyRow{Tuple{Float64,Float64}}"
+    else
+        @test str == "LazyRows(::Matrix{Float64}, ::Matrix{Float64}) with eltype LazyRow{Tuple{Float64, Float64}}"
+    end
     io = IOBuffer()
     Base.showarg(io, rows, false)
     str = String(take!(io))
-    @test str == "LazyRows(::Array{Float64,2}, ::Array{Float64,2})"
+    if VERSION < v"1.6-"
+        @test str == "LazyRows(::Array{Float64,2}, ::Array{Float64,2})"
+    else
+        @test str == "LazyRows(::Matrix{Float64}, ::Matrix{Float64})"
+    end
 end
 
 @testset "refarray" begin
@@ -687,11 +702,19 @@ end
     io = IOBuffer()
     Base.showarg(io, s, true)
     str = String(take!(io))
-    @test str == "StructArray(::Array{Int64,1}, ::Array{Int64,1}) with eltype Complex{Int64}"
+    if VERSION < v"1.6-"
+        @test str == "StructArray(::Array{Int64,1}, ::Array{Int64,1}) with eltype Complex{Int64}"
+    else
+        @test str == "StructArray(::Vector{Int64}, ::Vector{Int64}) with eltype Complex{Int64}"
+    end
     io = IOBuffer()
     Base.showarg(io, s, false)
     str = String(take!(io))
-    @test str == "StructArray(::Array{Int64,1}, ::Array{Int64,1})"
+    if VERSION < v"1.6-"
+        @test str == "StructArray(::Array{Int64,1}, ::Array{Int64,1})"
+    else
+        @test str == "StructArray(::Vector{Int64}, ::Vector{Int64})"
+    end
 end
 
 @testset "append!!" begin
