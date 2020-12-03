@@ -26,6 +26,13 @@ collect_structarray
 fieldarrays
 ```
 
+# Lazy iteration
+
+```@docs
+LazyRow
+LazyRows
+```
+
 # Advanced APIs
 
 ```@docs
