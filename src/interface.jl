@@ -4,8 +4,9 @@ const EmptyTup = Union{Tuple{}, NamedTuple{(), Tuple{}}}
 """
     StructArrays.staticschema(T)
 
-A `Tuple` or `NamedTuple` type containing the necessary fields to construct `T`.
-By default, this will have fields with the same names and types as `T`.
+The default schema for an element type `T`. A schema is a `Tuple` or
+`NamedTuple` type containing the necessary fields to construct `T`. By default,
+this will have fields with the same names and types as `T`.
 
 This can be overloaded for custom types if required, in which case
 [`StructArrays.createinstance`](@ref) should also be defined.

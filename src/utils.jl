@@ -1,5 +1,16 @@
 eltypes(::Type{T}) where {T} = map_params(eltype, T)
 
+"""
+    StructArrays.map_params(f, T)
+
+Apply `f` to each field type of `Tuple` or `NamedTuple` type `T`, returning a
+new `Tuple` or `NamedTuple` type.
+
+```julia-repl
+julia> StructArrays.map_params(T -> Complex{T}, Tuple{Int32,Float64})
+Tuple{Complex{Int32},Complex{Float64}}
+```
+"""
 map_params(f, ::Type{Tuple{}}) = Tuple{}
 function map_params(f, ::Type{T}) where {T<:Tuple}
     tuple_type_cons(f(tuple_type_head(T)), map_params(f, tuple_type_tail(T)))
@@ -7,6 +18,17 @@ end
 map_params(f, ::Type{NamedTuple{names, types}}) where {names, types} =
     NamedTuple{names, map_params(f, types)}
 
+"""
+    StructArrays._map_params(f, T)
+
+Apply `f` to each field type of `Tuple` or `NamedTuple` type `T`, returning a
+new `Tuple` or `NamedTuple` object.
+
+```julia-repl
+julia> StructArrays._map_params(T -> Complex{T}, Tuple{Int32,Float64})
+(Complex{Int32}, Complex{Float64})
+```
+"""
 _map_params(f, ::Type{Tuple{}}) = ()
 function _map_params(f, ::Type{T}) where {T<:Tuple}
     (f(tuple_type_head(T)), _map_params(f, tuple_type_tail(T))...)
@@ -16,6 +38,15 @@ _map_params(f, ::Type{NamedTuple{names, types}}) where {names, types} =
 
 buildfromschema(initializer, ::Type{T}) where {T} = buildfromschema(initializer, T, staticschema(T))
 
+"""
+    StructArrays.buildfromschema(initializer, T[, S])
+
+Construct a [`StructArray{T}`](@ref) with a function `initializer`, using a schema `S`.
+
+`initializer(T)` is a function applied to each field type of `S`, and should return an `AbstractArray{S}`
+
+`S` is a `Tuple` or `NamedTuple` type. The default value is [`staticschema(T)`](@ref).
+"""
 function buildfromschema(initializer, ::Type{T}, ::Type{NT}) where {T, NT<:Tup}
     nt = _map_params(initializer, NT)
     StructArray{T}(nt)
