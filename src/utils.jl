@@ -64,7 +64,7 @@ end
 foreachfield(f, x::StructArray, xs...) = foreachfield_gen(x, f, x, xs...)
 
 """
-`iscompatible(::Type{S}, ::Type{V}) where {S, V<:AbstractArray}`
+    StructArrays.iscompatible(::Type{S}, ::Type{V}) where {S, V<:AbstractArray}
 
 Check whether element type `S` can be pushed to a container of type `V`.
 """
@@ -106,7 +106,7 @@ function replace_storage(f, v::AbstractArray{T, N})::AbstractArray{T, N} where {
 end
 
 """
-`replace_storage(f, s::StructArray)`
+    StructArrays.replace_storage(f, s::StructArray)
 
 Change storage type for fieldarrays: each array `v` is replaced by `f(v)`. `f(v) is expected to have the same
 `eltype` and `size` as `v`.
@@ -116,7 +116,7 @@ Change storage type for fieldarrays: each array `v` is replaced by `f(v)`. `f(v)
 If PooledArrays is loaded, we can pool all columns of non `isbitstype`:
 
 ```jldoctest
-julia> using PooledArrays
+julia> using StructArrays, PooledArrays
 
 julia> s = StructArray(a=1:3, b = fill("string", 3));
 
@@ -148,7 +148,7 @@ hasfields(::Type{T}) where {T} = !isabstracttype(T)
 hasfields(::Union) = false
 
 """
-    bypass_constructor(T, args)
+    StructArrays.bypass_constructor(T, args)
 
 Create an instance of type `T` from a tuple of field values `args`, bypassing
 possible internal constructors. `T` should be a concrete type.

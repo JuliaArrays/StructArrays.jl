@@ -27,7 +27,7 @@ _axes(itr, ::Base.HasLength) = (Base.OneTo(length(itr)),)
 _axes(itr, ::Base.HasShape) = axes(itr)
 
 """
-`collect_structarray(itr; initializer = default_initializer)`
+    collect_structarray(itr; initializer = default_initializer)
 
 Collects `itr` into a `StructArray`. The user can optionally pass a `initializer`, that is to say
 a function `(S, d) -> v` that associates to a type and a size an array of eltype `S`
@@ -128,18 +128,18 @@ function _widenarray(dest::AbstractArray, i, ::Type{T}) where T
 end
 
 """
-`append!!(dest, itr) -> dest′`
+    dest = StructArrays.append!!(dest, itr)
 
-Try to append `itr` into a vector `dest`.  Widen element type of
-`dest` if it cannot hold the elements of `itr`.  That is to say,
-
+Try to append `itr` into a vector `dest`, widening the element type of `dest` if
+it cannot hold the elements of `itr`. That is to say,
 ```julia
 vcat(dest, StructVector(itr)) == append!!(dest, itr)
 ```
+holds. Note that the `dest` argument may or may not be the same object as the
+returned value.
 
-holds.  Note that `dest′` may or may not be the same object as `dest`.
-The state of `dest` is unpredictable after `append!!`
-is called (e.g., it may contain just half of the elements from `itr`).
+The state of `dest` is unpredictable after `append!!` is called (e.g., it may
+contain some, none or all the elements from `itr`).
 """
 append!!(dest::AbstractVector, itr) =
     _append!!(dest, itr, Base.IteratorSize(itr))
