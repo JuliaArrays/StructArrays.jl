@@ -112,9 +112,11 @@ StructVector(args...; kwargs...) = StructArray(args...; kwargs...)
 """
     StructArray{T}(A::AbstractArray; dims)
 
-Construct a `StructArray` from slices of `A` along `dims`.
+Construct a `StructArray` from slices of `A` along `dims`. `T` will be
+recursively decomposed to fields of `eltype(A)`.
 
-`T` will be recursively decomposed to fields of `eltype(A)`.
+!!! compat "Julia 1.1"
+     This function requires at least Julia 1.1.
 
 ```julia-repl
 julia> X = [1.0 2.0; 3.0 4.0]
