@@ -25,6 +25,7 @@ jobs:
             Pkg.instantiate()'
       - run: |
           julia --project=docs -e '
+            push!(LOAD_PATH, ".")
             using Documenter: doctest
             using StructArrays
             doctest(StructArrays)'
