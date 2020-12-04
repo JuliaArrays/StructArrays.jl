@@ -1,3 +1,5 @@
+using BangBang
+
 """
 A type that stores an array of structures as a structure of arrays.
 # Fields:
@@ -7,11 +9,13 @@ struct StructArray{T, N, C<:Tup, I} <: AbstractArray{T, N}
     fieldarrays::C
 
     function StructArray{T, N, C}(c) where {T, N, C<:Tup}
-        if length(c) > 0
-            ax = axes(c[1])
+        arrays = [get(nt, ℓ) for ℓ in lenses(nt)]
+        if length(arrays) > 0
+            ax = axes(arrays[1])
             length(ax) == N || error("wrong number of dimensions")
-            for i = 2:length(c)
-                axes(c[i]) == ax || error("all field arrays must have same shape")
+
+            for i = 2:length(arrays)
+                axes(arrays[i]) == ax || error("all field arrays must have same shape")
             end
         end
         new{T, N, C, index_type(C)}(c)
