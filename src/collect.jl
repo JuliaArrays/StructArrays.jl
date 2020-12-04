@@ -127,6 +127,8 @@ function _widenarray(dest::AbstractArray, i, ::Type{T}) where T
     new
 end
 
+import BangBang
+
 """
 `append!!(dest, itr) -> dest′`
 
@@ -141,7 +143,7 @@ holds.  Note that `dest′` may or may not be the same object as `dest`.
 The state of `dest` is unpredictable after `append!!`
 is called (e.g., it may contain just half of the elements from `itr`).
 """
-append!!(dest::AbstractVector, itr) =
+BangBang.append!!(dest::AbstractVector, itr) =
     _append!!(dest, itr, Base.IteratorSize(itr))
 
 function _append!!(dest::AbstractVector, itr, ::Union{Base.HasShape, Base.HasLength})
@@ -162,7 +164,7 @@ _append!!(dest::AbstractVector, itr, ::Base.SizeUnknown) =
 # Optimized version when element collection is an `AbstractVector`
 # This only works for julia 1.3 or greater, which has `append!` for `AbstractVector`
 @static if VERSION ≥ v"1.3.0"
-    function append!!(dest::V, v::AbstractVector{T}) where {V<:AbstractVector, T}
+    function BangBang.append!!(dest::V, v::AbstractVector{T}) where {V<:AbstractVector, T}
         new = iscompatible(T, V) ? dest : widen_from_type(dest, length(dest) + 1, T)
         return append!(new, v)
     end
