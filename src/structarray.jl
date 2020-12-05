@@ -257,6 +257,15 @@ Base.size(s::StructArray{<:Any, <:Any, <:EmptyTup}) = (0,)
 Base.axes(s::StructArray) = axes(fieldarrays(s)[1])
 Base.axes(s::StructArray{<:Any, <:Any, <:EmptyTup}) = (1:0,)
 
+"""
+    StructArrays.get_ith(cols::Union{Tuple,NamedTuple}, I...)
+
+Form a `Tuple` of the `I`th index of each element of `cols`, i.e. is equivalent
+to
+```julia
+map(c -> c[I...], Tuple(cols))
+```
+"""
 get_ith(cols::NamedTuple, I...) = get_ith(Tuple(cols), I...)
 function get_ith(cols::Tuple, I...)
     @inbounds r = first(cols)[I...]

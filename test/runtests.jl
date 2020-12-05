@@ -6,6 +6,10 @@ using DataAPI: refarray, refvalue
 using Adapt: adapt, Adapt
 using Test
 
+using Documenter: doctest
+doctest(StructArrays)
+
+
 @testset "index" begin
     a, b = [1 2; 3 4], [4 5; 6 7]
     t = StructArray((a = a, b = b))
@@ -780,3 +784,4 @@ Base.similar(bc::Broadcast.Broadcasted{Broadcast.ArrayStyle{MyArray}}, ::Type{El
     s = StructArray{ComplexF64}((MyArray(rand(2,2)), MyArray(rand(2,2))))
     @test_throws MethodError s .+ s
 end
+

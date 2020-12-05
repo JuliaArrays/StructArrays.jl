@@ -23,12 +23,6 @@ jobs:
           julia --project=docs -e '
             using Pkg
             Pkg.instantiate()'
-      - run: |
-          julia --project=docs -e '
-            push!(LOAD_PATH, ".")
-            using Documenter: doctest
-            using StructArrays
-            doctest(StructArrays)'
       - run: julia --project=docs docs/make.jl
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
