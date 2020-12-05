@@ -39,7 +39,7 @@ array_types(::Type{TT}) where {TT<:Tuple} = TT
 
 function StructArray{T}(c::C) where {T, C<:Tup}
     cols = strip_params(staticschema(T))(c)
-    array1 = get(nt, lenses(c)[1])
+    array1 = get(c, lenses(c)[1])
     N = isempty(cols) ? 1 : ndims(cols[1])
     StructArray{T, N, typeof(cols)}(cols)
 end
