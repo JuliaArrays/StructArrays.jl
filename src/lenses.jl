@@ -1,8 +1,20 @@
 using BangBang
 using Setfield
 
+lenses(t::Tuple) = _lenses(t, ())
+
 lenses(nt::NamedTuple) = _lenses(nt, ())
 lenses(NT::Type{NamedTuple{K,V}}) where {K,V} = lenses(fromtype(NT))
+
+function _lenses(t::Tuple, acc)
+    result = ()
+    for (k,v) in enumerate(t)
+        acc_k = push!!(acc, Setfield.IndexLens((k,)))
+        ℓ = _lenses(v, acc_k)
+        result = append!!(result, ℓ)
+    end
+    return result
+end
 
 function _lenses(nt::NamedTuple, acc)
     result = ()
