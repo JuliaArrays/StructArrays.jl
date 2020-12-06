@@ -1,6 +1,24 @@
 using BangBang
 using Setfield
 
+"""
+    lenses(t::Tuple)
+    lenses(nt::NamedTuple)
+    lenses(NT::Type{NamedTuple{K,V}})
+
+Build a Tuple of lenses for a given value or type
+
+Example:
+    julia> nt = (a=(b=[1,2],c=(d=[3,4],e=[5,6])),f=[7,8]);
+
+    julia> lenses(nt)
+    ((@lens _.a.b), (@lens _.a.c.d), (@lens _.a.c.e), (@lens _.f))
+
+    julia> lenses(typeof(nt))
+    ((@lens _.a.b), (@lens _.a.c.d), (@lens _.a.c.e), (@lens _.f))
+"""
+function lenses end
+
 lenses(t::Tuple) = _lenses(t, ())
 
 lenses(nt::NamedTuple) = _lenses(nt, ())
@@ -36,8 +54,3 @@ end
 function _lenses(::Type{A}, acc) where {A <: AbstractArray}
     return (Setfield.compose(acc...),)
 end
-
-nt = (a=(b=[1,2],c=(d=[3,4],e=[5,6])),f=[7,8]);
-
-lenses(nt)
-lenses(typeof(nt))
