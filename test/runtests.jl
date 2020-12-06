@@ -784,4 +784,3 @@ Base.similar(bc::Broadcast.Broadcasted{Broadcast.ArrayStyle{MyArray}}, ::Type{El
     s = StructArray{ComplexF64}((MyArray(rand(2,2)), MyArray(rand(2,2))))
     @test_throws MethodError s .+ s
 end
-
