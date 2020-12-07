@@ -135,6 +135,7 @@ julia> StructArray{Complex{Float64}}(X; dims=2)
  3.0 + 4.0im
 ```
 """
+StructArray(A::AbstractArray; dims)
 function StructArray{T}(A::AbstractArray; dims) where {T}
     slices = Iterators.Stateful(eachslice(A; dims=dims))
     buildfromslices(T, eltype(A), slices)
