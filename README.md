@@ -2,6 +2,7 @@
 
 [![CI](https://github.com/JuliaArrays/StructArrays.jl/workflows/CI/badge.svg?branch=master)](https://github.com/JuliaArrays/StructArrays.jl/actions?query=workflow%3ACI+branch%3Amaster)
 [![codecov.io](http://codecov.io/github/JuliaArrays/StructArrays.jl/coverage.svg?branch=master)](http://codecov.io/github/JuliaArrays/StructArrays.jl?branch=master)
+[![](https://img.shields.io/badge/docs-dev-blue.svg)](https://JuliaArrays.github.io/StructArrays.jl/dev)
 
 This package introduces the type `StructArray` which is an `AbstractArray` whose elements are `struct` (for example `NamedTuples`,  or `ComplexF64`, or a custom user defined `struct`). While a `StructArray` iterates `structs`, the layout is column based (meaning each field of the `struct` is stored in a separate `Array`).
 
