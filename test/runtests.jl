@@ -6,6 +6,10 @@ using DataAPI: refarray, refvalue
 using Adapt: adapt, Adapt
 using Test
 
+using Documenter: doctest
+doctest(StructArrays)
+
+
 @testset "index" begin
     a, b = [1 2; 3 4], [4 5; 6 7]
     t = StructArray((a = a, b = b))

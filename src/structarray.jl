@@ -1,7 +1,14 @@
 """
-A type that stores an array of structures as a structure of arrays.
-# Fields:
-- `fieldarrays`: a (named) tuple of arrays. Also `fieldarrays(x)`
+    StructArray{T,N,C,I} <: AbstractArray{T, N}
+
+A type that stores an `N`-dimensional array of structures of type `T` as a structure of arrays.
+
+- `getindex` and `setindex!` are overloaded to get/set values of type `T`.
+- `getproperty` is overloaded to return individual field arrays.
+
+# Fields
+
+- `fieldarrays`: a `NamedTuple` or `Tuple` of the arrays used by each field. These can be accessed by [`fieldarrays(x)`](@ref).
 """
 struct StructArray{T, N, C<:Tup, I} <: AbstractArray{T, N}
     fieldarrays::C
@@ -18,6 +25,7 @@ struct StructArray{T, N, C<:Tup, I} <: AbstractArray{T, N}
     end
 end
 
+# common type used for indexing
 index_type(::Type{NamedTuple{names, types}}) where {names, types} = index_type(types)
 index_type(::Type{Tuple{}}) = Int
 function index_type(::Type{T}) where {T<:Tuple}
@@ -30,6 +38,55 @@ index_type(::Type{StructArray{T, N, C, I}}) where {T, N, C, I} = I
 array_types(::Type{StructArray{T, N, C, I}}) where {T, N, C, I} = array_types(C)
 array_types(::Type{NamedTuple{names, types}}) where {names, types} = types
 array_types(::Type{TT}) where {TT<:Tuple} = TT
+
+"""
+    StructArray{T}((fieldarrays...)::Union{Tuple, NamedTuple})
+    StructArray{T}(name1=fieldarray1, name2=fieldarray2, ...)
+
+Construct a `StructArray` of element type `T` from the specified field arrays.
+
+    StructArray((fieldarrays...)::Union{Tuple, NamedTuple})
+    StructArray(name1=fieldarray1, name2=fieldarray2, ...)
+
+Construct a `StructArray` with a `Tuple` or `NamedTuple` element type from the
+specified field arrays.
+
+# Examples
+
+```julia-repl
+julia> StructArray{ComplexF64}(([1.0, 2.0], [3.0, 4.0]))
+2-element StructArray(::Array{Float64,1}, ::Array{Float64,1}) with eltype Complex{Float64}:
+ 1.0 + 3.0im
+ 2.0 + 4.0im
+
+julia> StructArray{ComplexF64}(re=[1.0, 2.0], im=[3.0, 4.0])
+2-element StructArray(::Array{Float64,1}, ::Array{Float64,1}) with eltype Complex{Float64}:
+ 1.0 + 3.0im
+ 2.0 + 4.0im
+```
+
+Any `AbstractArray` can be used as a field array
+```julia-repl
+julia> StructArray{Complex{Int64}}(([1, 2], 3:4))
+2-element StructArray(::Array{Int64,1}, ::UnitRange{Int64}) with eltype Complex{Int64}:
+ 1 + 3im
+ 2 + 4im
+```
+
+If no element type `T` is provided, a `Tuple` or `NamedTuple` is used:
+```julia-repl
+julia> StructArray((zeros(2,2), ones(2,2)))
+2×2 StructArray(::Array{Float64,2}, ::Array{Float64,2}) with eltype Tuple{Float64,Float64}:
+ (0.0, 1.0)  (0.0, 1.0)
+ (0.0, 1.0)  (0.0, 1.0)
+
+julia> StructArray(a=zeros(2,2), b=ones(2,2))
+2×2 StructArray(::Array{Float64,2}, ::Array{Float64,2}) with eltype NamedTuple{(:a, :b),Tuple{Float64,Float64}}:
+ (a = 0.0, b = 1.0)  (a = 0.0, b = 1.0)
+ (a = 0.0, b = 1.0)  (a = 0.0, b = 1.0)
+```
+"""
+StructArray(tup::Union{Tuple,NamedTuple})
 
 function StructArray{T}(c::C) where {T, C<:Tup}
     cols = strip_params(staticschema(T))(c)
@@ -72,6 +129,26 @@ function _similar(v::AbstractArray, ::Type{Z}; unwrap = t -> false) where {Z}
     end
 end
 
+"""
+    StructArray{T}(undef, dims; unwrap=T->false)
+
+Construct an uninitialized `StructArray` with element type `T`, with `Array`
+field arrays.
+
+The `unwrap` keyword argument is a function that determines whether to
+recursively convert arrays of element type `T` to `StructArray`s.
+
+# Examples
+
+```julia-repl
+julia> StructArray{ComplexF64}(undef, (2,3))
+2×3 StructArray(::Array{Float64,2}, ::Array{Float64,2}) with eltype Complex{Float64}:
+  2.3166e-314+2.38405e-314im  2.39849e-314+2.38405e-314im  2.41529e-314+2.38405e-314im
+ 2.31596e-314+2.41529e-314im  2.31596e-314+2.41529e-314im  2.31596e-314+NaN*im
+```
+"""
+StructArray(::Base.UndefInitializer, sz::Dims)
+
 function StructArray{T}(::Base.UndefInitializer, sz::Dims; unwrap = t -> false) where {T}
     buildfromschema(typ -> _undef_array(typ, sz; unwrap = unwrap), T)
 end
@@ -81,6 +158,51 @@ function similar_structarray(v::AbstractArray, ::Type{Z}; unwrap = t -> false) w
     buildfromschema(typ -> _similar(v, typ; unwrap = unwrap), Z)
 end
 
+"""
+    StructArray(A; unwrap = T->false)
+
+Construct a `StructArray` from an existing multidimensional array or iterator
+`A`.
+
+The `unwrap` keyword argument is a function that determines whether to
+recursively convert arrays of element type `T` to `StructArray`s.
+
+# Examples
+
+## Basic usage
+
+```julia-repl
+julia> A = rand(ComplexF32, 2,2)
+2×2 Array{Complex{Float32},2}:
+ 0.694399+0.94999im  0.422804+0.891131im
+ 0.101001+0.33644im  0.632468+0.811319im
+
+julia> StructArray(A)
+2×2 StructArray(::Array{Float32,2}, ::Array{Float32,2}) with eltype Complex{Float32}:
+ 0.694399+0.94999im  0.422804+0.891131im
+ 0.101001+0.33644im  0.632468+0.811319im
+```
+
+## From an iterator
+
+```julia-repl
+julia> StructArray((1, Complex(i, j)) for i = 1:3, j = 2:4)
+3×3 StructArray(::Array{Int64,2}, ::Array{Complex{Int64},2}) with eltype Tuple{Int64,Complex{Int64}}:
+ (1, 1+2im)  (1, 1+3im)  (1, 1+4im)
+ (1, 2+2im)  (1, 2+3im)  (1, 2+4im)
+ (1, 3+2im)  (1, 3+3im)  (1, 3+4im)
+```
+
+## Recursive unwrapping
+
+```julia-repl
+julia> StructArray((1, Complex(i, j)) for i = 1:3, j = 2:4; unwrap = T -> !(T<:Real))
+3×3 StructArray(::Array{Int64,2}, StructArray(::Array{Int64,2}, ::Array{Int64,2})) with eltype Tuple{Int64,Complex{Int64}}:
+ (1, 1+2im)  (1, 1+3im)  (1, 1+4im)
+ (1, 2+2im)  (1, 2+3im)  (1, 2+4im)
+ (1, 3+2im)  (1, 3+3im)  (1, 3+4im)
+```
+"""
 function StructArray(v; unwrap = t -> false)::StructArray
     collect_structarray(v; initializer = StructArrayInitializer(unwrap))
 end
@@ -111,14 +233,13 @@ function Base.similar(s::StructArray{T}, sz::Tuple) where {T}
 end
 
 """
-`fieldarrays(s::StructArray)`
+    fieldarrays(s::StructArray)
 
-Return the field arrays corresponding to the various entry of the struct as a named tuple.
-If the struct has no names (e.g. a tuple), return the arrays as a tuple.
+Return the field arrays corresponding to the various entry of the struct as a `NamedTuple`, or a `Tuple` if the struct has no names.
 
-## Examples
+# Examples
 
-```julia
+```julia-repl
 julia> s = StructArray(rand(ComplexF64, 4));
 
 julia> fieldarrays(s)
@@ -136,6 +257,15 @@ Base.size(s::StructArray{<:Any, <:Any, <:EmptyTup}) = (0,)
 Base.axes(s::StructArray) = axes(fieldarrays(s)[1])
 Base.axes(s::StructArray{<:Any, <:Any, <:EmptyTup}) = (1:0,)
 
+"""
+    StructArrays.get_ith(cols::Union{Tuple,NamedTuple}, I...)
+
+Form a `Tuple` of the `I`th index of each element of `cols`, i.e. is equivalent
+to
+```julia
+map(c -> c[I...], Tuple(cols))
+```
+"""
 get_ith(cols::NamedTuple, I...) = get_ith(Tuple(cols), I...)
 function get_ith(cols::Tuple, I...)
     @inbounds r = first(cols)[I...]

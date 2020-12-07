@@ -1,3 +1,30 @@
+"""
+    LazyRow(s::StructArray, i)
+
+A lazy representation of `s[i]`. `LazyRow(s, i)` does not materialize the `i`th
+row but returns a lazy wrapper around it on which `getproperty` does the correct
+thing. This is useful when the row has many fields only some of which are
+necessary. It also allows changing columns in place.
+
+See [`LazyRows`](@ref) to get an iterator of `LazyRow`s.
+
+# Examples
+
+```julia-repl
+julia> t = StructArray((a = [1, 2], b = ["x", "y"]));
+
+julia> LazyRow(t, 2).a
+2
+
+julia> LazyRow(t, 2).a = 123
+123
+
+julia> t
+2-element StructArray(::Array{Int64,1}, ::Array{String,1}) with eltype NamedTuple{(:a, :b),Tuple{Int64,String}}:
+ (a = 1, b = "x")
+ (a = 123, b = "y")
+```
+"""
 struct LazyRow{T, N, C, I}
     columns::StructArray{T, N, C, I} # a `Columns` object
     index::I
@@ -29,6 +56,20 @@ iscompatible(::Type{<:LazyRow{R}}, ::Type{S}) where {R, S<:StructArray} = iscomp
 
 (s::ArrayInitializer)(::Type{<:LazyRow{T}}, d) where {T} = buildfromschema(typ -> s(typ, d), T)
 
+"""
+    LazyRows(s::StructArray)
+
+An iterator of [`LazyRow`](@ref)s of `s`.
+
+# Examples
+
+```julia-repl
+julia> map(t -> t.b ^ t.a, LazyRows(t))
+2-element Array{String,1}:
+ "x"
+ "yy"
+```
+"""
 struct LazyRows{T, N, C, I} <: AbstractArray{LazyRow{T, N, C, I}, N}
     columns::StructArray{T, N, C, I}
 end

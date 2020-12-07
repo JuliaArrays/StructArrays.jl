@@ -1,5 +1,16 @@
 eltypes(::Type{T}) where {T} = map_params(eltype, T)
 
+"""
+    StructArrays.map_params(f, T)
+
+Apply `f` to each field type of `Tuple` or `NamedTuple` type `T`, returning a
+new `Tuple` or `NamedTuple` type.
+
+```julia-repl
+julia> StructArrays.map_params(T -> Complex{T}, Tuple{Int32,Float64})
+Tuple{Complex{Int32},Complex{Float64}}
+```
+"""
 map_params(f, ::Type{Tuple{}}) = Tuple{}
 function map_params(f, ::Type{T}) where {T<:Tuple}
     tuple_type_cons(f(tuple_type_head(T)), map_params(f, tuple_type_tail(T)))
@@ -7,6 +18,17 @@ end
 map_params(f, ::Type{NamedTuple{names, types}}) where {names, types} =
     NamedTuple{names, map_params(f, types)}
 
+"""
+    StructArrays._map_params(f, T)
+
+Apply `f` to each field type of `Tuple` or `NamedTuple` type `T`, returning a
+new `Tuple` or `NamedTuple` object.
+
+```julia-repl
+julia> StructArrays._map_params(T -> Complex{T}, Tuple{Int32,Float64})
+(Complex{Int32}, Complex{Float64})
+```
+"""
 _map_params(f, ::Type{Tuple{}}) = ()
 function _map_params(f, ::Type{T}) where {T<:Tuple}
     (f(tuple_type_head(T)), _map_params(f, tuple_type_tail(T))...)
@@ -16,6 +38,15 @@ _map_params(f, ::Type{NamedTuple{names, types}}) where {names, types} =
 
 buildfromschema(initializer, ::Type{T}) where {T} = buildfromschema(initializer, T, staticschema(T))
 
+"""
+    StructArrays.buildfromschema(initializer, T[, S])
+
+Construct a [`StructArray{T}`](@ref) with a function `initializer`, using a schema `S`.
+
+`initializer(T)` is a function applied to each field type of `S`, and should return an `AbstractArray{S}`
+
+`S` is a `Tuple` or `NamedTuple` type. The default value is [`staticschema(T)`](@ref).
+"""
 function buildfromschema(initializer, ::Type{T}, ::Type{NT}) where {T, NT<:Tup}
     nt = _map_params(initializer, NT)
     StructArray{T}(nt)
@@ -64,7 +95,7 @@ end
 foreachfield(f, x::StructArray, xs...) = foreachfield_gen(x, f, x, xs...)
 
 """
-`iscompatible(::Type{S}, ::Type{V}) where {S, V<:AbstractArray}`
+    StructArrays.iscompatible(::Type{S}, ::Type{V}) where {S, V<:AbstractArray}
 
 Check whether element type `S` can be pushed to a container of type `V`.
 """
@@ -106,7 +137,7 @@ function replace_storage(f, v::AbstractArray{T, N})::AbstractArray{T, N} where {
 end
 
 """
-`replace_storage(f, s::StructArray)`
+    StructArrays.replace_storage(f, s::StructArray)
 
 Change storage type for fieldarrays: each array `v` is replaced by `f(v)`. `f(v) is expected to have the same
 `eltype` and `size` as `v`.
@@ -116,14 +147,18 @@ Change storage type for fieldarrays: each array `v` is replaced by `f(v)`. `f(v)
 If PooledArrays is loaded, we can pool all columns of non `isbitstype`:
 
 ```jldoctest
-julia> using PooledArrays
+julia> using StructArrays, PooledArrays
 
 julia> s = StructArray(a=1:3, b = fill("string", 3));
 
 julia> s_pooled = StructArrays.replace_storage(s) do v
            isbitstype(eltype(v)) ? v : convert(PooledArray, v)
        end
-3-element StructArray(::UnitRange{Int64}, ::PooledArray{String,UInt8,1,Array{UInt8,1}}) with eltype NamedTuple{(:a, :b),Tuple{Int64,String}}:
+$(if VERSION < v"1.6-" 
+    "3-element StructArray(::UnitRange{Int64}, ::PooledArray{String,UInt8,1,Array{UInt8,1}}) with eltype NamedTuple{(:a, :b),Tuple{Int64,String}}:"
+else
+        "3-element StructArray(::UnitRange{Int64}, ::PooledVector{String, UInt8, Vector{UInt8}}) with eltype NamedTuple{(:a, :b), Tuple{Int64, String}}:"
+end)
  (a = 1, b = "string")
  (a = 2, b = "string")
  (a = 3, b = "string")
@@ -148,7 +183,7 @@ hasfields(::Type{T}) where {T} = !isabstracttype(T)
 hasfields(::Union) = false
 
 """
-    bypass_constructor(T, args)
+    StructArrays.bypass_constructor(T, args)
 
 Create an instance of type `T` from a tuple of field values `args`, bypassing
 possible internal constructors. `T` should be a concrete type.
