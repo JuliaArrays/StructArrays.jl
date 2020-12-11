@@ -5,12 +5,13 @@ A type that stores an array of structures as a structure of arrays.
 # Fields:
 - `fieldarrays`: a (named) tuple of arrays. Also `fieldarrays(x)`
 """
-struct StructArray{T, N, C<:Tup, I} <: AbstractArray{T, N}
-    lenses
+struct StructArray{T, N, C<:Tup, I, L} <: AbstractArray{T, N}
     fieldarrays::C
+    lenses::L
 
     function StructArray{T, N, C}(c) where {T, N, C<:Tup}
         ℓ = lenses(c)
+        L = typeof(ℓ)
         arrays = [get(c, ℓⱼ) for ℓⱼ in ℓ]
         if length(arrays) > 0
             ax = axes(arrays[1])
@@ -20,7 +21,7 @@ struct StructArray{T, N, C<:Tup, I} <: AbstractArray{T, N}
                 axes(arrays[i]) == ax || error("all field arrays must have same shape")
             end
         end
-        new{T, N, C, index_type(C)}(ℓ, c)
+        new{T, N, C, index_type(C), L}(c, ℓ)
     end
 end
 

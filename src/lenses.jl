@@ -51,6 +51,6 @@ function _lenses(a::AbstractArray, acc)
     return (Setfield.compose(acc...),)
 end
 
-function _lenses(::Type{A}, acc) where {A <: AbstractArray}
+function _lenses(::Type{T}, acc) where {T}
     return (Setfield.compose(acc...),)
 end
