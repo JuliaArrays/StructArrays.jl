@@ -1,3 +1,5 @@
+using BangBang
+
 """
     StructArray{T,N,C,I} <: AbstractArray{T, N}
 
@@ -10,18 +12,23 @@ A type that stores an `N`-dimensional array of structures of type `T` as a struc
 
 - `fieldarrays`: a `NamedTuple` or `Tuple` of the arrays used by each field. These can be accessed by [`fieldarrays(x)`](@ref).
 """
-struct StructArray{T, N, C<:Tup, I} <: AbstractArray{T, N}
+struct StructArray{T, N, C<:Tup, I, L} <: AbstractArray{T, N}
     fieldarrays::C
+    lenses::L
 
     function StructArray{T, N, C}(c) where {T, N, C<:Tup}
-        if length(c) > 0
-            ax = axes(c[1])
+        ℓ = lenses(c)
+        L = typeof(ℓ)
+        arrays = [get(c, ℓⱼ) for ℓⱼ in ℓ]
+        if length(arrays) > 0
+            ax = axes(arrays[1])
             length(ax) == N || error("wrong number of dimensions")
-            for i = 2:length(c)
-                axes(c[i]) == ax || error("all field arrays must have same shape")
+
+            for i = 2:length(arrays)
+                axes(arrays[i]) == ax || error("all field arrays must have same shape")
             end
         end
-        new{T, N, C, index_type(C)}(c)
+        new{T, N, C, index_type(C), L}(c, ℓ)
     end
 end
 
@@ -90,6 +97,7 @@ StructArray(tup::Union{Tuple,NamedTuple})
 
 function StructArray{T}(c::C) where {T, C<:Tup}
     cols = strip_params(staticschema(T))(c)
+    array1 = get(c, lenses(c)[1])
     N = isempty(cols) ? 1 : ndims(cols[1])
     StructArray{T, N, typeof(cols)}(cols)
 end

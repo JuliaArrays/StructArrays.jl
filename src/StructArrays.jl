@@ -6,6 +6,8 @@ export StructArray, StructVector, LazyRow, LazyRows
 export collect_structarray, fieldarrays
 export replace_storage
 
+include("typelevel.jl")
+include("lenses.jl")
 include("interface.jl")
 include("structarray.jl")
 include("utils.jl")
