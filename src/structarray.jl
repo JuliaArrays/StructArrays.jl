@@ -113,7 +113,7 @@ function Base.IndexStyle(::Type{S}) where {S<:StructArray}
     index_type(S) === Int ? IndexLinear() : IndexCartesian()
 end
 
-function _undef_array(::Type{T}, sz; unwrap = t -> false) where {T}
+function _undef_array(::Type{T}, sz; unwrap::F = alwaysfalse) where {T, F}
     if unwrap(T)
         return StructArray{T}(undef, sz; unwrap = unwrap)
     else
@@ -121,7 +121,7 @@ function _undef_array(::Type{T}, sz; unwrap = t -> false) where {T}
     end
 end
 
-function _similar(v::AbstractArray, ::Type{Z}; unwrap = t -> false) where {Z}
+function _similar(v::AbstractArray, ::Type{Z}; unwrap::F = alwaysfalse) where {Z, F}
     if unwrap(Z)
         return buildfromschema(typ -> _similar(v, typ; unwrap = unwrap), Z)
     else
@@ -149,12 +149,12 @@ julia> StructArray{ComplexF64}(undef, (2,3))
 """
 StructArray(::Base.UndefInitializer, sz::Dims)
 
-function StructArray{T}(::Base.UndefInitializer, sz::Dims; unwrap = t -> false) where {T}
+function StructArray{T}(::Base.UndefInitializer, sz::Dims; unwrap::F = alwaysfalse) where {T, F}
     buildfromschema(typ -> _undef_array(typ, sz; unwrap = unwrap), T)
 end
-StructArray{T}(u::Base.UndefInitializer, d::Integer...; unwrap = t -> false) where {T} = StructArray{T}(u, convert(Dims, d); unwrap = unwrap)
+StructArray{T}(u::Base.UndefInitializer, d::Integer...; unwrap::F = alwaysfalse) where {T, F} = StructArray{T}(u, convert(Dims, d); unwrap = unwrap)
 
-function similar_structarray(v::AbstractArray, ::Type{Z}; unwrap = t -> false) where {Z}
+function similar_structarray(v::AbstractArray, ::Type{Z}; unwrap::F = alwaysfalse) where {Z, F}
     buildfromschema(typ -> _similar(v, typ; unwrap = unwrap), Z)
 end
 
@@ -203,11 +203,11 @@ julia> StructArray((1, Complex(i, j)) for i = 1:3, j = 2:4; unwrap = T -> !(T<:R
  (1, 3+2im)  (1, 3+3im)  (1, 3+4im)
 ```
 """
-function StructArray(v; unwrap = t -> false)::StructArray
+function StructArray(v; unwrap::F = alwaysfalse)::StructArray where {F}
     collect_structarray(v; initializer = StructArrayInitializer(unwrap))
 end
 
-function StructArray(v::AbstractArray{T}; unwrap = t -> false) where {T}
+function StructArray(v::AbstractArray{T}; unwrap::F = alwaysfalse) where {T, F}
     s = similar_structarray(v, T; unwrap = unwrap)
     for i in eachindex(v)
         @inbounds s[i] = v[i]
