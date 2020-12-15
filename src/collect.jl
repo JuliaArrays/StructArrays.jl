@@ -4,7 +4,7 @@ struct StructArrayInitializer{F, G}
     unwrap::F
     arrayof::G
 end
-StructArrayInitializer(unwrap = t->false) = StructArrayInitializer(unwrap, arrayof)
+StructArrayInitializer(unwrap::F = alwaysfalse) where {F} = StructArrayInitializer(unwrap, arrayof)
 
 const default_initializer = StructArrayInitializer()
 
@@ -17,7 +17,7 @@ struct ArrayInitializer{F, G}
     unwrap::F
     arrayof::G
 end
-ArrayInitializer(unwrap = t->false) = ArrayInitializer(unwrap, arrayof)
+ArrayInitializer(unwrap::F = alwaysfalse) where {F} = ArrayInitializer(unwrap, arrayof)
 
 (s::ArrayInitializer)(S, d) = s.unwrap(S) ? buildfromschema(typ -> s(typ, d), S) : s.arrayof(S, d)
 

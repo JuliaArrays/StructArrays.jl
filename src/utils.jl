@@ -1,5 +1,7 @@
 eltypes(::Type{T}) where {T} = map_params(eltype, T)
 
+alwaysfalse(t) = false
+
 """
     StructArrays.map_params(f, T)
 
@@ -33,10 +35,10 @@ _map_params(f, ::Type{Tuple{}}) = ()
 function _map_params(f, ::Type{T}) where {T<:Tuple}
     (f(tuple_type_head(T)), _map_params(f, tuple_type_tail(T))...)
 end
-_map_params(f, ::Type{NamedTuple{names, types}}) where {names, types} =
+_map_params(f::F, ::Type{NamedTuple{names, types}}) where {names, types, F} =
     NamedTuple{names}(_map_params(f, types))
 
-buildfromschema(initializer, ::Type{T}) where {T} = buildfromschema(initializer, T, staticschema(T))
+buildfromschema(initializer::F, ::Type{T}) where {T, F} = buildfromschema(initializer, T, staticschema(T))
 
 """
     StructArrays.buildfromschema(initializer, T[, S])
@@ -47,7 +49,7 @@ Construct a [`StructArray{T}`](@ref) with a function `initializer`, using a sche
 
 `S` is a `Tuple` or `NamedTuple` type. The default value is [`staticschema(T)`](@ref).
 """
-function buildfromschema(initializer, ::Type{T}, ::Type{NT}) where {T, NT<:Tup}
+function buildfromschema(initializer::F, ::Type{T}, ::Type{NT}) where {T, NT<:Tup, F}
     nt = _map_params(initializer, NT)
     StructArray{T}(nt)
 end
