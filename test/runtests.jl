@@ -95,10 +95,6 @@ end
     @test StructArrays.roweq(strs, 1, 2)
     @test !StructArrays.roweq(strs, 1, 3)
     @test !StructArrays.roweq(strs, 2, 3)
-
-    a = ["a", "c", "z", "a"]
-    b = PooledArrays.PooledArray(["p", "y", "a", "x"])
-    t = StructArray((a, b))
 end
 
 @testset "permute" begin
