@@ -1,6 +1,16 @@
 const Tup = Union{Tuple, NamedTuple}
 const EmptyTup = Union{Tuple{}, NamedTuple{(), Tuple{}}}
 
+@generated function _fieldnames(::Type{T}) where {T}
+    return Expr(:tuple, [QuoteNode(f) for f in fieldnames(T)]...)
+end
+
+@generated function _fieldtypes(::Type{T}) where {T}
+    return Expr(:curly, :Tuple, [Expr(:call, :fieldtype, :T, i) for i in 1:fieldcount(T)]...)
+end
+
+_getfield(x, i) = getfield(x, i)
+
 """
     StructArrays.staticschema(T)
 
@@ -16,10 +26,10 @@ julia> StructArrays.staticschema(Complex{Float64})
 NamedTuple{(:re, :im),Tuple{Float64,Float64}}
 ```
 """
-@generated function staticschema(::Type{T}) where {T}
-    name_tuple = Expr(:tuple, [QuoteNode(f) for f in fieldnames(T)]...)
-    type_tuple = Expr(:curly, :Tuple, [Expr(:call, :fieldtype, :T, i) for i in 1:fieldcount(T)]...)
-    Expr(:curly, :NamedTuple, name_tuple, type_tuple)
+function staticschema(::Type{T}) where {T}
+    name_tuple = _fieldnames(T)
+    type_tuple = _fieldtypes(T)
+    return NamedTuple{name_tuple, type_tuple}
 end
 
 staticschema(::Type{T}) where {T<:Tup} = T

@@ -54,13 +54,6 @@ function buildfromschema(initializer::F, ::Type{T}, ::Type{NT}) where {T, NT<:Tu
     StructArray{T}(nt)
 end
 
-@static if VERSION < v"1.2.0"
-    @inline _getproperty(v::Tuple, field) = getfield(v, field)
-    @inline _getproperty(v, field) = getproperty(v, field)
-else
-    const _getproperty = getproperty
-end
-
 array_names_types(::Type{StructArray{T, N, C, I}}) where {T, N, C, I} = array_names_types(C)
 array_names_types(::Type{NamedTuple{names, types}}) where {names, types} = zip(names, types.parameters)
 array_names_types(::Type{T}) where {T<:Tuple} = enumerate(T.parameters)
@@ -69,7 +62,7 @@ function apply_f_to_vars_fields(names_types, vars)
     exprs = Expr[]
     for (name, type) in names_types
         sym = QuoteNode(name)
-        args = [Expr(:call, :_getproperty, var, sym) for var in vars]
+        args = [Expr(:call, :_getfield, var, sym) for var in vars]
         expr = if type <: StructArray
             apply_f_to_vars_fields(array_names_types(type), args)
         else

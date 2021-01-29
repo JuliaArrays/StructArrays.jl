@@ -248,9 +248,12 @@ julia> fieldarrays(s)
 """
 fieldarrays(s::StructArray) = getfield(s, :fieldarrays)
 
-Base.getproperty(s::StructArray, key::Symbol) = getfield(fieldarrays(s), key)
-Base.getproperty(s::StructArray, key::Int) = getfield(fieldarrays(s), key)
+_getfield(s::StructArray, key) = getfield(fieldarrays(s), key)
+
+Base.getproperty(s::StructArray, key::Symbol) = _getfield(s::StructArray, key)
+Base.getproperty(s::StructArray, key::Int) = _getfield(s::StructArray, key)
 Base.propertynames(s::StructArray) = propertynames(fieldarrays(s))
+
 
 Base.size(s::StructArray) = size(fieldarrays(s)[1])
 Base.size(s::StructArray{<:Any, <:Any, <:EmptyTup}) = (0,)
