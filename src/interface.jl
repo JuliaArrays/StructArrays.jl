@@ -2,24 +2,6 @@ const Tup = Union{Tuple, NamedTuple}
 const EmptyTup = Union{Tuple{}, NamedTuple{(), Tuple{}}}
 
 """
-    StructArrayys._fieldnames(T)
-
-Default to `fieldnames`. It is used to compute [`StructArrays.staticschema`](@ref).
-"""
-@generated function _fieldnames(::Type{T}) where {T}
-    return Expr(:tuple, [QuoteNode(f) for f in fieldnames(T)]...)
-end
-
-"""
-    StructArrayys._fieldtypes(T)
-
-Default to `fieldtypes`. It is used to compute [`StructArrays.staticschema`](@ref).
-"""
-@generated function _fieldtypes(::Type{T}) where {T}
-    return Expr(:curly, :Tuple, [Expr(:call, :fieldtype, :T, i) for i in 1:fieldcount(T)]...)
-end
-
-"""
     StructArrayys._getfield(x, i)
 
 Default to `getfield`. It should be overloaded for custom types with a custom
@@ -34,19 +16,19 @@ The default schema for an element type `T`. A schema is a `Tuple` or
 `NamedTuple` type containing the necessary fields to construct `T`. By default,
 this will have fields with the same names and types as `T`.
 
-To have a custom schema for custom types, overload [`StructArrays._fieldnames`](@ref)
-and [`StructArrays._fieldtypes`](@ref). In that case, [`StructArrays._getfield`](@ref)
-and [`StructArrays.createinstance`](@ref) should also be defined.
-
+This can be overloaded for custom types if required, in which case
+[`StructArrays._getfield`](@ref) and [`StructArrays.createinstance`](@ref)
+should also be defined.
+    
 ```julia-repl
 julia> StructArrays.staticschema(Complex{Float64})
 NamedTuple{(:re, :im),Tuple{Float64,Float64}}
 ```
 """
-function staticschema(::Type{T}) where {T}
-    name_tuple = _fieldnames(T)
-    type_tuple = _fieldtypes(T)
-    return NamedTuple{name_tuple, type_tuple}
+@generated function staticschema(::Type{T}) where {T}
+    name_tuple = Expr(:tuple, [QuoteNode(f) for f in fieldnames(T)]...)
+    type_tuple = Expr(:curly, :Tuple, [Expr(:call, :fieldtype, :T, i) for i in 1:fieldcount(T)]...)
+    Expr(:curly, :NamedTuple, name_tuple, type_tuple)
 end
 
 staticschema(::Type{T}) where {T<:Tup} = T

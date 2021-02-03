@@ -255,8 +255,7 @@ Base.getproperty(s::StructArray, key::Int) = getfieldarray(s, key)
 Base.propertynames(s::StructArray) = propertynames(fieldarrays(s))
 
 _getfield(s::StructArray, key) = getfieldarray(s, key)
-_fieldnames(::Type{StructArray{T, N, C, I}}) where {T, N, C, I} = _fieldnames(C)
-_fieldtypes(::Type{StructArray{T, N, C, I}}) where {T, N, C, I} = _fieldtypes(C)
+staticschema(::Type{StructArray{T, N, C, I}}) where {T, N, C, I} = staticschema(C)
 createinstance(::Type{<:StructArray{T}}, args...) where {T} = StructArray{T}(args)
 
 Base.size(s::StructArray) = size(fieldarrays(s)[1])

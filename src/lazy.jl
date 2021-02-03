@@ -51,9 +51,7 @@ end
 
 @inline Base.@propagate_inbounds _getfield(l::LazyRow, key) = getproperty(l, key)
 
-_fieldnames(::Type{<:LazyRow{T}}) where {T} = _fieldnames(T)
-_fieldtypes(::Type{<:LazyRow{T}}) where {T} = _fieldtypes(T)
-
+staticschema(::Type{<:LazyRow{T}}) where {T} = staticschema(T)
 buildfromschema(f, ::Type{<:LazyRow{T}}) where {T} = buildfromschema(f, T)
 iscompatible(::Type{<:LazyRow{R}}, ::Type{S}) where {R, S<:StructArray} = iscompatible(R, S)
 

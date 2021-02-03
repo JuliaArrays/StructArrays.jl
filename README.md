@@ -183,7 +183,9 @@ julia> map(t -> t.b ^ t.a, LazyRows(t))
 
 ## Advanced: structures with non-standard data layout
 
-StructArrays support structures with non-standard data layout (where `getproperty` has been overloaded or where the constructors are non-standard). The user is required to provide an overloaded `staticschema` for their type (to give the names and types of the properties of a given type) as well as a `createinstance` method. Here is an example of a type `MyType` that has as properties either its field `data` or properties of its field `rest` (which is a named tuple):
+StructArrays support structures with custom data layout. The user is required to overload `staticschema` in order to define the custom layout, `_getfield` to access fields of the custom layout, and `createinstance(T, fields...)` to create an instance of type `T` from its custom fields `fields`. In other word, given `x::T`, `createinstance(T, (_getfield(x, f) for f in fieldnames(staticschema(T)))...)` should successfully return an instance of type `T`.
+
+Here is an example of a type `MyType` that has as custom fields either its field `data` or fields of its field `rest` (which is a named tuple):
 
 ```julia
 using StructArrays
@@ -195,17 +197,17 @@ end
 
 MyType(x; kwargs...) = MyType(x, values(kwargs))
 
-Base.getproperty(b::MyType, s::Symbol) = s == :data ? getfield(b, 1) : getproperty(getfield(b, 2), s)
-Base.propertynames(b::MyType) = (:data, propertynames(getfield(b, 2))...)
-
-# explicitly give the "schema" of the object to StructArrays
 function StructArrays.staticschema(::Type{MyType{T, NamedTuple{names, types}}}) where {T, names, types}
-    NamedTuple{(:data, names...), Base.tuple_type_cons(T, types)}
+    return NamedTuple{(:data, names...), Base.tuple_type_cons(T, types)}
+end
+
+function StructArrays._getfield(m::MyType, key::Symbol)
+    return key === :data ? getfield(m, 1) : getfield(getfield(m, 2), key)
 end
 
 # generate an instance of MyType type
 function StructArrays.createinstance(::Type{MyType{T, NT}}, x, args...) where {T, NT}
-    MyType(x, NT(args))
+    return MyType(x, NT(args))
 end
 
 s = [MyType(rand(), a=1, b=2) for i in 1:10]
