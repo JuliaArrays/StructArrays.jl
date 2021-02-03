@@ -38,7 +38,15 @@ LazyRows
 ```@docs
 StructArrays.append!!
 StructArrays.replace_storage
+```
+
+# Interface
+
+```@docs
 StructArrays.staticschema
+StructArrays._fieldnames
+StructArrays._fieldtypes
+StructArrays._getfield
 StructArrays.createinstance
 ```
 
