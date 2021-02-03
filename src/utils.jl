@@ -58,14 +58,11 @@ array_names_types(::Type{StructArray{T, N, C, I}}) where {T, N, C, I} = array_na
 array_names_types(::Type{NamedTuple{names, types}}) where {names, types} = zip(names, types.parameters)
 array_names_types(::Type{T}) where {T<:Tuple} = enumerate(T.parameters)
 
-getfield_or_fieldarray(s, key) = _getfield(s, key)
-getfield_or_fieldarray(s::StructArray, key) = getfieldarray(s, key)
-
 function apply_f_to_vars_fields(names_types, vars)
     exprs = Expr[]
     for (name, type) in names_types
         sym = QuoteNode(name)
-        args = [Expr(:call, :getfield_or_fieldarray, var, sym) for var in vars]
+        args = [Expr(:call, :_getfield, var, sym) for var in vars]
         expr = if type <: StructArray
             apply_f_to_vars_fields(array_names_types(type), args)
         else
