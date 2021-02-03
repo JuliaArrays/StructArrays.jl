@@ -49,9 +49,12 @@ function Base.show(io::IO, c::LazyRow)
     show(io, tup)
 end
 
-staticschema(::Type{<:LazyRow{T}}) where {T} = staticschema(T)
-buildfromschema(f, ::Type{<:LazyRow{T}}) where {T} = buildfromschema(f, T)
+@inline Base.@propagate_inbounds _getfield(l::LazyRow, key) = getproperty(l, key)
 
+_fieldnames(::Type{<:LazyRow{T}}) where {T} = _fieldnames(T)
+_fieldtypes(::Type{<:LazyRow{T}}) where {T} = _fieldtypes(T)
+
+buildfromschema(f, ::Type{<:LazyRow{T}}) where {T} = buildfromschema(f, T)
 iscompatible(::Type{<:LazyRow{R}}, ::Type{S}) where {R, S<:StructArray} = iscompatible(R, S)
 
 (s::ArrayInitializer)(::Type{<:LazyRow{T}}, d) where {T} = buildfromschema(typ -> s(typ, d), T)
@@ -75,10 +78,11 @@ struct LazyRows{T, N, C, I} <: AbstractArray{LazyRow{T, N, C, I}, N}
 end
 Base.parent(v::LazyRows) = getfield(v, 1)
 fieldarrays(v::LazyRows) = fieldarrays(parent(v))
+getfieldarray(v::LazyRows, key) = getfieldarray(parent(v), key)
 
-Base.getproperty(s::LazyRows, key::Symbol) = getproperty(parent(s), key)
-Base.getproperty(s::LazyRows, key::Int) = getproperty(parent(s), key)
-Base.propertynames(c::LazyRows) = propertynames(parent(c))
+Base.getproperty(v::LazyRows, key::Symbol) = getfieldarray(v, key)
+Base.getproperty(v::LazyRows, key::Int) = getfieldarray(v, key)
+Base.propertynames(v::LazyRows) = propertynames(parent(v))
 
 Base.size(v::LazyRows) = size(parent(v))
 Base.getindex(v::LazyRows{<:Any, <:Any, <:Any, Int}, i::Int) = LazyRow(parent(v), i)
