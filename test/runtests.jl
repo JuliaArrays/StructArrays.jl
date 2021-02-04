@@ -2,6 +2,7 @@ using StructArrays
 using StructArrays: staticschema, iscompatible, _promote_typejoin, append!!
 using OffsetArrays: OffsetArray
 import Tables, PooledArrays, WeakRefStrings
+using TypedTables: Table
 using DataAPI: refarray, refvalue
 using Adapt: adapt, Adapt
 using Test
@@ -340,6 +341,8 @@ end
     @test append!(StructArray([1im]), [(re = 111, im = 222)]) ==
         StructArray([1im, 111 + 222im])
     @test append!(StructArray([1im]), (x for x in [(re = 111, im = 222)])) ==
+        StructArray([1im, 111 + 222im])
+    @test append!(StructArray([1im]), Table(re = [111], im = [222])) ==
         StructArray([1im, 111 + 222im])
     # Testing integer column "names":
     @test invoke(append!, Tuple{StructVector,Any}, StructArray(([0],)), StructArray(([1],))) ==

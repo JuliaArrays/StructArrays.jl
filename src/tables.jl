@@ -18,8 +18,7 @@ function try_compatible_columns(rows::R, s::StructArray) where {R}
     hasfields(T) || return nothing
     NT = staticschema(T)
     _schema(NT) == Tables.schema(rows) || return nothing
-    table = Tables.columns(rows)
-    fieldnames(NT) == propertynames(table) ? table : nothing
+    return Tables.columntable(rows)
 end
 
 function Base.append!(s::StructVector, rows)
