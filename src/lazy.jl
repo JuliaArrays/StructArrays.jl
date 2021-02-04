@@ -77,8 +77,13 @@ end
 Base.parent(v::LazyRows) = getfield(v, 1)
 components(v::LazyRows) = components(parent(v))
 
-Base.getproperty(v::LazyRows, key::Symbol) = getfield(components(v), key)
-Base.getproperty(v::LazyRows, key::Int) = getfield(components(v), key)
+component(v::LazyRows, key) = component(parent(v), key)
+
+staticschema(::Type{LazyRows{T, N, C, I}}) where {T, N, C, I} = staticschema(C)
+createinstance(::Type{<:LazyRows{T}}, args...) where {T} = LazyRows(StructArray{T}(args))
+
+Base.getproperty(v::LazyRows, key::Symbol) = component(v, key)
+Base.getproperty(v::LazyRows, key::Int) = component(v, key)
 Base.propertynames(v::LazyRows) = propertynames(parent(v))
 
 Base.size(v::LazyRows) = size(parent(v))

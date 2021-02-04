@@ -561,6 +561,16 @@ end
     @test v.b[2] == t.b
     @test v[1] == s
     @test v[2] == t
+
+    s = LazyRows(StructArray(a = rand(10), b = rand(10)))
+    t = LazyRows(StructArray(a = rand(10), b = rand(10)))
+    v = StructArray([s, t])
+    @test v.a[1] == s.a
+    @test v.a[2] == t.a
+    @test v.b[1] == s.b
+    @test v.b[2] == t.b
+    @test v[1] == s
+    @test v[2] == t
 end
 
 @testset "hasfields" begin
