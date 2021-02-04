@@ -5,7 +5,7 @@
 ### Breaking
 
 - Renamed `fieldarrays` to `components` [#167](https://github.com/JuliaArrays/StructArrays.jl/pull/167)
-- `getproperty` is no longer use to access fields of a struct, and is replaced by `StructArrays.component(x, i)` [#167](https://github.com/JuliaArrays/StructArrays.jl/pull/167)
+- `getproperty` is no longer used to access fields of a struct. It is replaced by `StructArrays.component(x, i)` [#167](https://github.com/JuliaArrays/StructArrays.jl/pull/167)
 - Broadcast on `StructArray`s now returns a `StructArray` [#136](https://github.com/JuliaArrays/StructArrays.jl/pull/136)
 - Inner constructors are bypassed on `getindex` [#145](https://github.com/JuliaArrays/StructArrays.jl/pull/136)
 
