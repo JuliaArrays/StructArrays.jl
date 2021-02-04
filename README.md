@@ -183,7 +183,7 @@ julia> map(t -> t.b ^ t.a, LazyRows(t))
 
 ## Advanced: structures with non-standard data layout
 
-StructArrays support structures with custom data layout. The user is required to overload `staticschema` in order to define the custom layout, `_getfield` to access fields of the custom layout, and `createinstance(T, fields...)` to create an instance of type `T` from its custom fields `fields`. In other word, given `x::T`, `createinstance(T, (_getfield(x, f) for f in fieldnames(staticschema(T)))...)` should successfully return an instance of type `T`.
+StructArrays support structures with custom data layout. The user is required to overload `staticschema` in order to define the custom layout, `component` to access fields of the custom layout, and `createinstance(T, fields...)` to create an instance of type `T` from its custom fields `fields`. In other word, given `x::T`, `createinstance(T, (component(x, f) for f in fieldnames(staticschema(T)))...)` should successfully return an instance of type `T`.
 
 Here is an example of a type `MyType` that has as custom fields either its field `data` or fields of its field `rest` (which is a named tuple):
 
@@ -201,7 +201,7 @@ function StructArrays.staticschema(::Type{MyType{T, NamedTuple{names, types}}}) 
     return NamedTuple{(:data, names...), Base.tuple_type_cons(T, types)}
 end
 
-function StructArrays._getfield(m::MyType, key::Symbol)
+function StructArrays.component(m::MyType, key::Symbol)
     return key === :data ? getfield(m, 1) : getfield(getfield(m, 2), key)
 end
 

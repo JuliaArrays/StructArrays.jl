@@ -254,7 +254,7 @@ Base.getproperty(s::StructArray, key::Symbol) = getfieldarray(s, key)
 Base.getproperty(s::StructArray, key::Int) = getfieldarray(s, key)
 Base.propertynames(s::StructArray) = propertynames(fieldarrays(s))
 
-_getfield(s::StructArray, key) = getfieldarray(s, key)
+component(s::StructArray, key) = getfieldarray(s, key)
 staticschema(::Type{StructArray{T, N, C, I}}) where {T, N, C, I} = staticschema(C)
 createinstance(::Type{<:StructArray{T}}, args...) where {T} = StructArray{T}(args)
 

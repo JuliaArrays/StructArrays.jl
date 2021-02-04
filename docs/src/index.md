@@ -44,7 +44,7 @@ StructArrays.replace_storage
 
 ```@docs
 StructArrays.staticschema
-StructArrays._getfield
+StructArrays.component
 StructArrays.createinstance
 ```
 

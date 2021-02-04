@@ -62,7 +62,7 @@ function apply_f_to_vars_fields(names_types, vars)
     exprs = Expr[]
     for (name, type) in names_types
         sym = QuoteNode(name)
-        args = [Expr(:call, :_getfield, var, sym) for var in vars]
+        args = [Expr(:call, :component, var, sym) for var in vars]
         expr = if type <: StructArray
             apply_f_to_vars_fields(array_names_types(type), args)
         else

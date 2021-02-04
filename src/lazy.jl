@@ -49,7 +49,7 @@ function Base.show(io::IO, c::LazyRow)
     show(io, tup)
 end
 
-@inline Base.@propagate_inbounds _getfield(l::LazyRow, key) = getproperty(l, key)
+@inline Base.@propagate_inbounds component(l::LazyRow, key) = getproperty(l, key)
 
 staticschema(::Type{<:LazyRow{T}}) where {T} = staticschema(T)
 buildfromschema(f, ::Type{<:LazyRow{T}}) where {T} = buildfromschema(f, T)

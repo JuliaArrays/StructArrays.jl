@@ -2,12 +2,12 @@ const Tup = Union{Tuple, NamedTuple}
 const EmptyTup = Union{Tuple{}, NamedTuple{(), Tuple{}}}
 
 """
-    StructArrayys._getfield(x, i)
+    StructArrayys.component(x, i)
 
 Default to `getfield`. It should be overloaded for custom types with a custom
 schema. See [`StructArrays.staticschema`](@ref).
 """
-_getfield(x, i) = getfield(x, i)
+component(x, i) = getfield(x, i)
 
 """
     StructArrays.staticschema(T)
@@ -17,7 +17,7 @@ The default schema for an element type `T`. A schema is a `Tuple` or
 this will have fields with the same names and types as `T`.
 
 This can be overloaded for custom types if required, in which case
-[`StructArrays._getfield`](@ref) and [`StructArrays.createinstance`](@ref)
+[`StructArrays.component`](@ref) and [`StructArrays.createinstance`](@ref)
 should also be defined.
     
 ```julia-repl
