@@ -30,7 +30,7 @@ julia> s.re
  0.680079  0.92407
  0.874437  0.929336
 
-julia> fieldarrays(s) # obtain all field arrays as a named tuple
+julia> components(s) # obtain all field arrays as a named tuple
 (re = [0.680079 0.92407; 0.874437 0.929336], im = [0.625239 0.267358; 0.737254 0.804478])
 ```
 

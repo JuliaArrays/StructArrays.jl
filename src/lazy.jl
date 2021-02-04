@@ -45,7 +45,7 @@ Base.propertynames(c::LazyRow) = propertynames(getfield(c, 1))
 function Base.show(io::IO, c::LazyRow)
     print(io, "LazyRow")
     columns, index = getfield(c, 1), getfield(c, 2)
-    tup = StructArray(fieldarrays(columns))[index]
+    tup = StructArray(components(columns))[index]
     show(io, tup)
 end
 
@@ -75,11 +75,10 @@ struct LazyRows{T, N, C, I} <: AbstractArray{LazyRow{T, N, C, I}, N}
     columns::StructArray{T, N, C, I}
 end
 Base.parent(v::LazyRows) = getfield(v, 1)
-fieldarrays(v::LazyRows) = fieldarrays(parent(v))
-getfieldarray(v::LazyRows, key) = getfieldarray(parent(v), key)
+components(v::LazyRows) = components(parent(v))
 
-Base.getproperty(v::LazyRows, key::Symbol) = getfieldarray(v, key)
-Base.getproperty(v::LazyRows, key::Int) = getfieldarray(v, key)
+Base.getproperty(v::LazyRows, key::Symbol) = getfield(components(v), key)
+Base.getproperty(v::LazyRows, key::Int) = getfield(components(v), key)
 Base.propertynames(v::LazyRows) = propertynames(parent(v))
 
 Base.size(v::LazyRows) = size(parent(v))
@@ -93,6 +92,6 @@ end
 
 function Base.showarg(io::IO, s::LazyRows{T}, toplevel) where T
     print(io, "LazyRows")
-    showfields(io, Tuple(fieldarrays(s)))
+    showfields(io, Tuple(components(s)))
     toplevel && print(io, " with eltype LazyRow{", T, "}")
 end

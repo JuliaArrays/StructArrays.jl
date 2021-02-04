@@ -8,10 +8,10 @@ A type that stores an `N`-dimensional array of structures of type `T` as a struc
 
 # Fields
 
-- `fieldarrays`: a `NamedTuple` or `Tuple` of the arrays used by each field. These can be accessed by [`fieldarrays(x)`](@ref).
+- `components`: a `NamedTuple` or `Tuple` of the arrays used by each field. These can be accessed by [`components(x)`](@ref).
 """
 struct StructArray{T, N, C<:Tup, I} <: AbstractArray{T, N}
-    fieldarrays::C
+    components::C
 
     function StructArray{T, N, C}(c) where {T, N, C<:Tup}
         if length(c) > 0
@@ -40,13 +40,13 @@ array_types(::Type{NamedTuple{names, types}}) where {names, types} = types
 array_types(::Type{TT}) where {TT<:Tuple} = TT
 
 """
-    StructArray{T}((fieldarrays...)::Union{Tuple, NamedTuple})
-    StructArray{T}(name1=fieldarray1, name2=fieldarray2, ...)
+    StructArray{T}((components...)::Union{Tuple, NamedTuple})
+    StructArray{T}(name1=component1, name2=component2, ...)
 
 Construct a `StructArray` of element type `T` from the specified field arrays.
 
-    StructArray((fieldarrays...)::Union{Tuple, NamedTuple})
-    StructArray(name1=fieldarray1, name2=fieldarray2, ...)
+    StructArray((components...)::Union{Tuple, NamedTuple})
+    StructArray(name1=component1, name2=component2, ...)
 
 Construct a `StructArray` with a `Tuple` or `NamedTuple` element type from the
 specified field arrays.
@@ -229,11 +229,11 @@ end
 Base.similar(s::StructArray, sz::Base.DimOrInd...) = similar(s, Base.to_shape(sz))
 Base.similar(s::StructArray) = similar(s, Base.to_shape(axes(s)))
 function Base.similar(s::StructArray{T}, sz::Tuple) where {T}
-    StructArray{T}(map(typ -> similar(typ, sz), fieldarrays(s)))
+    StructArray{T}(map(typ -> similar(typ, sz), components(s)))
 end
 
 """
-    fieldarrays(s::StructArray)
+    components(s::StructArray)
 
 Return the field arrays corresponding to the various entry of the struct as a `NamedTuple`, or a `Tuple` if the struct has no names.
 
@@ -242,25 +242,24 @@ Return the field arrays corresponding to the various entry of the struct as a `N
 ```julia-repl
 julia> s = StructArray(rand(ComplexF64, 4));
 
-julia> fieldarrays(s)
+julia> components(s)
 (re = [0.396526, 0.486036, 0.459595, 0.0323561], im = [0.147702, 0.81043, 0.00993469, 0.487091])
 ```
 """
-fieldarrays(s::StructArray) = getfield(s, :fieldarrays)
+components(s::StructArray) = getfield(s, :components)
 
-getfieldarray(s::StructArray, key) = getfield(fieldarrays(s), key)
+component(s::StructArray, key) = getfield(components(s), key)
 
-Base.getproperty(s::StructArray, key::Symbol) = getfieldarray(s, key)
-Base.getproperty(s::StructArray, key::Int) = getfieldarray(s, key)
-Base.propertynames(s::StructArray) = propertynames(fieldarrays(s))
+Base.getproperty(s::StructArray, key::Symbol) = component(s, key)
+Base.getproperty(s::StructArray, key::Int) = component(s, key)
+Base.propertynames(s::StructArray) = propertynames(components(s))
 
-component(s::StructArray, key) = getfieldarray(s, key)
 staticschema(::Type{StructArray{T, N, C, I}}) where {T, N, C, I} = staticschema(C)
 createinstance(::Type{<:StructArray{T}}, args...) where {T} = StructArray{T}(args)
 
-Base.size(s::StructArray) = size(fieldarrays(s)[1])
+Base.size(s::StructArray) = size(components(s)[1])
 Base.size(s::StructArray{<:Any, <:Any, <:EmptyTup}) = (0,)
-Base.axes(s::StructArray) = axes(fieldarrays(s)[1])
+Base.axes(s::StructArray) = axes(components(s)[1])
 Base.axes(s::StructArray{<:Any, <:Any, <:EmptyTup}) = (1:0,)
 
 """
@@ -280,19 +279,19 @@ end
 get_ith(::Tuple{}, I...) = ()
 
 Base.@propagate_inbounds function Base.getindex(x::StructArray{T, <:Any, <:Any, CartesianIndex{N}}, I::Vararg{Int, N}) where {T, N}
-    cols = fieldarrays(x)
+    cols = components(x)
     @boundscheck checkbounds(x, I...)
     return createinstance(T, get_ith(cols, I...)...)
 end
 
 Base.@propagate_inbounds function Base.getindex(x::StructArray{T, <:Any, <:Any, Int}, I::Int) where {T}
-    cols = fieldarrays(x)
+    cols = components(x)
     @boundscheck checkbounds(x, I)
     return createinstance(T, get_ith(cols, I)...)
 end
 
 function Base.view(s::StructArray{T, N, C}, I...) where {T, N, C}
-    StructArray{T}(map(v -> view(v, I...), fieldarrays(s)))
+    StructArray{T}(map(v -> view(v, I...), components(s)))
 end
 
 Base.@propagate_inbounds function Base.setindex!(s::StructArray{<:Any, <:Any, <:Any, CartesianIndex{N}}, vals, I::Vararg{Int, N}) where {N}
@@ -325,7 +324,7 @@ function Base.copyto!(I::StructArray, doffs::Integer, J::StructArray, soffs::Int
 end
 
 function Base.resize!(s::StructArray, i::Integer)
-    for a in fieldarrays(s)
+    for a in components(s)
         resize!(a, i)
     end
     return s
@@ -345,10 +344,10 @@ for op in [:cat, :hcat, :vcat]
     end
 end
 
-Base.copy(s::StructArray{T,N,C}) where {T,N,C} = StructArray{T,N,C}(C(copy(x) for x in fieldarrays(s)))
+Base.copy(s::StructArray{T,N,C}) where {T,N,C} = StructArray{T,N,C}(C(copy(x) for x in components(s)))
 
 function Base.reshape(s::StructArray{T}, d::Dims) where {T}
-    StructArray{T}(map(x -> reshape(x, d), fieldarrays(s)))
+    StructArray{T}(map(x -> reshape(x, d), components(s)))
 end
 
 function showfields(io::IO, fields::NTuple{N, Any}) where N
@@ -362,7 +361,7 @@ end
 
 function Base.showarg(io::IO, s::StructArray{T}, toplevel) where T
     print(io, "StructArray")
-    showfields(io, Tuple(fieldarrays(s)))
+    showfields(io, Tuple(components(s)))
     toplevel && print(io, " with eltype ", T)
 end
 

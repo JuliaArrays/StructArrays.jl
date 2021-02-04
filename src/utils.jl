@@ -134,7 +134,7 @@ end
 """
     StructArrays.replace_storage(f, s::StructArray)
 
-Change storage type for fieldarrays: each array `v` is replaced by `f(v)`. `f(v) is expected to have the same
+Change storage type for components: each array `v` is replaced by `f(v)`. `f(v) is expected to have the same
 `eltype` and `size` as `v`.
 
 ## Examples
@@ -160,7 +160,7 @@ end)
 ```
 """
 function replace_storage(f, s::StructArray{T}) where T
-    cols = fieldarrays(s)
+    cols = components(s)
     newcols = map(t -> replace_storage(f, t), cols)
     StructArray{T}(newcols)
 end

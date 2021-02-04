@@ -3,7 +3,7 @@ import Tables
 Tables.isrowtable(::Type{<:StructArray}) = true
 
 Tables.columnaccess(::Type{<:StructArray}) = true
-Tables.columns(s::StructArray) = fieldarrays(s)
+Tables.columns(s::StructArray) = components(s)
 Tables.schema(s::StructArray) = _schema(staticschema(eltype(s)))
 
 _schema(::Type{NT}) where {NT<:NamedTuple} = Tables.Schema(NT)

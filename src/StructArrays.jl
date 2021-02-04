@@ -3,7 +3,7 @@ module StructArrays
 using Base: tuple_type_cons, tuple_type_head, tuple_type_tail, tail
 
 export StructArray, StructVector, LazyRow, LazyRows
-export collect_structarray, fieldarrays
+export collect_structarray, components
 export replace_storage
 
 include("interface.jl")
@@ -18,10 +18,10 @@ include("tables.jl")
 import DataAPI: refarray, refvalue
 using DataAPI: defaultarray
 
-refarray(s::StructArray) = StructArray(map(refarray, fieldarrays(s)))
+refarray(s::StructArray) = StructArray(map(refarray, components(s)))
 
 function refvalue(s::StructArray{T}, v::Tup) where {T}
-    createinstance(T, map(refvalue, fieldarrays(s), v)...)
+    createinstance(T, map(refvalue, components(s), v)...)
 end
 
 # Use Adapt allows for automatic conversion of CPU to GPU StructArrays

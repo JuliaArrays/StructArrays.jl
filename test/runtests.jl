@@ -19,10 +19,10 @@ doctest(StructArrays)
     @test (@inferred view(t, 2, 1:2)) == StructArray((a = view(a, 2, 1:2), b = view(b, 2, 1:2)))
 end
 
-@testset "fieldarrays" begin
+@testset "components" begin
     t = StructArray(a = 1:10, b = rand(Bool, 10))
     @test StructArrays.propertynames(t) == (:a, :b)
-    @test StructArrays.propertynames(StructArrays.fieldarrays(t)) == (:a, :b)
+    @test StructArrays.propertynames(StructArrays.components(t)) == (:a, :b)
 end
 
 @testset "utils" begin
@@ -309,7 +309,7 @@ cols_infer() = StructArray(([1, 2], [1.2, 2.3]))
     @inferred g_infer()
     @test g_infer().a.b == ["1"]
     s = @inferred tup_infer()
-    @test fieldarrays(s) == ([1, 3], [2, 4])
+    @test components(s) == ([1, 3], [2, 4])
     @test s[1] == (1, 2)
     @test s[2] == (3, 4)
     @inferred cols_infer()
@@ -474,8 +474,8 @@ end
     @test collect_structarray_rec(tuple_itr) == Float64[]
 
     t = collect_structarray_rec((a = i,) for i in (1, missing, 3))
-    @test StructArrays.fieldarrays(t)[1] isa Array{Union{Int, Missing}}
-    @test isequal(StructArrays.fieldarrays(t)[1], [1, missing, 3])
+    @test StructArrays.components(t)[1] isa Array{Union{Int, Missing}}
+    @test isequal(StructArrays.components(t)[1], [1, missing, 3])
 end
 
 pair_structarray((first, last)) = StructArray{Pair{eltype(first), eltype(last)}}((first, last))

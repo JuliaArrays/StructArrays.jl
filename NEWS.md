@@ -1,12 +1,21 @@
 # NEWS
 
+## Version 0.6.0
+
+### Breaking
+
+- Renamed `fieldarrays` to `components` [#167](https://github.com/JuliaArrays/StructArrays.jl/pull/167)
+- `getproperty` is no longer use to access fields of a struct, and is replaced by `StructArrays.component(x, i)` [#167](https://github.com/JuliaArrays/StructArrays.jl/pull/167)
+- Broadcast on `StructArray`s now returns a `StructArray` [#136](https://github.com/JuliaArrays/StructArrays.jl/pull/136)
+- Inner constructors are bypassed on `getindex` [#145](https://github.com/JuliaArrays/StructArrays.jl/pull/136)
+
 ## Version 0.4.0
 
 ### Breaking
 
 - `fieldarrays` now returns a tuple of arrays for a `StructArray{<:Tuple}`
 - `push!` now only works if the `StructArray` and the element have the same propertynames
-- the special constructor `StructArray(first_col => last_col)` is no longer supported
+- The special constructor `StructArray(first_col => last_col)` is no longer supported
 
 ## Version 0.2.0
 
