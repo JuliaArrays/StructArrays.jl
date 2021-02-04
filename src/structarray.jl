@@ -232,7 +232,7 @@ function Base.similar(s::StructArray{T}, sz::Tuple) where {T}
     StructArray{T}(map(typ -> similar(typ, sz), components(s)))
 end
 
-@deprecate fieldarrays(x) components(x)
+@deprecate fieldarrays(x) StructArrays.components(x)
 
 """
     components(s::StructArray)

@@ -310,7 +310,7 @@ cols_infer() = StructArray(([1, 2], [1.2, 2.3]))
     @inferred g_infer()
     @test g_infer().a.b == ["1"]
     s = @inferred tup_infer()
-    @test components(s) == ([1, 3], [2, 4])
+    @test StructArrays.components(s) == ([1, 3], [2, 4])
     @test s[1] == (1, 2)
     @test s[2] == (3, 4)
     @inferred cols_infer()

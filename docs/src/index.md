@@ -23,7 +23,7 @@ collect_structarray
 # Accessors
 
 ```@docs
-components
+StructArrays.components
 ```
 
 # Lazy iteration
