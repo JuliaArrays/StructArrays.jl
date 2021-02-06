@@ -223,6 +223,18 @@ end
     @test getproperty(t, 2) == [3.0, 2.0]
 end
 
+@testset "constructor from slices" begin
+    if VERSION >= v"1.1"
+        X = [1.0 2.0; 3.0 4.0]
+        @test StructArray{Complex{Float64}}(X; dims=1) == [Complex(1.0,3.0), Complex(2.0,4.0)]
+        @test StructArray{Complex{Float64}}(X; dims=2) == [Complex(1.0,2.0), Complex(3.0,4.0)]
+
+        X = [1.0 2.0; 3.0 4.0; 5.0 6.0]
+        @test StructArray{Tuple{Float64,Complex{Float64}}}(X; dims=1) == [(1.0,Complex(3.0,5.0)), (2.0, Complex(4.0,6.0))]
+    end
+end
+
+
 struct A
     x::Int
     y::Int

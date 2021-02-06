@@ -15,6 +15,7 @@ StructArray
 
 ```@docs
 StructArray(tup::Union{Tuple,NamedTuple})
+StructArray(::AbstractArray)
 StructArray(::Base.UndefInitializer, sz::Dims)
 StructArray(v)
 collect_structarray
