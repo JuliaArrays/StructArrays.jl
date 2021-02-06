@@ -113,7 +113,7 @@ function _widenstructarray(dest::StructArray, i, ::Type{T}) where {T}
     sch = hasfields(T) ? staticschema(T) : nothing
     sch !== nothing && fieldnames(sch) == propertynames(dest) || return _widenarray(dest, i, T)
     types = ntuple(x -> fieldtype(sch, x), fieldcount(sch))
-    cols = Tuple(fieldarrays(dest))
+    cols = Tuple(components(dest))
     newcols = map((a, b) -> _widenstructarray(a, i, b), cols, types)
     return StructArray{T}(newcols)
 end

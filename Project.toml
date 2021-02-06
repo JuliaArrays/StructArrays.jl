@@ -18,7 +18,8 @@ Documenter = "e30172f5-a6a5-5a46-863b-614d45cd2de4"
 OffsetArrays = "6fe1bfb0-de20-5000-8ca7-80f57d26f881"
 PooledArrays = "2dfb63ee-cc39-5dd5-95bd-886bf059d720"
 Test = "8dfed614-e22c-5e08-85e1-65c5234f0b40"
+TypedTables = "9d95f2ec-7b3d-5a63-8d20-e2491e220bb9"
 WeakRefStrings = "ea10d353-3f73-51f8-a26c-33c1cb351aa5"
 
 [targets]
-test = ["Test", "OffsetArrays", "PooledArrays", "WeakRefStrings", "Documenter"]
+test = ["Test", "OffsetArrays", "PooledArrays", "TypedTables", "WeakRefStrings", "Documenter"]

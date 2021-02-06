@@ -2,6 +2,7 @@ using StructArrays
 using StructArrays: staticschema, iscompatible, _promote_typejoin, append!!
 using OffsetArrays: OffsetArray
 import Tables, PooledArrays, WeakRefStrings
+using TypedTables: Table
 using DataAPI: refarray, refvalue
 using Adapt: adapt, Adapt
 using Test
@@ -19,10 +20,10 @@ doctest(StructArrays)
     @test (@inferred view(t, 2, 1:2)) == StructArray((a = view(a, 2, 1:2), b = view(b, 2, 1:2)))
 end
 
-@testset "fieldarrays" begin
+@testset "components" begin
     t = StructArray(a = 1:10, b = rand(Bool, 10))
     @test StructArrays.propertynames(t) == (:a, :b)
-    @test StructArrays.propertynames(StructArrays.fieldarrays(t)) == (:a, :b)
+    @test StructArrays.propertynames(StructArrays.components(t)) == (:a, :b)
 end
 
 @testset "utils" begin
@@ -309,7 +310,7 @@ cols_infer() = StructArray(([1, 2], [1.2, 2.3]))
     @inferred g_infer()
     @test g_infer().a.b == ["1"]
     s = @inferred tup_infer()
-    @test fieldarrays(s) == ([1, 3], [2, 4])
+    @test StructArrays.components(s) == ([1, 3], [2, 4])
     @test s[1] == (1, 2)
     @test s[2] == (3, 4)
     @inferred cols_infer()
@@ -340,6 +341,8 @@ end
     @test append!(StructArray([1im]), [(re = 111, im = 222)]) ==
         StructArray([1im, 111 + 222im])
     @test append!(StructArray([1im]), (x for x in [(re = 111, im = 222)])) ==
+        StructArray([1im, 111 + 222im])
+    @test append!(StructArray([1im]), Table(re = [111], im = [222])) ==
         StructArray([1im, 111 + 222im])
     # Testing integer column "names":
     @test invoke(append!, Tuple{StructVector,Any}, StructArray(([0],)), StructArray(([1],))) ==
@@ -474,8 +477,8 @@ end
     @test collect_structarray_rec(tuple_itr) == Float64[]
 
     t = collect_structarray_rec((a = i,) for i in (1, missing, 3))
-    @test StructArrays.fieldarrays(t)[1] isa Array{Union{Int, Missing}}
-    @test isequal(StructArrays.fieldarrays(t)[1], [1, missing, 3])
+    @test StructArrays.components(t)[1] isa Array{Union{Int, Missing}}
+    @test isequal(StructArrays.components(t)[1], [1, missing, 3])
 end
 
 pair_structarray((first, last)) = StructArray{Pair{eltype(first), eltype(last)}}((first, last))
@@ -549,6 +552,28 @@ end
     @test sa isa StructArray
     @test collect(sa.a) == 1:3
     @test sa.a isa OffsetArray
+end
+
+@testset "collectstructarrays" begin
+    s = StructArray(a = rand(10), b = rand(10))
+    t = StructArray(a = rand(10), b = rand(10))
+    v = StructArray([s, t])
+    @test v.a[1] == s.a
+    @test v.a[2] == t.a
+    @test v.b[1] == s.b
+    @test v.b[2] == t.b
+    @test v[1] == s
+    @test v[2] == t
+
+    s = LazyRows(StructArray(a = rand(10), b = rand(10)))
+    t = LazyRows(StructArray(a = rand(10), b = rand(10)))
+    v = StructArray([s, t])
+    @test v.a[1] == s.a
+    @test v.a[2] == t.a
+    @test v.b[1] == s.b
+    @test v.b[2] == t.b
+    @test v[1] == s
+    @test v[2] == t
 end
 
 @testset "hasfields" begin

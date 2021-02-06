@@ -40,7 +40,7 @@ end
 
 roweq(t::Tuple{}, i, j) = true
 roweq(t::Tuple, i, j) = roweq(t[1], i, j) ? roweq(tail(t), i, j) : false
-roweq(s::StructArray, i, j) = roweq(Tuple(fieldarrays(s)), i, j)
+roweq(s::StructArray, i, j) = roweq(Tuple(components(s)), i, j)
 
 function uniquesorted(keys, perm=sortperm(keys))
     (keys[perm[idxs[1]]] for idxs in GroupPerm(keys, perm))
@@ -55,7 +55,7 @@ function finduniquesorted(keys, perm=sortperm(keys))
 end
 
 function Base.sortperm(c::StructVector{T}) where {T<:Union{Tuple, NamedTuple}}
-    cols = fieldarrays(c)
+    cols = components(c)
     x = cols[1]
     p = sortperm(x)
     if length(cols) > 1

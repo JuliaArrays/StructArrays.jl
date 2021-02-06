@@ -23,7 +23,7 @@ collect_structarray
 # Accessors
 
 ```@docs
-fieldarrays
+StructArrays.components
 ```
 
 # Lazy iteration
@@ -38,7 +38,13 @@ LazyRows
 ```@docs
 StructArrays.append!!
 StructArrays.replace_storage
+```
+
+# Interface
+
+```@docs
 StructArrays.staticschema
+StructArrays.component
 StructArrays.createinstance
 ```
 

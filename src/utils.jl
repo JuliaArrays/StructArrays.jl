@@ -54,13 +54,6 @@ function buildfromschema(initializer::F, ::Type{T}, ::Type{NT}) where {T, NT<:Tu
     StructArray{T}(nt)
 end
 
-@static if VERSION < v"1.2.0"
-    @inline _getproperty(v::Tuple, field) = getfield(v, field)
-    @inline _getproperty(v, field) = getproperty(v, field)
-else
-    const _getproperty = getproperty
-end
-
 array_names_types(::Type{StructArray{T, N, C, I}}) where {T, N, C, I} = array_names_types(C)
 array_names_types(::Type{NamedTuple{names, types}}) where {names, types} = zip(names, types.parameters)
 array_names_types(::Type{T}) where {T<:Tuple} = enumerate(T.parameters)
@@ -69,7 +62,7 @@ function apply_f_to_vars_fields(names_types, vars)
     exprs = Expr[]
     for (name, type) in names_types
         sym = QuoteNode(name)
-        args = [Expr(:call, :_getproperty, var, sym) for var in vars]
+        args = [Expr(:call, :component, var, sym) for var in vars]
         expr = if type <: StructArray
             apply_f_to_vars_fields(array_names_types(type), args)
         else
@@ -141,7 +134,7 @@ end
 """
     StructArrays.replace_storage(f, s::StructArray)
 
-Change storage type for fieldarrays: each array `v` is replaced by `f(v)`. `f(v) is expected to have the same
+Change storage type for components: each array `v` is replaced by `f(v)`. `f(v) is expected to have the same
 `eltype` and `size` as `v`.
 
 ## Examples
@@ -157,9 +150,9 @@ julia> s_pooled = StructArrays.replace_storage(s) do v
            isbitstype(eltype(v)) ? v : convert(PooledArray, v)
        end
 $(if VERSION < v"1.6-" 
-    "3-element StructArray(::UnitRange{Int64}, ::PooledArray{String,UInt8,1,Array{UInt8,1}}) with eltype NamedTuple{(:a, :b),Tuple{Int64,String}}:"
+    "3-element StructArray(::UnitRange{Int64}, ::PooledArray{String,UInt32,1,Array{UInt32,1}}) with eltype NamedTuple{(:a, :b),Tuple{Int64,String}}:"
 else
-        "3-element StructArray(::UnitRange{Int64}, ::PooledVector{String, UInt8, Vector{UInt8}}) with eltype NamedTuple{(:a, :b), Tuple{Int64, String}}:"
+        "3-element StructArray(::UnitRange{Int64}, ::PooledVector{String, UInt32, Vector{UInt32}}) with eltype NamedTuple{(:a, :b), Tuple{Int64, String}}:"
 end)
  (a = 1, b = "string")
  (a = 2, b = "string")
@@ -167,7 +160,7 @@ end)
 ```
 """
 function replace_storage(f, s::StructArray{T}) where T
-    cols = fieldarrays(s)
+    cols = components(s)
     newcols = map(t -> replace_storage(f, t), cols)
     StructArray{T}(newcols)
 end
