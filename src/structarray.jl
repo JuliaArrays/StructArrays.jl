@@ -398,7 +398,7 @@ for op in [:cat, :hcat, :vcat]
     end
 end
 
-Base.copy(s::StructArray) = replace_storage(copy, s)
+Base.copy(s::StructArray{T}) where {T} = StructArray{T}(map(copy, components(s)))
 
 function Base.reshape(s::StructArray{T}, d::Dims) where {T}
     StructArray{T}(map(x -> reshape(x, d), components(s)))
