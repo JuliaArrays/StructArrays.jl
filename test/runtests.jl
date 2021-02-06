@@ -278,6 +278,14 @@ end
     t2[1,1] = 2.0 + im*4.0
     # Test we actually did a copy
     @test t[1,1] == 1.0 + im*4.0
+    # Test that `copy` works, even when the array type changes (e.g. views)
+    s = rand(10, 2)
+    v = StructArray{ComplexF64}((view(s, :, 1), view(s, :, 2)))
+    v2 = copy(v)
+    @test v2.re isa Vector
+    @test v2.im isa Vector
+    @test v2.re == copy(v.re)
+    @test v2.im == copy(v.im)
 end
 
 @testset "undef initializer" begin
