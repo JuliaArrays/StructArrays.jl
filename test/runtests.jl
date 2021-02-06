@@ -278,7 +278,7 @@ end
     t2[1,1] = 2.0 + im*4.0
     # Test we actually did a copy
     @test t[1,1] == 1.0 + im*4.0
-    # Test that `copy` works, even whe
+    # Test that `copy` works, even when the array type changes (e.g. views)
     s = rand(10, 2)
     v = StructArray{ComplexF64}(Tuple(eachcol(s)))
     v2 = copy(v)
