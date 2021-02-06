@@ -280,7 +280,7 @@ end
     @test t[1,1] == 1.0 + im*4.0
     # Test that `copy` works, even when the array type changes (e.g. views)
     s = rand(10, 2)
-    v = StructArray{ComplexF64}(Tuple(eachcol(s)))
+    v = StructArray{ComplexF64}((view(s, :, 1), view(s, :, 2)))
     v2 = copy(v)
     @test v2.re isa Vector
     @test v2.im isa Vector
