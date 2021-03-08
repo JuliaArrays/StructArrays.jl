@@ -2,7 +2,7 @@ const Tup = Union{Tuple, NamedTuple}
 const EmptyTup = Union{Tuple{}, NamedTuple{(), Tuple{}}}
 
 """
-    StructArrayys.component(x, i)
+    StructArrays.component(x, i)
 
 Default to `getfield`. It should be overloaded for custom types with a custom
 schema. See [`StructArrays.staticschema`](@ref).
