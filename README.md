@@ -45,7 +45,7 @@ julia> StructArray([1+im, 3-2im])
 
 ### Collection and initialization
 
-One can also create a `StructArrray` from an iterable of structs without creating an intermediate `Array`:
+One can also create a `StructArray` from an iterable of structs without creating an intermediate `Array`:
 
 ```julia
 julia> StructArray(log(j+2.0*im) for j in 1:10)
