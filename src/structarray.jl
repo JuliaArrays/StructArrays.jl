@@ -325,12 +325,12 @@ to
 map(c -> c[I...], Tuple(cols))
 ```
 """
-get_ith(cols::NamedTuple, I...) = get_ith(Tuple(cols), I...)
-function get_ith(cols::Tuple, I...)
+@inline get_ith(cols::NamedTuple, I...) = get_ith(Tuple(cols), I...)
+@inline function get_ith(cols::Tuple, I...)
     @inbounds r = first(cols)[I...]
     return (r, get_ith(Base.tail(cols), I...)...)
 end
-get_ith(::Tuple{}, I...) = ()
+@inline get_ith(::Tuple{}, I...) = ()
 
 Base.@propagate_inbounds function Base.getindex(x::StructArray{T, <:Any, <:Any, CartesianIndex{N}}, I::Vararg{Int, N}) where {T, N}
     cols = components(x)
