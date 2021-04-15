@@ -358,9 +358,9 @@ end
     @test Tables.getcolumn(Tables.columns(s), :a) == [1]
     @test Tables.getcolumn(Tables.columns(s), 2) == ["test"]
     @test Tables.getcolumn(Tables.columns(s), :b) == ["test"]
-    @test_broken append!(StructArray([1im]), [(re = 111, im = 222)]) ==
+    @test append!(StructArray([1im]), [(re = 111, im = 222)]) ==
         StructArray([1im, 111 + 222im])
-    @test_broken append!(StructArray([1im]), (x for x in [(re = 111, im = 222)])) ==
+    @test append!(StructArray([1im]), (x for x in [(re = 111, im = 222)])) ==
         StructArray([1im, 111 + 222im])
     @test append!(StructArray([1im]), Table(re = [111], im = [222])) ==
         StructArray([1im, 111 + 222im])
