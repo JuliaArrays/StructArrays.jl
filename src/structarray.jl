@@ -368,6 +368,10 @@ Base.@propagate_inbounds function Base.setindex!(s::StructArray{T, <:Any, <:Any,
     s
 end
 
+function Base.push!(s::StructVector{T}, vals) where {T}
+    push!(s, convert(T, vals))
+end
+
 function Base.push!(s::StructVector{T}, vals::T) where T
     foreachfield(push!, s, vals)
     return s

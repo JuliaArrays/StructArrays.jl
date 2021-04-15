@@ -100,3 +100,9 @@ function Base.showarg(io::IO, s::LazyRows{T}, toplevel) where T
     showfields(io, Tuple(components(s)))
     toplevel && print(io, " with eltype LazyRow{", T, "}")
 end
+
+# "materialize" / "evaluate"
+function Base.convert(::Type{T}, c::LazyRow{T}) where {T}
+    columns, index = getfield(c, 1), getfield(c, 2)
+    columns[index...]
+end
