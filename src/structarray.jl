@@ -348,35 +348,33 @@ function Base.view(s::StructArray{T, N, C}, I...) where {T, N, C}
     StructArray{T}(map(v -> view(v, I...), components(s)))
 end
 
-struct Nominal end          # like `Base`
-struct Structural end       # exceptions
-
-
-Behavior(vals) = Nominal()
-Behavior(vals::NamedTuple) = Structural()
-
-_convert(T, vals) = _convert(T, vals, Behavior(vals))
-
 """
 By default, this package behave just as `<:Base.AbstractArray` in terms of `convert`.
 It does not do any "structural" conversion.
 Exceptions include `NamedTuples`.
 """
-_convert(T, vals, ::Nominal) = convert(T, vals)
+struct Structural{T}
+    _::T
+end
 
-function _convert(T, vals, ::Structural)
+maybe_structural(x) = x
+
+# this exception needs to be removed to comply with `AbstractArray`
+maybe_structural(x::NamedTuple) = Structural(x)
+
+function Base.convert(T, vals::Structural)
     # TODO more efficient
     s = StructVector{T}(undef, 0)
-    foreachfield(push!, s, vals)
+    foreachfield(push!, s, vals._)
     only(s)
 end
 
 Base.@propagate_inbounds function Base.setindex!(s::StructArray{T, <:Any, <:Any, CartesianIndex{N}}, vals, I::Vararg{Int, N}) where {T, N}
-    setindex!(s, _convert(T, vals), I...)
+    setindex!(s, convert(T, maybe_structural(vals)), I...)
 end
 
 Base.@propagate_inbounds function Base.setindex!(s::StructArray{T, <:Any, <:Any, Int}, vals, I::Int) where {T}
-    setindex!(s, _convert(T, vals), I)
+    setindex!(s, convert(T, maybe_structural(vals)), I)
 end
 
 Base.@propagate_inbounds function Base.setindex!(s::StructArray{T, <:Any, <:Any, CartesianIndex{N}}, vals::T, I::Vararg{Int, N}) where {T, N}
@@ -392,7 +390,7 @@ Base.@propagate_inbounds function Base.setindex!(s::StructArray{T, <:Any, <:Any,
 end
 
 function Base.push!(s::StructVector{T}, vals) where {T}
-    push!(s, _convert(T, vals))
+    push!(s, convert(T, maybe_structural(vals)))
 end
 
 function Base.push!(s::StructVector{T}, vals::T) where T
