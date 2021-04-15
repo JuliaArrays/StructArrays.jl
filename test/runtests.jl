@@ -850,5 +850,5 @@ end
 
     soa = StructVector{Foo1}(undef, 0)
     append!(soa, StructVector([Foo2(1, 2)]))
-    @test_broken soa[1] == Foo1(-1, 3)
+    @test soa[1] == Foo1(-1, 3)
 end

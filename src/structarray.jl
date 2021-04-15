@@ -377,6 +377,12 @@ function Base.push!(s::StructVector{T}, vals::T) where T
     return s
 end
 
+function Base.append!(s::StructVector, vals::StructVector)
+    # TODO, more efficient implementation
+    foldl(push!, vals; init = s)
+    return s
+end
+
 function Base.append!(s::StructVector{T}, vals::StructVector{T}) where T
     foreachfield(append!, s, vals)
     return s
