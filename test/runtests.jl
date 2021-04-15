@@ -810,6 +810,7 @@ Base.similar(bc::Broadcast.Broadcasted{Broadcast.ArrayStyle{MyArray}}, ::Type{El
     @test_throws MethodError s .+ s
 end
 
+# define two types that are "structurally" equivalent:
 struct Foo1
     x::Int
     y::Int
@@ -820,6 +821,7 @@ struct Foo2
     y::Int
 end
 
+# but not otherwise interchangeable:
 Base.convert(::Type{Foo1}, v::Foo2) = Foo1(-v.x, v.x + v.y)
 # Base.convert(::Type{Foo2}, v::Foo1) = Foo2(-v.x, v.y + v.x)
 
@@ -845,4 +847,8 @@ end
 
     @test check_setindex!_convert(StructArray)
     @test check_push!_convert(StructVector)
+
+    soa = StructVector{Foo1}(undef, 0)
+    append!(soa, StructVector([Foo2(1, 2)]))
+    @test soa[1] == Foo1(-1, 3)
 end
