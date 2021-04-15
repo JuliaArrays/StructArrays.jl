@@ -349,16 +349,16 @@ function Base.view(s::StructArray{T, N, C}, I...) where {T, N, C}
 end
 
 Base.@propagate_inbounds function Base.setindex!(s::StructArray{T}, vals, arg, args...) where {T}
-    setindex!(s, convert(T, vals), arg, args...)
+    _setindex!(s, convert(T, vals), arg, args...)
 end
 
-Base.@propagate_inbounds function Base.setindex!(s::StructArray{T, <:Any, <:Any, CartesianIndex{N}}, vals::T, I::Vararg{Int, N}) where {T, N}
+Base.@propagate_inbounds function _setindex!(s::StructArray{T, <:Any, <:Any, CartesianIndex{N}}, vals::T, I::Vararg{Int, N}) where {T, N}
     @boundscheck checkbounds(s, I...)
     foreachfield((col, val) -> (@inbounds col[I...] = val), s, vals)
     s
 end
 
-Base.@propagate_inbounds function Base.setindex!(s::StructArray{T, <:Any, <:Any, Int}, vals::T, I::Int) where {T}
+Base.@propagate_inbounds function _setindex!(s::StructArray{T, <:Any, <:Any, Int}, vals::T, I::Int) where {T}
     @boundscheck checkbounds(s, I)
     foreachfield((col, val) -> (@inbounds col[I] = val), s, vals)
     s
