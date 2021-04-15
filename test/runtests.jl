@@ -809,3 +809,40 @@ Base.similar(bc::Broadcast.Broadcasted{Broadcast.ArrayStyle{MyArray}}, ::Type{El
     s = StructArray{ComplexF64}((MyArray(rand(2,2)), MyArray(rand(2,2))))
     @test_throws MethodError s .+ s
 end
+
+struct Foo1
+    x::Int
+    y::Int
+end
+
+struct Foo2
+    x::Int
+    y::Int
+end
+
+Base.convert(::Type{Foo1}, v::Foo2) = Foo1(-v.x, v.x + v.y)
+# Base.convert(::Type{Foo2}, v::Foo1) = Foo2(-v.x, v.y + v.x)
+
+# should_be_identity(v::Foo1) = convert(Foo1, convert(Foo2, v))
+# should_be_identity(v::Foo2) = convert(Foo2, convert(Foo1, v))
+
+function check_setindex!_convert(TArray)
+    a = TArray{Foo1}(undef, 1)
+    a[1] = Foo2(1, 2)
+    a[1] == Foo1(-1, 3)
+end
+
+function check_push!_convert(TArray)
+    a = TArray{Foo1}(undef, 0)
+    push!(a, Foo2(1, 2))
+    a[1] == Foo1(-1, 3)
+end
+
+@testset "convert on setindex!/push!" begin
+    # check behavior of `Base.Array`
+    @test check_setindex!_convert(Array)
+    @test check_push!_convert(Vector)
+
+    @test check_setindex!_convert(StructArray)
+    @test check_push!_convert(StructVector)
+end
