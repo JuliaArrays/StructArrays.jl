@@ -14,6 +14,9 @@ include("sort.jl")
 include("lazy.jl")
 include("tables.jl")
 
+import StaticArrays: SArray
+include("staticarrays.jl")
+
 # Implement refarray and refvalue to deal with pooled arrays and weakrefstrings effectively
 import DataAPI: refarray, refvalue
 using DataAPI: defaultarray
