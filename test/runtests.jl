@@ -1,6 +1,7 @@
 using StructArrays
 using StructArrays: staticschema, iscompatible, _promote_typejoin, append!!
 using OffsetArrays: OffsetArray
+using StaticArrays: SVector
 import Tables, PooledArrays, WeakRefStrings
 using TypedTables: Table
 using DataAPI: refarray, refvalue
@@ -808,4 +809,12 @@ Base.similar(bc::Broadcast.Broadcasted{Broadcast.ArrayStyle{MyArray}}, ::Type{El
 
     s = StructArray{ComplexF64}((MyArray(rand(2,2)), MyArray(rand(2,2))))
     @test_throws MethodError s .+ s
+end
+
+@testset "staticarrays" begin
+    x = StructArray([SVector{2}(Float64[i;i+1]) for i = 1:2])
+    y = StructArray([SVector{2}(Float64[i+1;i+2]) for i = 1:2])
+    StructArrays.components(x) # ([1.0, 2.0], [2.0, 3.0])
+    @test StructArrays.components(x) == ([1.0,2.0], [2.0,3.0])
+    @test x .+ y == StructArray([SVector{2}(Float64[2*i+1;2*i+3]) for i = 1:2])
 end
