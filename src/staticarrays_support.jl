@@ -1,7 +1,10 @@
-import StaticArrays: SArray
+import StaticArrays: StaticArray, tuple_prod
 
-# These definitions allow `StructArray` and `StaticArrays.SArray` to play nicely together.
-StructArrays.staticschema(::Type{SArray{S,T,N,L}}) where {S,T,N,L} = NTuple{L,T}
-StructArrays.createinstance(::Type{SArray{S,T,N,L}}, args...) where {S,T,N,L} =
-    SArray{S,T,N,L}(args...)
-StructArrays.component(s::SArray, i) = getindex(s, i)
+@generated function StructArrays.staticschema(::Type{s}) where {s <: StaticArray{S,T,N}} where {S,T,N}
+    return quote
+        Base.@_inline_meta
+        return NTuple{$(tuple_prod(S)),T}
+    end
+end
+StructArrays.createinstance(::Type{T}, args...) where {T<:StaticArray} = T(args...)
+StructArrays.component(s::T, i) where {T <: StaticArray} = getindex(s, i)
