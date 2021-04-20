@@ -1,6 +1,6 @@
 import StaticArrays: StaticArray, tuple_prod
 
-@generated function StructArrays.staticschema(::Type{s}) where {s <: StaticArray{S,T,N}} where {S,T,N}
+@generated function StructArrays.staticschema(::Type{<:StaticArray{S, T}}) where {S, T}
     return quote
         Base.@_inline_meta
         return NTuple{$(tuple_prod(S)),T}
