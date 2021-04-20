@@ -814,15 +814,16 @@ end
 @testset "staticarrays" begin
     # test broadcast + components for vectors
     for StaticVectorType = [SVector, MVector, SizedVector]
-        x = StructArray([StaticVectorType{2}(Float64[i;i+1]) for i = 1:2])
-        y = StructArray([StaticVectorType{2}(Float64[i+1;i+2]) for i = 1:2])
+        x = @inferred StructArray([StaticVectorType{2}(Float64[i;i+1]) for i = 1:2])
+        y = @inferred StructArray([StaticVectorType{2}(Float64[i+1;i+2]) for i = 1:2])
         @test StructArrays.components(x) == ([1.0,2.0], [2.0,3.0])
         @test x .+ y == StructArray([StaticVectorType{2}(Float64[2*i+1;2*i+3]) for i = 1:2])
+        @inferred 
     end
     # test broadcast + components for general arrays
     for StaticArrayType = [SArray, MArray, SizedArray]
-        x = StructArray([StaticArrayType{Tuple{1,2}}(ones(1,2) .+ i) for i = 0:1])
-        y = StructArray([StaticArrayType{Tuple{1,2}}(2*ones(1,2) .+ i) for i = 0:1])
+        x = @inferred StructArray([StaticArrayType{Tuple{1,2}}(ones(1,2) .+ i) for i = 0:1])
+        y = @inferred StructArray([StaticArrayType{Tuple{1,2}}(2*ones(1,2) .+ i) for i = 0:1])
         @test StructArrays.components(x) == ([1., 2.], [1., 2.])
         @test x .+ y == StructArray([StaticArrayType{Tuple{1,2}}(3*ones(1,2) .+ 2*i) for i = 0:1])
     end
