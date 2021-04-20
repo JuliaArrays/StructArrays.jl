@@ -7,4 +7,4 @@ import StaticArrays: StaticArray, tuple_prod
     end
 end
 StructArrays.createinstance(::Type{T}, args...) where {T<:StaticArray} = T(args...)
-StructArrays.component(s::T, i) where {T <: StaticArray} = getindex(s, i)
+StructArrays.component(s::StaticArray, i) = getindex(s, i)
