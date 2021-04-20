@@ -6,5 +6,5 @@ import StaticArrays: StaticArray, tuple_prod
         return NTuple{$(tuple_prod(S)),T}
     end
 end
-StructArrays.createinstance(::Type{T}, args...) where {T<:StaticArray} = T(args...)
+StructArrays.createinstance(::Type{T}, args...) where {T<:StaticArray} = T(args)
 StructArrays.component(s::StaticArray, i) = getindex(s, i)
