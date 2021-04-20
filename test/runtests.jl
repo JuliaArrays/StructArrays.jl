@@ -818,7 +818,6 @@ end
         y = @inferred StructArray([StaticVectorType{2}(Float64[i+1;i+2]) for i = 1:2])
         @test StructArrays.components(x) == ([1.0,2.0], [2.0,3.0])
         @test x .+ y == StructArray([StaticVectorType{2}(Float64[2*i+1;2*i+3]) for i = 1:2])
-        @inferred 
     end
     # test broadcast + components for general arrays
     for StaticArrayType = [SArray, MArray, SizedArray]
