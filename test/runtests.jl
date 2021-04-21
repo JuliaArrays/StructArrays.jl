@@ -812,6 +812,12 @@ Base.similar(bc::Broadcast.Broadcasted{Broadcast.ArrayStyle{MyArray}}, ::Type{El
 end
 
 @testset "staticarrays" begin
+
+    # test that staticschema returns the right things
+    for StaticVectorType = [SVector, MVector, SizedVector]    
+        @test StructArrays.staticschema(StaticVectorType{2,Float64}) == Tuple{Float64,Float64}
+    end
+
     # test broadcast + components for vectors
     for StaticVectorType = [SVector, MVector, SizedVector]
         x = @inferred StructArray([StaticVectorType{2}(Float64[i;i+1]) for i = 1:2])
