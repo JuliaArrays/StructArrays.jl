@@ -10,10 +10,17 @@ makedocs(
     pages = [
             "Overview"=>"overview.md",
             "Example usage"=>"examples.md",
+            "Some counterintuitive behaviors"=>"counterintuitive.md",
             "Advanced techniques"=>"advanced.md",
             "Index"=>"index.md",
             ]
 )
+
+# TODO list : 
+# document convert on setindex? 
+# LazyRow efficiency and @inbounds? https://github.com/JuliaArrays/StructArrays.jl/issues/112
+#  
+
 
 # Documenter can also automatically deploy documentation to gh-pages.
 # See "Hosting Documentation" and deploydocs() in the Documenter manual
