@@ -1,8 +1,8 @@
 # Overview of StructArrays.jl
 
-This package introduces the type `StructArray` which is an `AbstractArray` whose elements are `struct` (for example `NamedTuples`,  or `ComplexF64`, or a custom user defined `struct`). While a `StructArray` iterates `structs`, the layout is column based (meaning each field of the `struct` is stored in a separate `Array`). 
+This package introduces the type `StructArray` which is an `AbstractArray` whose elements are `struct` (for example `NamedTuples`,  or `ComplexF64`, or a custom user defined `struct`). While a `StructArray` iterates `structs`, the layout is column based (meaning each field of the `struct` is stored in a separate `Array`, and `struct` entries of a StructArray are constructed on-the-fly). 
 
-`Base.getproperty` or the dot syntax can be used to access columns, whereas rows can be accessed with `getindex`.
+`Base.getproperty` or the dot syntax can be used to access columns, whereas rows can be accessed with `getindex`. 
 
 The package was largely inspired by the `Columns` type in [IndexedTables](https://github.com/JuliaComputing/IndexedTables.jl) which it now replaces.
 
