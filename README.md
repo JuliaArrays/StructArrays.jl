@@ -43,7 +43,7 @@ julia> StructArray([1+im, 3-2im])
  3 - 2im
 ```
 
-### Collection and initialization
+## Collection and initialization
 
 One can also create a `StructArray` from an iterable of structs without creating an intermediate `Array`:
 
@@ -76,7 +76,7 @@ julia> rand!(s)
   0.92407+0.929336im  0.267358+0.804478im
 ```
 
-### Using custom array types
+## Using custom array types
 
 StructArrays supports using custom array types. It is always possible to pass field arrays of a custom type. The "custom array of structs to struct of custom arrays" transformation will use the `similar` method of the custom array type. This can be useful when working on the GPU for example:
 
@@ -153,7 +153,7 @@ julia> push!(t, (a = 3, b = "z"))
  (a = 3, b = "z")
 ```
 
-### Lazy row iteration
+## Lazy row iteration
 
 StructArrays also provides a `LazyRow` wrapper for lazy row iteration. `LazyRow(t, i)` does not materialize the i-th row but returns a lazy wrapper around it on which `getproperty` does the correct thing. This is useful when the row has many fields only some of which are necessary. It also allows changing columns in place.
 
