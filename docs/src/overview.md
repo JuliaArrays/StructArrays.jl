@@ -8,6 +8,37 @@ The package was largely inspired by the `Columns` type in [IndexedTables](https:
 
 ## Collection and initialization
 
+One can create a `StructArray` by providing the struct type and a tuple or NamedTuple of field arrays:
+```julia
+julia> struct Foo{T}
+       a::T
+       b::T
+       end
+
+julia> x = StructArray{Foo}((rand(2,2), rand(2,2)))
+2×2 StructArray(::Matrix{Float64}, ::Matrix{Float64}) with eltype Foo:
+ Foo{Float64}(0.702413, 0.416194)  Foo{Float64}(0.520032, 0.0856553)
+ Foo{Float64}(0.701297, 0.977394)  Foo{Float64}(0.451654, 0.258264)
+
+julia> x = StructArray{Foo}((a=rand(2,2), b=rand(2,2)))
+2×2 StructArray(::Matrix{Float64}, ::Matrix{Float64}) with eltype Foo:
+ Foo{Float64}(0.702413, 0.416194)  Foo{Float64}(0.520032, 0.0856553)
+ Foo{Float64}(0.701297, 0.977394)  Foo{Float64}(0.451654, 0.258264) 
+```
+If a struct is not specified, a StructArray of tuple or NamedTuple type will be created
+```julia 
+julia> x = StructArray((rand(2,2), rand(2,2)))
+2×2 StructArray(::Matrix{Float64}, ::Matrix{Float64}) with eltype Tuple{Float64, Float64}:
+ (0.754912, 0.803434)  (0.341105, 0.904933)
+ (0.348966, 0.550496)  (0.199761, 0.511388)
+
+julia> x = StructArray((x = rand(2,2), y = rand(2,2)))
+2×2 StructArray(::Matrix{Float64}, ::Matrix{Float64}) with eltype NamedTuple{(:x, :y), Tuple{Float64, Float64}}:
+ (x = 0.486, y = 0.00588886)   (x = 0.97401, y = 0.834173)
+ (x = 0.394493, y = 0.192362)  (x = 0.107698, y = 0.694548)
+```
+
+
 One can also create a `StructArray` from an iterable of structs without creating an intermediate `Array`:
 
 ```julia
