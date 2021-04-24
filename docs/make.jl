@@ -8,11 +8,11 @@ makedocs(
     format = Documenter.HTML(prettyurls = get(ENV, "CI", nothing) == "true"),
     modules = [StructArrays],
     pages = [
-            "Overview"=>"overview.md",
+            "Overview"=>"index.md",
             "Example usage"=>"examples.md",
             "Some counterintuitive behaviors"=>"counterintuitive.md",
             "Advanced techniques"=>"advanced.md",
-            "Index"=>"index.md",
+            "Index"=>"reference.md",
             ]
 )
 
