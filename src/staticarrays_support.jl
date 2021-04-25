@@ -5,7 +5,7 @@ import StaticArrays: StaticArray, tuple_prod
 
 The `staticschema` of a `StaticArray` element type is the `staticschema` of the underlying `Tuple`.
 ```julia
-julia> StructArrays.staticschema(SVector{2,Float64})
+julia> StructArrays.staticschema(SVector{2, Float64})
 Tuple{Float64, Float64}
 ```
 """
