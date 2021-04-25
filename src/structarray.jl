@@ -344,7 +344,7 @@ Base.@propagate_inbounds function Base.getindex(x::StructArray{T, <:Any, <:Any, 
     return createinstance(T, get_ith(cols, I)...)
 end
 
-function Base.view(s::StructArray{T, N, C}, I...) where {T, N, C}
+@inline function Base.view(s::StructArray{T, N, C}, I...) where {T, N, C}
     StructArray{T}(map(v -> view(v, I...), components(s)))
 end
 
