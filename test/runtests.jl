@@ -1,6 +1,7 @@
 using StructArrays
 using StructArrays: staticschema, iscompatible, _promote_typejoin, append!!
 using OffsetArrays: OffsetArray
+using StaticArrays
 import Tables, PooledArrays, WeakRefStrings
 using TypedTables: Table
 using DataAPI: refarray, refvalue
@@ -808,4 +809,27 @@ Base.similar(bc::Broadcast.Broadcasted{Broadcast.ArrayStyle{MyArray}}, ::Type{El
 
     s = StructArray{ComplexF64}((MyArray(rand(2,2)), MyArray(rand(2,2))))
     @test_throws MethodError s .+ s
+end
+
+@testset "staticarrays" begin
+
+    # test that staticschema returns the right things
+    for StaticVectorType = [SVector, MVector, SizedVector]    
+        @test StructArrays.staticschema(StaticVectorType{2,Float64}) == Tuple{Float64,Float64}
+    end
+
+    # test broadcast + components for vectors
+    for StaticVectorType = [SVector, MVector, SizedVector]
+        x = @inferred StructArray([StaticVectorType{2}(Float64[i;i+1]) for i = 1:2])
+        y = @inferred StructArray([StaticVectorType{2}(Float64[i+1;i+2]) for i = 1:2])
+        @test StructArrays.components(x) == ([1.0,2.0], [2.0,3.0])
+        @test x .+ y == StructArray([StaticVectorType{2}(Float64[2*i+1;2*i+3]) for i = 1:2])
+    end
+    # test broadcast + components for general arrays
+    for StaticArrayType = [SArray, MArray, SizedArray]
+        x = @inferred StructArray([StaticArrayType{Tuple{1,2}}(ones(1,2) .+ i) for i = 0:1])
+        y = @inferred StructArray([StaticArrayType{Tuple{1,2}}(2*ones(1,2) .+ i) for i = 0:1])
+        @test StructArrays.components(x) == ([1., 2.], [1., 2.])
+        @test x .+ y == StructArray([StaticArrayType{Tuple{1,2}}(3*ones(1,2) .+ 2*i) for i = 0:1])
+    end
 end

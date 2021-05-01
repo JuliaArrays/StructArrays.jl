@@ -13,6 +13,7 @@ include("collect.jl")
 include("sort.jl")
 include("lazy.jl")
 include("tables.jl")
+include("staticarrays_support.jl")
 
 # Implement refarray and refvalue to deal with pooled arrays and weakrefstrings effectively
 import DataAPI: refarray, refvalue
