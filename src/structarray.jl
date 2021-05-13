@@ -365,6 +365,12 @@ function Base.push!(s::StructVector, vals)
     return s
 end
 
+function Base.pop!(s::StructVector)
+    out = s[end]
+    foreachfield(pop!, s)
+    return out
+end
+
 function Base.append!(s::StructVector, vals::StructVector)
     foreachfield(append!, s, vals)
     return s
