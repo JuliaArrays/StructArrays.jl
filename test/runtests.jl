@@ -222,7 +222,7 @@ end
     push!(t, (1, 2))
     @test getproperty(t, 1) == [2, 1]
     @test getproperty(t, 2) == [3.0, 2.0]
-    @test pop!(t) == (2,3.0)
+    @test pop!(t) == (1,2.0)
     @test getproperty(t, 1) == [2]
     @test getproperty(t, 2) == [3.0]
 end
