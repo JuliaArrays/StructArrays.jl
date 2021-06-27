@@ -1,5 +1,15 @@
 # NEWS
 
+## Version 0.6.0
+
+### Breaking
+
+- Static arrays are automatically unwrapped when creating a `StructArray{<:StaticArray}` [#186](https://github.com/JuliaArrays/StructArrays.jl/pull/186)
+
+### New features
+
+- `pop!` is now supported on `StructVector`s [#190](https://github.com/JuliaArrays/StructArrays.jl/pull/190)
+
 ## Version 0.5.0
 
 ### Breaking
