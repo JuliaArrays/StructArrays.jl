@@ -32,6 +32,17 @@ function index_type(::Type{T}) where {T<:Tuple}
     S, U = tuple_type_head(T), tuple_type_tail(T)
     IndexStyle(S) isa IndexCartesian ? CartesianIndex{ndims(S)} : index_type(U)
 end
+# Julia v1.7.0-beta3 doesn't seem to specialize `index_type` as defined above
+# for tuple types with "many" elements (three or four, depending on the concrete
+# types). However, we can help the compiler for homogeneous types by defining
+# the specialization below.
+function index_type(::Type{<:NTuple{N, S}}) where {N, S}
+    if IndexStyle(S) isa IndexCartesian
+        return CartesianIndex{ndims(S)}
+    else
+        return Int
+    end
+end
 
 index_type(::Type{StructArray{T, N, C, I}}) where {T, N, C, I} = I
 

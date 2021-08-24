@@ -70,6 +70,15 @@ end
     @test s[100] == s[10, 10] == (a=1, b=1)
     s[10, 10] = (a=0, b=0)
     @test s[100] == s[10, 10] == (a=0, b=0)
+
+    # inference for "many" types, both for linear ad Cartesian indexing
+    @inferred StructArrays.index_type(NTuple{2, Vector{Float64}})
+    @inferred StructArrays.index_type(NTuple{3, Matrix{Float64}})
+    @inferred StructArrays.index_type(NTuple{4, Array{Float64, 3}})
+
+    @inferred StructArrays.index_type(NTuple{2, SubArray{Float64, 1, Array{Float64, 2}, Tuple{Base.Slice{Base.OneTo{Int64}}, Int64}, true}})
+    @inferred StructArrays.index_type(NTuple{3, SubArray{Float64, 1, Array{Float64, 2}, Tuple{Base.Slice{Base.OneTo{Int64}}, Int64}, true}})
+    @inferred StructArrays.index_type(NTuple{4, SubArray{Float64, 1, Array{Float64, 2}, Tuple{Base.Slice{Base.OneTo{Int64}}, Int64}, true}})
 end
 
 @testset "replace_storage" begin
@@ -818,9 +827,8 @@ Base.similar(bc::Broadcast.Broadcasted{Broadcast.ArrayStyle{MyArray}}, ::Type{El
 end
 
 @testset "staticarrays" begin
-
     # test that staticschema returns the right things
-    for StaticVectorType = [SVector, MVector, SizedVector]    
+    for StaticVectorType = [SVector, MVector, SizedVector]
         @test StructArrays.staticschema(StaticVectorType{2,Float64}) == Tuple{Float64,Float64}
     end
 
@@ -837,5 +845,12 @@ end
         y = @inferred StructArray([StaticArrayType{Tuple{1,2}}(2*ones(1,2) .+ i) for i = 0:1])
         @test StructArrays.components(x) == ([1., 2.], [1., 2.])
         @test x .+ y == StructArray([StaticArrayType{Tuple{1,2}}(3*ones(1,2) .+ 2*i) for i = 0:1])
+    end
+
+    # test type stability of creating views with "many" homogeneous components
+    for n in 1:10
+        u = StructArray(randn(SVector{n, Float64}) for _ in 1:10, _ in 1:5)
+        @inferred view(u, :, 1)
+        @inferred view(u, 1, :)
     end
 end
