@@ -87,7 +87,7 @@ end
 @generated foreachfield_gen(::S, f, xs::Vararg{Any, L}) where {S<:StructArray, L} =
     _foreachfield(array_names_types(S), L)
 
-foreachfield(f, x::StructArray, xs...) = foreachfield_gen(x, f, x, xs...)
+foreachfield(f::F, x::StructArray, xs::Vararg{Any, N}) where {F, N} = foreachfield_gen(x, f, x, xs...)
 
 """
     StructArrays.iscompatible(::Type{S}, ::Type{V}) where {S, V<:AbstractArray}
@@ -149,7 +149,7 @@ julia> s = StructArray(a=1:3, b = fill("string", 3));
 julia> s_pooled = StructArrays.replace_storage(s) do v
            isbitstype(eltype(v)) ? v : convert(PooledArray, v)
        end
-$(if VERSION < v"1.6-" 
+$(if VERSION < v"1.6-"
     "3-element StructArray(::UnitRange{Int64}, ::PooledArray{String,UInt32,1,Array{UInt32,1}}) with eltype NamedTuple{(:a, :b),Tuple{Int64,String}}:"
 else
         "3-element StructArray(::UnitRange{Int64}, ::PooledVector{String, UInt32, Vector{UInt32}}) with eltype NamedTuple{(:a, :b), Tuple{Int64, String}}:"

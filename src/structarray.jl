@@ -112,7 +112,7 @@ StructVector(args...; kwargs...) = StructArray(args...; kwargs...)
 """
     StructArray{T}(A::AbstractArray; dims, unwrap=FT->FT!=eltype(A))
 
-Construct a `StructArray` from slices of `A` along `dims`. 
+Construct a `StructArray` from slices of `A` along `dims`.
 
 The `unwrap` keyword argument is a function that determines whether to
 recursively convert fields of type `FT` to `StructArray`s.
