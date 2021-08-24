@@ -112,7 +112,7 @@ StructVector(args...; kwargs...) = StructArray(args...; kwargs...)
 """
     StructArray{T}(A::AbstractArray; dims, unwrap=FT->FT!=eltype(A))
 
-Construct a `StructArray` from slices of `A` along `dims`. 
+Construct a `StructArray` from slices of `A` along `dims`.
 
 The `unwrap` keyword argument is a function that determines whether to
 recursively convert fields of type `FT` to `StructArray`s.
@@ -441,3 +441,6 @@ BroadcastStyle(::Type{SA}) where SA<:StructArray = StructArrayStyle{typeof(cst(S
 
 Base.similar(bc::Broadcasted{StructArrayStyle{S}}, ::Type{ElType}) where {S<:DefaultArrayStyle,N,ElType} =
     isstructtype(ElType) ? similar(StructArray{ElType}, axes(bc)) : similar(Array{ElType}, axes(bc))
+
+# for aliasing analysis during broadcast
+Base.dataids(u::StructArray) = map(Base.dataids, values(components(u)))
