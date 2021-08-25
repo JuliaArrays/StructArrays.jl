@@ -130,6 +130,35 @@ julia> replace_storage(CuArray, s)
  2.0 - 1.0im
 ```
 
+### Get the actual memory layout
+
+Using `reinterpret` on `StructArray` won't give you the real memory order as the reinterpretation works on an element-wise sense:
+
+```julia
+julia> s = StructArray([1.0+im, 2.0-im])
+2-element StructArray(::Vector{Float64}, ::Vector{Float64}) with eltype ComplexF64:
+ 1.0 + 1.0im
+ 2.0 - 1.0im
+
+julia> reinterpret(Float64, s) # In memory this is actually stored in order [1.0, 2.0, 1.0, -1.0], assuming the tuples are contiguous.
+4-element reinterpret(Float64, StructArray(::Vector{Float64}, ::Vector{Float64})):
+  1.0
+  1.0
+  2.0
+ -1.0
+```
+
+If you already have `StructArray` created, the easiest way is to directly stack the components in memory order:
+
+```julia
+julia> using StackViews # lazily cat/stack arrays in a new tailing dimension
+
+julia> StackView(StructArrays.components(s)...)
+2×2 StackView{Float64, 2, 2, Tuple{Vector{Float64}, Vector{Float64}}}:
+ 1.0   1.0
+ 2.0  -1.0
+```
+
 ## Example usage to store a data table
 
 ```julia
