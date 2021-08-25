@@ -443,4 +443,4 @@ Base.similar(bc::Broadcasted{StructArrayStyle{S}}, ::Type{ElType}) where {S<:Def
     isstructtype(ElType) ? similar(StructArray{ElType}, axes(bc)) : similar(Array{ElType}, axes(bc))
 
 # for aliasing analysis during broadcast
-Base.dataids(u::StructArray) = map(Base.dataids, values(components(u)))
+Base.dataids(u::StructArray) = mapreduce(Base.dataids, (a, b) -> (a..., b...), values(components(u)), init=())
