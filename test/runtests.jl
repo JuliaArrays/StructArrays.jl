@@ -813,6 +813,9 @@ Base.similar(bc::Broadcast.Broadcasted{Broadcast.ArrayStyle{MyArray}}, ::Type{El
     @test isa(@inferred(s .+ r), StructArray)
     @test s .+ r == StructArray{ComplexF64}((s.re .+ r, s.im))
 
+    # used inside of broadcast but we also test it here explicitly
+    @test isa(@inferred(Base.dataids(s)), NTuple{N, UInt} where {N})
+
     s = StructArray{ComplexF64}((MyArray(rand(2,2)), MyArray(rand(2,2))))
     @test_throws MethodError s .+ s
 end
@@ -820,7 +823,7 @@ end
 @testset "staticarrays" begin
 
     # test that staticschema returns the right things
-    for StaticVectorType = [SVector, MVector, SizedVector]    
+    for StaticVectorType = [SVector, MVector, SizedVector]
         @test StructArrays.staticschema(StaticVectorType{2,Float64}) == Tuple{Float64,Float64}
     end
 
