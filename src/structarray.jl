@@ -452,3 +452,6 @@ BroadcastStyle(::Type{SA}) where SA<:StructArray = StructArrayStyle{typeof(cst(S
 
 Base.similar(bc::Broadcasted{StructArrayStyle{S}}, ::Type{ElType}) where {S<:DefaultArrayStyle,N,ElType} =
     isstructtype(ElType) ? similar(StructArray{ElType}, axes(bc)) : similar(Array{ElType}, axes(bc))
+
+# for aliasing analysis during broadcast
+Base.dataids(u::StructArray) = mapreduce(Base.dataids, (a, b) -> (a..., b...), values(components(u)), init=())
