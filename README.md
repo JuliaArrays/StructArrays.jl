@@ -387,3 +387,25 @@ julia> StackView(StructArrays.components(s)...)
  1.0   3.0
  2.0  -1.0
 ```
+
+StructArrays also provides a way to reconstruct from a given memory block via `dims` keyword:
+
+```julia
+julia> v = Float64[1 3; 2 -1]
+2×2 Matrix{Float64}:
+ 1.0   3.0
+ 2.0  -1.0
+
+julia> StructArray{ComplexF64}(v, dims=1) # the actual memory is `([1.0, 3.0], [2.0, -1.0])`
+2-element StructArray(view(::Matrix{Float64}, 1, :), view(::Matrix{Float64}, 2, :)) with eltype ComplexF64:
+ 1.0 + 2.0im
+ 3.0 - 1.0im
+
+julia> s = StructArray{ComplexF64}(v, dims=2) # the actual memory is `([1.0, 2.0], [3.0, -1.0])`
+2-element StructArray(view(::Matrix{Float64}, :, 1), view(::Matrix{Float64}, :, 2)) with eltype ComplexF64:
+ 1.0 + 3.0im
+ 2.0 - 1.0im
+```
+
+This, however, depends on the underlying data layout and how you interpret the memory block. You
+should use this with caution because otherwise it might give you unexpected results.
