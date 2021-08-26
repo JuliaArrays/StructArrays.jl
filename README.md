@@ -388,7 +388,8 @@ julia> StackView(StructArrays.components(s)...)
  2.0  -1.0
 ```
 
-StructArrays also provides a way to reconstruct from a given memory block via `dims` keyword:
+StructArrays also provides `dims` keyword to reinterpret a given memory block without creating new
+memory:
 
 ```julia
 julia> v = Float64[1 3; 2 -1]
@@ -396,17 +397,27 @@ julia> v = Float64[1 3; 2 -1]
  1.0   3.0
  2.0  -1.0
 
-julia> StructArray{ComplexF64}(v, dims=1) # the actual memory is `([1.0, 3.0], [2.0, -1.0])`
+julia> s = StructArray{ComplexF64}(v, dims=1)
 2-element StructArray(view(::Matrix{Float64}, 1, :), view(::Matrix{Float64}, 2, :)) with eltype ComplexF64:
  1.0 + 2.0im
  3.0 - 1.0im
 
-julia> s = StructArray{ComplexF64}(v, dims=2) # the actual memory is `([1.0, 2.0], [3.0, -1.0])`
+julia> s = StructArray{ComplexF64}(v, dims=2)
 2-element StructArray(view(::Matrix{Float64}, :, 1), view(::Matrix{Float64}, :, 2)) with eltype ComplexF64:
  1.0 + 3.0im
  2.0 - 1.0im
+
+julia> s[1] = 0+0im; s # `s` is a reinterpretation view and doesn't copy memory
+2-element StructArray(view(::Matrix{Float64}, :, 1), view(::Matrix{Float64}, :, 2)) with eltype ComplexF64:
+ 0.0 + 0.0im
+ 2.0 - 1.0im
+
+julia> v # thus `v` will be modified as well
+2×2 Matrix{Float64}:
+ 0.0   0.0
+ 2.0  -1.0
 ```
 
-This, however, depends on the underlying data layout and how you interpret the memory block. You
-should use this with caution because otherwise it might give you unexpected results. To get the
-"same" memory layout with the raw data `v`, you can always pass `dims=ndims(v)`.
+For column-major arrays, reinterpreting along the last dimension (`dims=ndims(v)`) makes every
+component of `s` reflects a contiguous memory and thus will be more efficient. In previous example,
+when `dims=2` we have `s.re == [1.0, 2.0]`, which reflects the first column of `v`.
