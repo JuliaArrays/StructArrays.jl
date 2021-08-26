@@ -408,4 +408,5 @@ julia> s = StructArray{ComplexF64}(v, dims=2) # the actual memory is `([1.0, 2.0
 ```
 
 This, however, depends on the underlying data layout and how you interpret the memory block. You
-should use this with caution because otherwise it might give you unexpected results.
+should use this with caution because otherwise it might give you unexpected results. To get the
+"same" memory layout with the raw data `v`, you can always pass `dims=ndims(v)`.
