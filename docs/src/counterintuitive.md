@@ -60,4 +60,4 @@ Because setting `x[1] .= 1` creates a `Bar` struct first, broadcasted assignment
 
 ## Mutable struct types
 
-Each of these counterintuitive behaviors occur when using StructArrays with mutable elements. However, since a StructArray is mutable even if its entries are immutable, a StructArray with immutable elements will in many cases behave identically to (but be more efficient than) a StructArray with mutable elements. Thus, it is recommended to use immutable structs with StructArray whenever possible. 
+Each of these counterintuitive behaviors occur when using StructArrays with mutable elements. However, since the component arrays of a StructArray are generally mutable even if its entries are immutable, a StructArray with immutable elements will in many cases behave identically to (but be more efficient than) a StructArray with mutable elements. Thus, it is recommended to use immutable structs with StructArray whenever possible. 

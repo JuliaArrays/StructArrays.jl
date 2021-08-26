@@ -25,7 +25,7 @@ julia> x = StructArray{Foo}((a=rand(2,2), b=rand(2,2)))
  Foo{Float64}(0.702413, 0.416194)  Foo{Float64}(0.520032, 0.0856553)
  Foo{Float64}(0.701297, 0.977394)  Foo{Float64}(0.451654, 0.258264) 
 ```
-If a struct is not specified, a StructArray of tuple or NamedTuple type will be created
+If a struct is not specified, a StructArray of Tuple or NamedTuple type will be created
 ```julia 
 julia> x = StructArray((rand(2,2), rand(2,2)))
 2×2 StructArray(::Matrix{Float64}, ::Matrix{Float64}) with eltype Tuple{Float64, Float64}:
