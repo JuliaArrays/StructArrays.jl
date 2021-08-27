@@ -24,12 +24,12 @@ julia> x # remains unchanged
 ```
 The assignment `x[1].a = 10` first calls `getindex(x,1)`, then sets property `a` of the accessed element. However, since StructArrays constructs `Foo(x.a[1],x.b[1])` on the fly when when accessing `x[1]`, setting `x[1].a = 10` modifies the materialized struct rather than the StructArray `x`. 
 
-Note that one can modify a field of a StructArray entry via `x.a[1] = 10` (the order of `getproperty` and `getindex` matters). As an added benefit, this does not require that the struct `Foo` is mutable, as it modifies the underlying component array `x.a` directly.
+Note that one can modify a field of a StructArray entry via `x.a[1] = 10` (the order of `.` syntax and indexing syntax matters). As an added benefit, this does not require that the struct `Foo` is mutable, as it modifies the underlying component array `x.a` directly.
 
 For mutable structs, it is possible to write code that works for both regular `Array`s and `StructArray`s with the following trick:
 ```julia
- x[1] = x[1].a = 10
- ```
+x[1] = x[1].a = 10
+```
  
 `x[1].a = 10` creates a new `Foo` element, modifies the field `a`, then returns the modified struct. Assigning this to `x[1]` then unpacks `a` and `b` from the modified struct and assigns entries of the component arrays `x.a[1] = a`, `x.b[1] = b`.
 
