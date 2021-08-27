@@ -419,5 +419,5 @@ julia> v # thus `v` will be modified as well
 ```
 
 For column-major arrays, reinterpreting along the last dimension (`dims=ndims(v)`) makes every
-component of `s` reflects a contiguous memory and thus will be more efficient. In previous example,
+component of `s` a view of contiguous memory and thus is more efficient. In the previous example,
 when `dims=2` we have `s.re == [1.0, 2.0]`, which reflects the first column of `v`.
