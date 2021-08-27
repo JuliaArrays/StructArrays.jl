@@ -342,3 +342,82 @@ julia> s
  Foo(44, "d")
  Foo(55, "e")
 ```
+
+## Advanced: StructArrays versus struct-of-arrays layout in higher-dimensional array
+
+Regular arrays of structs can sometimes be reinterpreted as arrays of primitive values with an added
+initial dimension.
+
+```julia
+julia> v = [1.0+3im, 2.0-im]
+2-element Vector{ComplexF64}:
+ 1.0 + 3.0im
+ 2.0 - 1.0im
+
+julia> reinterpret(reshape, Float64, v)
+2×2 reinterpret(reshape, Float64, ::Vector{ComplexF64}) with eltype Float64:
+ 1.0   2.0
+ 3.0  -1.0
+```
+
+However, the situation is more complex for the `StructArray` format, where `s = StructArray(v)` is
+stored as two separate `Vector{Float64}`. `reinterpret` on `StructArray` returns an
+"array-of-structs" layout, as the reinterpretation works element-wise:
+
+```julia
+julia> s = StructArray([1.0+3im, 2.0-im])
+2-element StructArray(::Vector{Float64}, ::Vector{Float64}) with eltype ComplexF64:
+ 1.0 + 1.0im
+ 2.0 - 1.0im
+
+julia> reinterpret(reshape, Float64, s) # The actual memory is `([1.0, 2.0], [3.0, -1.0])`
+2×2 reinterpret(reshape, Float64, StructArray(::Vector{Float64}, ::Vector{Float64})) with eltype Float64:
+ 1.0   2.0
+ 3.0  -1.0
+```
+
+If you already have a `StructArray`, the easiest way is to get the higher-dimensional
+"struct-of-arrays" layout is to directly stack the components in memory order:
+
+```julia
+julia> using StackViews # lazily cat/stack arrays in a new tailing dimension
+
+julia> StackView(StructArrays.components(s)...)
+2×2 StackView{Float64, 2, 2, Tuple{Vector{Float64}, Vector{Float64}}}:
+ 1.0   3.0
+ 2.0  -1.0
+```
+
+StructArrays also provides `dims` keyword to reinterpret a given memory block without creating new
+memory:
+
+```julia
+julia> v = Float64[1 3; 2 -1]
+2×2 Matrix{Float64}:
+ 1.0   3.0
+ 2.0  -1.0
+
+julia> s = StructArray{ComplexF64}(v, dims=1)
+2-element StructArray(view(::Matrix{Float64}, 1, :), view(::Matrix{Float64}, 2, :)) with eltype ComplexF64:
+ 1.0 + 2.0im
+ 3.0 - 1.0im
+
+julia> s = StructArray{ComplexF64}(v, dims=2)
+2-element StructArray(view(::Matrix{Float64}, :, 1), view(::Matrix{Float64}, :, 2)) with eltype ComplexF64:
+ 1.0 + 3.0im
+ 2.0 - 1.0im
+
+julia> s[1] = 0+0im; s # `s` is a reinterpretation view and doesn't copy memory
+2-element StructArray(view(::Matrix{Float64}, :, 1), view(::Matrix{Float64}, :, 2)) with eltype ComplexF64:
+ 0.0 + 0.0im
+ 2.0 - 1.0im
+
+julia> v # thus `v` will be modified as well
+2×2 Matrix{Float64}:
+ 0.0   0.0
+ 2.0  -1.0
+```
+
+For column-major arrays, reinterpreting along the last dimension (`dims=ndims(v)`) makes every
+component of `s` a view of contiguous memory and thus is more efficient. In the previous example,
+when `dims=2` we have `s.re == [1.0, 2.0]`, which reflects the first column of `v`.
