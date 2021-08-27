@@ -6,7 +6,14 @@ using StructArrays
 makedocs(
     sitename = "StructArrays",
     format = Documenter.HTML(prettyurls = get(ENV, "CI", nothing) == "true"),
-    modules = [StructArrays]
+    modules = [StructArrays],
+    pages = [
+            "Overview"=>"index.md",
+            "Example usage"=>"examples.md",
+            "Some counterintuitive behaviors"=>"counterintuitive.md",
+            "Advanced techniques"=>"advanced.md",
+            "Index"=>"reference.md",
+            ]
 )
 
 # Documenter can also automatically deploy documentation to gh-pages.
