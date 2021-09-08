@@ -850,6 +850,14 @@ end
         @test x .+ y == StructArray([StaticArrayType{Tuple{1,2}}(3*ones(1,2) .+ 2*i) for i = 0:1])
     end
 
+    # test FieldVector constructor (see https://github.com/JuliaArrays/StructArrays.jl/issues/205)
+    struct Vec2D <: FieldVector{2,Float64}
+        x::Float64
+        y::Float64
+    end
+    A = StructArray{Vec2D}((ones(5), ones(5)))
+    @test A.x == ones(5)
+
     # test type stability of creating views with "many" homogeneous components
     for n in 1:10
         u = StructArray(randn(SVector{n, Float64}) for _ in 1:10, _ in 1:5)
