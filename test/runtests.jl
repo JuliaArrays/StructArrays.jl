@@ -855,8 +855,9 @@ end
         x::Float64
         y::Float64
     end
-    A = StructArray{Vec2D}((ones(5), ones(5)))
-    @test A.x == ones(5)
+    a = StructArray{Vec2D}((ones(5), 2.0 * ones(5)))
+    @test a.x == ones(5)
+    @test a.y == 2 * ones(5)
 
     # test type stability of creating views with "many" homogeneous components
     for n in 1:10
