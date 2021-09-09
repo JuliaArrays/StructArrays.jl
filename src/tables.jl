@@ -21,16 +21,18 @@ function try_compatible_columns(rows::R, s::StructArray) where {R}
     return Tables.columntable(rows)
 end
 
-function Base.append!(s::StructVector, rows)
-    table = try_compatible_columns(rows, s)
-    if table !== nothing
-        # Input `rows` is a container of rows _and_ satisfies column
-        # table interface.  Thus, we can add the input column-by-column.
-        foreachfield(append!, s, table)
-        return s
-    else
-        # Otherwise, fallback to a generic implementation expecting
-        # that `rows` is an iterator:
-        return foldl(push!, rows; init = s)
+for (f, g) in zip((:append!, :prepend!), (:push!, :pushfirst!))
+    @eval function Base.$f(s::StructVector, rows)
+        table = try_compatible_columns(rows, s)
+        if table !== nothing
+            # Input `rows` is a container of rows _and_ satisfies column
+            # table interface.  Thus, we can add the input column-by-column.
+            foreachfield($f, s, table)
+            return s
+        else
+            # Otherwise, fallback to a generic implementation expecting
+            # that `rows` is an iterator:
+            return foldl($g, rows; init = s)
+        end
     end
 end

@@ -362,19 +362,35 @@ Base.@propagate_inbounds function Base.setindex!(s::StructArray{<:Any, <:Any, <:
     s
 end
 
-function Base.push!(s::StructVector, vals)
-    foreachfield(push!, s, vals)
+for f in (:push!, :pushfirst!)
+    @eval function Base.$f(s::StructVector, vals)
+        foreachfield($f, s, vals)
+        return s
+    end
+end
+
+for f in (:append!, :prepend!)
+    @eval function Base.$f(s::StructVector, vals::StructVector)
+        foreachfield($f, s, vals)
+        return s
+    end
+end
+
+function Base.insert!(s::StructVector, i::Integer, vals)
+    foreachfield((v, val) -> insert!(v, i, val), s, vals)
     return s
 end
 
-function Base.pop!(s::StructVector{T}) where T
-    t = map(pop!, components(s))
+for f in (:pop!, :popfirst!)
+    @eval function Base.$f(s::StructVector{T}, vals) where T
+        t = map($f, components(s))
+        return createinstance(T, t...)
+    end
+end
+
+function Base.deleteat!(s::StructVector{T}, idxs) where T
+    t = map(Base.Fix2(deleteat!, idxs), components(s))
     return createinstance(T, t...)
-end
-
-function Base.append!(s::StructVector, vals::StructVector)
-    foreachfield(append!, s, vals)
-    return s
 end
 
 Base.copyto!(I::StructArray, J::StructArray) = (foreachfield(copyto!, I, J); I)
