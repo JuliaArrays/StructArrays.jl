@@ -50,11 +50,10 @@ end
 end
 
 @testset "indexstyle" begin
-    @inferred IndexStyle(StructArray(a=rand(10,10), b=view(rand(100,100), 1:10, 1:10)))
     s = StructArray(a=rand(10,10), b=view(rand(100,100), 1:10, 1:10))
     T = typeof(s)
     @test IndexStyle(T) === IndexCartesian()
-    @test StructArrays.index_type(T) == CartesianIndex{2}
+    @test StructArrays.index_type(s) == CartesianIndex{2}
     @test s[100] == s[10, 10] == (a=s.a[10,10], b=s.b[10,10])
     s[100] = (a=1, b=1)
     @test s[100] == s[10, 10] == (a=1, b=1)
@@ -63,8 +62,8 @@ end
     @inferred IndexStyle(StructArray(a=rand(10,10), b=rand(10,10)))
     s = StructArray(a=rand(10,10), b=rand(10,10))
     T = typeof(s)
-    @test IndexStyle(T) === IndexLinear()
-    @test StructArrays.index_type(T) == Int
+    @test StructArrays.index_type(s) == Int
+    @inferred IndexStyle(s)
     @test s[100] == s[10, 10] == (a=s.a[10,10], b=s.b[10,10])
     s[100] = (a=1, b=1)
     @test s[100] == s[10, 10] == (a=1, b=1)
@@ -72,13 +71,16 @@ end
     @test s[100] == s[10, 10] == (a=0, b=0)
 
     # inference for "many" types, both for linear ad Cartesian indexing
-    @inferred StructArrays.index_type(NTuple{2, Vector{Float64}})
-    @inferred StructArrays.index_type(NTuple{3, Matrix{Float64}})
-    @inferred StructArrays.index_type(NTuple{4, Array{Float64, 3}})
+    @inferred StructArrays.index_type(ntuple(_ -> rand(5), 2))
+    @inferred StructArrays.index_type(ntuple(_ -> rand(5, 5), 3))
+    @inferred StructArrays.index_type(ntuple(_ -> rand(5, 5, 5), 4))
 
-    @inferred StructArrays.index_type(NTuple{2, SubArray{Float64, 1, Array{Float64, 2}, Tuple{Base.Slice{Base.OneTo{Int64}}, Int64}, true}})
-    @inferred StructArrays.index_type(NTuple{3, SubArray{Float64, 1, Array{Float64, 2}, Tuple{Base.Slice{Base.OneTo{Int64}}, Int64}, true}})
-    @inferred StructArrays.index_type(NTuple{4, SubArray{Float64, 1, Array{Float64, 2}, Tuple{Base.Slice{Base.OneTo{Int64}}, Int64}, true}})
+    @inferred StructArrays.index_type(ntuple(_ -> view(rand(5), 1:3), 2))
+    @inferred StructArrays.index_type(ntuple(_ -> view(rand(5, 5), 1:3, 1:2), 3))
+    @inferred StructArrays.index_type(ntuple(_ -> view(rand(5, 5, 5), 1:3, 1:2, 1:4), 4))
+
+    @inferred StructArrays.index_type(ntuple(n -> n == 1 ? rand(5, 5) : view(rand(5, 5), 1:2, 1:3), 5))
+    @inferred IndexStyle(StructArray(a=rand(10,10), b=view(rand(100,100), 1:10, 1:10)))
 end
 
 @testset "replace_storage" begin

@@ -21,27 +21,22 @@ struct StructArray{T, N, C<:Tup, I} <: AbstractArray{T, N}
                 axes(c[i]) == ax || error("all field arrays must have same shape")
             end
         end
-        new{T, N, C, index_type(C)}(c)
+        new{T, N, C, index_type(c)}(c)
     end
 end
 
-# compute optimal type to use for indexing as a function of component types
-index_type(::Type{NamedTuple{names, types}}) where {names, types} = index_type(types)
-index_type(::Type{Tuple{}}) = Int
-function index_type(::Type{T}) where {T<:Tuple}
-    S, U = tuple_type_head(T), tuple_type_tail(T)
-    return _index_type(S, U)
+# compute optimal type to use for indexing as a function of components
+index_type(components::NamedTuple) = index_type(values(components))
+index_type(::Tuple{}) = Int
+function index_type(components::Tuple)
+    f, ls = first(components), tail(components)
+    return IndexStyle(f) isa IndexCartesian ? CartesianIndex{ndims(f)} : index_type(ls)
 end
-# Julia v1.7.0-beta3 doesn't seem to specialize `index_type` as defined above
-# for tuple types with "many" elements (three or four, depending on the concrete
-# types). However, we can help the compiler for homogeneous types by defining
-# the specialization below.
-index_type(::Type{NTuple{N, S}}) where {N, S} = _index_type(S)
+# Only check first component if the all the component types match
+index_type(components::NTuple) = invoke(index_type, Tuple{Tuple}, (first(components),))
+# Return the index type parameter as a function of the StructArray type or instance
+index_type(s::StructArray) = index_type(typeof(s))
 index_type(::Type{StructArray{T, N, C, I}}) where {T, N, C, I} = I
-
-function _index_type(::Type{S}, ::Type{U}=Tuple{}) where {S, U}
-    return IndexStyle(S) isa IndexCartesian ? CartesianIndex{ndims(S)} : index_type(U)
-end
 
 array_types(::Type{StructArray{T, N, C, I}}) where {T, N, C, I} = array_types(C)
 array_types(::Type{NamedTuple{names, types}}) where {names, types} = types
@@ -167,7 +162,6 @@ function buildfromslices(::Type{T}, unwrap::F, slices) where {T,F}
         return popfirst!(slices)
     end
 end
-
 
 function Base.IndexStyle(::Type{S}) where {S<:StructArray}
     index_type(S) === Int ? IndexLinear() : IndexCartesian()
