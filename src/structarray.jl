@@ -382,7 +382,7 @@ function Base.insert!(s::StructVector, i::Integer, vals)
 end
 
 for f in (:pop!, :popfirst!)
-    @eval function Base.$f(s::StructVector{T}, vals) where T
+    @eval function Base.$f(s::StructVector{T}) where T
         t = map($f, components(s))
         return createinstance(T, t...)
     end
