@@ -851,13 +851,21 @@ end
     end
 
     # test FieldVector constructor (see https://github.com/JuliaArrays/StructArrays.jl/issues/205)
-    struct Vec2D <: FieldVector{2,Float64}
+    struct FlippedVec2D <: FieldVector{2,Float64}
         x::Float64
         y::Float64
     end
-    a = StructArray{Vec2D}((ones(5), 2.0 * ones(5)))
-    @test a.x == ones(5)
-    @test a.y == 2 * ones(5)
+    # define a custom getindex to test StructArrays.component(::FieldArray) behavior
+    Base.getindex(a::FlippedVec2D, index::Int) = index==1 ? a.y : a.x
+    Base.Tuple(a::FlippedVec2D) = (a.y, a.x)
+    a = StructArray([FlippedVec2D(1.0,2.0)])
+    @test a.x == [1.0]
+    @test a.y == [2.0]
+    @test a.x[1] == a[1].x
+
+    # test custom indices and components
+    @test typeof(StructArrays.components(a)) == NamedTuple{(:x, :y), NTuple{2, Vector{Float64}}}
+    @test StructArrays.components(a) == (; x = [1.0], y = [2.0])    
 
     # test type stability of creating views with "many" homogeneous components
     for n in 1:10
