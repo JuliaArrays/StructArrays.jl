@@ -18,9 +18,11 @@ which subtypes `FieldArray`.
         return NTuple{$(tuple_prod(S)), T}
     end
 end
-# invoke the general fallback for a `FieldArray` type.
+StructArrays.createinstance(::Type{T}, args...) where {T<:StaticArray} = T(args)
+StructArrays.component(s::StaticArray, i) = getindex(s, i)
+
+# invoke general fallbacks for a `FieldArray` type.
 @inline function StructArrays.staticschema(T::Type{<:FieldArray})
     invoke(StructArrays.staticschema, Tuple{Type{<:Any}}, T)
 end
-StructArrays.createinstance(::Type{T}, args...) where {T<:StaticArray} = T(args)
-StructArrays.component(s::StaticArray, i) = getindex(s, i)
+StructArrays.component(s::FieldArray, i) = invoke(StructArrays.component, Tuple{<:Any, <:Any}, s, i)
