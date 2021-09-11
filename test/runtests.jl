@@ -855,6 +855,9 @@ end
         x::Float64
         y::Float64
     end
+    # tuple constructors should respect the flipped ordering
+    FlippedVec2D(t::Tuple) = FlippedVec2D(t[2], t[1])
+
     # define a custom getindex to test StructArrays.component(::FieldArray) behavior
     Base.getindex(a::FlippedVec2D, index::Int) = index==1 ? a.y : a.x
     Base.Tuple(a::FlippedVec2D) = (a.y, a.x)
