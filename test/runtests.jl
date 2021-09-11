@@ -852,6 +852,26 @@ end
         @test x .+ y == StructArray([StaticArrayType{Tuple{1,2}}(3*ones(1,2) .+ 2*i) for i = 0:1])
     end
 
+    # test FieldVector constructor (see https://github.com/JuliaArrays/StructArrays.jl/issues/205)
+    struct FlippedVec2D <: FieldVector{2,Float64}
+        x::Float64
+        y::Float64
+    end
+    # tuple constructors should respect the flipped ordering
+    FlippedVec2D(t::Tuple) = FlippedVec2D(t[2], t[1])
+
+    # define a custom getindex to test StructArrays.component(::FieldArray) behavior
+    Base.getindex(a::FlippedVec2D, index::Int) = index==1 ? a.y : a.x
+    Base.Tuple(a::FlippedVec2D) = (a.y, a.x)
+    a = StructArray([FlippedVec2D(1.0,2.0)])
+    @test a.x == [1.0]
+    @test a.y == [2.0]
+    @test a.x[1] == a[1].x
+
+    # test custom indices and components
+    @test typeof(StructArrays.components(a)) == NamedTuple{(:x, :y), NTuple{2, Vector{Float64}}}
+    @test StructArrays.components(a) == (; x = [1.0], y = [2.0])    
+
     # test type stability of creating views with "many" homogeneous components
     for n in 1:10
         u = StructArray(randn(SVector{n, Float64}) for _ in 1:10, _ in 1:5)
