@@ -26,3 +26,4 @@ StructArrays.component(s::StaticArray, i) = getindex(s, i)
     invoke(StructArrays.staticschema, Tuple{Type{<:Any}}, T)
 end
 StructArrays.component(s::FieldArray, i) = invoke(StructArrays.component, Tuple{Any, Any}, s, i)
+StructArrays.createinstance(T::Type{<:FieldArray}, args...) = invoke(createinstance, Tuple{Type{<:Any}, Vararg}, T, args...)
