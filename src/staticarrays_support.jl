@@ -25,4 +25,4 @@ StructArrays.component(s::StaticArray, i) = getindex(s, i)
 @inline function StructArrays.staticschema(T::Type{<:FieldArray})
     invoke(StructArrays.staticschema, Tuple{Type{<:Any}}, T)
 end
-StructArrays.component(s::FieldArray, i) = invoke(StructArrays.component, Tuple{<:Any, <:Any}, s, i)
+StructArrays.component(s::FieldArray, i) = invoke(StructArrays.component, Tuple{Any, Any}, s, i)
