@@ -13,12 +13,26 @@ julia> StructArrays.map_params(T -> Complex{T}, Tuple{Int32,Float64})
 Tuple{Complex{Int32},Complex{Float64}}
 ```
 """
-map_params(f, ::Type{Tuple{}}) = Tuple{}
-function map_params(f, ::Type{T}) where {T<:Tuple}
-    tuple_type_cons(f(tuple_type_head(T)), map_params(f, tuple_type_tail(T)))
-end
 map_params(f, ::Type{NamedTuple{names, types}}) where {names, types} =
     NamedTuple{names, map_params(f, types)}
+
+function map_params(f, ::Type{T}) where {T<:Tuple}
+    if @generated
+        types = types_to_tuple(T)
+        ex = :(Tuple{})
+        for t ∈ types
+            push!(ex.args, :(f($t)))
+        end
+        ex
+    else
+        map_params_recursive(f, T)
+    end
+end
+
+map_params_recursive(f, ::Type{Tuple{}}) = Tuple{}
+function map_params_recursive(f, ::Type{T}) where {T<:Tuple}
+    tuple_type_cons(f(tuple_type_head(T)), map_params_recursive(f, tuple_type_tail(T)))
+end
 
 """
     StructArrays._map_params(f, T)
