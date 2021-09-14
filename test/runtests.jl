@@ -891,3 +891,12 @@ end
     B = StructArrays._map_params_recursive(f, types)
     @test typeof(A) === typeof(B)
 end
+
+# Same for map_params
+@testset "map_params" begin
+    types = Tuple{Int, Float64, Int32}
+    f(T) = Complex{T}
+    A = @inferred StructArrays.map_params(f, types)
+    B = StructArrays.map_params_recursive(f, types)
+    @test A === B
+end
