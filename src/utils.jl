@@ -31,12 +31,31 @@ julia> StructArrays._map_params(T -> Complex{T}, Tuple{Int32,Float64})
 (Complex{Int32}, Complex{Float64})
 ```
 """
-_map_params(f, ::Type{Tuple{}}) = ()
-function _map_params(f, ::Type{T}) where {T<:Tuple}
-    (f(tuple_type_head(T)), _map_params(f, tuple_type_tail(T))...)
-end
 _map_params(f::F, ::Type{NamedTuple{names, types}}) where {names, types, F} =
     NamedTuple{names}(_map_params(f, types))
+
+function _map_params(f::F, ::Type{T}) where {T<:Tuple, F}
+    if @generated
+        types = types_to_tuple(T)
+        ex = :()
+        for t ∈ types
+            push!(ex.args, :(f($t)))
+        end
+        ex
+    else
+        _map_params_recursive(f, T)
+    end
+end
+
+_map_params_recursive(f, ::Type{Tuple{}}) = ()
+function _map_params_recursive(f, ::Type{T}) where {T<:Tuple}
+    (f(tuple_type_head(T)), _map_params_recursive(f, tuple_type_tail(T))...)
+end
+
+types_to_tuple(::Type{Tuple{}}) = ()
+function types_to_tuple(::Type{T}) where {T <: Tuple}
+    (Base.tuple_type_head(T), types_to_tuple(Base.tuple_type_tail(T))...)
+end
 
 buildfromschema(initializer::F, ::Type{T}) where {T, F} = buildfromschema(initializer, T, staticschema(T))
 
