@@ -881,3 +881,13 @@ end
         @inferred view(u, 1, :)
     end
 end
+
+# Test fallback (non-@generated) variant of _map_params
+@testset "_map_params" begin
+    v = StructArray(rand(ComplexF64, 2, 2))
+    f(T) = similar(v, T)
+    types = Tuple{Int, Float64, ComplexF32, String}
+    A = @inferred StructArrays._map_params(f, types)
+    B = StructArrays._map_params_recursive(f, types)
+    @test typeof(A) === typeof(B)
+end
