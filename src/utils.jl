@@ -1,7 +1,6 @@
-argtail(_, rest...) = rest
-params(::Type{T}) where {T<:Tuple} = T.parameters
+argtail(_, args...) = args
 
-split_tuple_type(T) = fieldtype(T, 1), Tuple{argtail(params(T)...)...}
+split_tuple_type(T) = fieldtype(T, 1), Tuple{argtail(T.parameters...)...}
 
 eltypes(nt::NamedTuple{names}) where {names} = NamedTuple{names, eltypes(values(nt))}
 eltypes(t::Tuple) = Tuple{map(eltype, t)...}
@@ -106,7 +105,7 @@ iscompatible(::S, ::V) where {S, V<:AbstractArray} = iscompatible(S, V)
 
 function _promote_typejoin(::Type{T}, ::Type{T′}) where {T<:NTuple{N, Any}, T′<:NTuple{N, Any}} where N
     (f, ls), (f′, ls′) = split_tuple_type(T), split_tuple_type(T′)
-    return Tuple{_promote_typejoin(f, f′), params(_promote_typejoin(ls, ls′))...}
+    return Tuple{_promote_typejoin(f, f′), _promote_typejoin(ls, ls′).parameters...}
 end
 
 _promote_typejoin(::Type{Tuple{}}, ::Type{Tuple{}}) = Tuple{}
