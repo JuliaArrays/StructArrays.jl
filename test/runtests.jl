@@ -888,7 +888,7 @@ end
     f(T) = similar(v, T)
     types = Tuple{Int, Float64, ComplexF32, String}
     A = @inferred StructArrays._map_params(f, types)
-    B = StructArrays._map_params_recursive(f, types)
+    B = StructArrays._map_params_fallback(f, types)
     @test typeof(A) === typeof(B)
 end
 
@@ -897,6 +897,6 @@ end
     types = Tuple{Int, Float64, Int32}
     f(T) = Complex{T}
     A = @inferred StructArrays.map_params(f, types)
-    B = StructArrays.map_params_recursive(f, types)
+    B = StructArrays.map_params_fallback(f, types)
     @test A === B
 end

@@ -18,14 +18,14 @@ map_params(f, ::Type{NamedTuple{names, types}}) where {names, types} =
 
 function map_params(f, ::Type{T}) where {T<:Tuple}
     if @generated
-        types = types_to_tuple(T)
+        types = fieldtypes(T)
         ex = :(Tuple{})
         for t ∈ types
             push!(ex.args, :(f($t)))
         end
         ex
     else
-        map_params_recursive(f, T)
+        map_params_fallback(f, T)
     end
 end
 
@@ -47,23 +47,18 @@ _map_params(f::F, ::Type{NamedTuple{names, types}}) where {names, types, F} =
 
 function _map_params(f::F, ::Type{T}) where {T<:Tuple, F}
     if @generated
-        types = types_to_tuple(T)
+        types = fieldtypes(T)
         ex = :()
         for t ∈ types
             push!(ex.args, :(f($t)))
         end
         ex
     else
-        _map_params_recursive(f, T)
+        _map_params_fallback(f, T)
     end
 end
 
 _map_params_fallback(f, ::Type{T}) where {T<:Tuple} = map(f, fieldtypes(T))
-
-types_to_tuple(::Type{Tuple{}}) = ()
-function types_to_tuple(::Type{T}) where {T <: Tuple}
-    (Base.tuple_type_head(T), types_to_tuple(Base.tuple_type_tail(T))...)
-end
 
 buildfromschema(initializer::F, ::Type{T}) where {T, F} = buildfromschema(initializer, T, staticschema(T))
 
