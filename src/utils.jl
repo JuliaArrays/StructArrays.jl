@@ -61,10 +61,7 @@ function _map_params(f::F, ::Type{T}) where {T<:Tuple, F}
     end
 end
 
-_map_params_recursive(f, ::Type{Tuple{}}) = ()
-function _map_params_recursive(f, ::Type{T}) where {T<:Tuple}
-    (f(tuple_type_head(T)), _map_params_recursive(f, tuple_type_tail(T))...)
-end
+_map_params_fallback(f, ::Type{T}) where {T<:Tuple} = map(f, fieldtypes(T))
 
 types_to_tuple(::Type{Tuple{}}) = ()
 function types_to_tuple(::Type{T}) where {T <: Tuple}
