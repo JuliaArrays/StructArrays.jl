@@ -29,10 +29,7 @@ function map_params(f, ::Type{T}) where {T<:Tuple}
     end
 end
 
-map_params_recursive(f, ::Type{Tuple{}}) = Tuple{}
-function map_params_recursive(f, ::Type{T}) where {T<:Tuple}
-    tuple_type_cons(f(tuple_type_head(T)), map_params_recursive(f, tuple_type_tail(T)))
-end
+map_params_fallback(f, ::Type{T}) where {T<:Tuple} = Tuple{map(f, fieldtypes(T))...}
 
 """
     StructArrays._map_params(f, T)
