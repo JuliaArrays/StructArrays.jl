@@ -29,10 +29,7 @@ end
 
 @testset "utils" begin
     t = StructArray(rand(ComplexF64, 2, 2))
-    T = staticschema(eltype(t))
-    @test StructArrays.eltypes(T) == NamedTuple{(:re, :im), Tuple{Float64, Float64}}
-    @test StructArrays.map_params(eltype, T) == NamedTuple{(:re, :im), Tuple{Float64, Float64}}
-    @test StructArrays.map_params(eltype, StructArrays.astuple(T)) == Tuple{Float64, Float64}
+    @test StructArrays.eltypes((re = 1.0, im = 1.0)) == NamedTuple{(:re, :im), Tuple{Float64, Float64}}
     @test !iscompatible(typeof((1, 2)), typeof(([1],)))
     @test iscompatible(typeof((1, 2)), typeof(([1], [2])))
     @test !iscompatible(typeof((1, 2)), typeof(([1.1], [2])))
@@ -343,6 +340,21 @@ g_infer() = StructArray([(a=(b="1",), c=2)], unwrap = t -> t <: NamedTuple)
 tup_infer() = StructArray([(1, 2), (3, 4)])
 cols_infer() = StructArray(([1, 2], [1.2, 2.3]))
 nt_infer(nt) = StructArray{typeof(nt)}(undef, 4)
+eltype_infer() = StructArray((rand(10), rand(Int, 10)))
+named_eltype_infer() = StructArray((x=rand(10), y=rand(Int, 10)))
+compatible_infer() = Val(iscompatible(Tuple{Int, Int}, Tuple{Vector{Int}, Vector{Real}}))
+function promote_infer()
+    x = (a=1, b=1.2)
+    y = (a=1.2, b="a")
+    T = _promote_typejoin(typeof(x), typeof(y))
+    return convert(T, x)
+end
+function map_params_infer()
+    v = StructArray(rand(ComplexF64, 2, 2))
+    f(T) = similar(v, T)
+    types = Tuple{Int, Float64, ComplexF32, String}
+    return StructArrays.map_params(f, types)
+end
 
 @testset "inferrability" begin
     @inferred f_infer()
@@ -354,6 +366,11 @@ nt_infer(nt) = StructArray{typeof(nt)}(undef, 4)
     @test s[2] == (3, 4)
     @inferred cols_infer()
     @inferred nt_infer((x = 3, y = :a, z = :b))
+    @inferred eltype_infer()
+    @inferred named_eltype_infer()
+    @inferred compatible_infer()
+    @inferred promote_infer()
+    @inferred map_params_infer()
 end
 
 @testset "propertynames" begin
@@ -882,21 +899,21 @@ end
     end
 end
 
-# Test fallback (non-@generated) variant of _map_params
-@testset "_map_params" begin
+# Test fallback (non-@generated) variant of map_params
+@testset "map_params" begin
     v = StructArray(rand(ComplexF64, 2, 2))
     f(T) = similar(v, T)
     types = Tuple{Int, Float64, ComplexF32, String}
-    A = @inferred StructArrays._map_params(f, types)
-    B = StructArrays._map_params_fallback(f, types)
-    @test typeof(A) === typeof(B)
-end
-
-# Same for map_params
-@testset "map_params" begin
-    types = Tuple{Int, Float64, Int32}
-    f(T) = Complex{T}
     A = @inferred StructArrays.map_params(f, types)
     B = StructArrays.map_params_fallback(f, types)
-    @test A === B
+    @test typeof(A) === typeof(B)
+    types = Tuple{Int, Float64, ComplexF32}
+    A = @inferred StructArrays.map_params(zero, types)
+    B = StructArrays.map_params_fallback(zero, types)
+    C = map(zero, fieldtypes(types))
+    @test A === B === C
+    namedtypes = NamedTuple{(:a, :b, :c), types}
+    A = @inferred StructArrays.map_params(zero, namedtypes)
+    C = map(zero, NamedTuple{(:a, :b, :c)}(map(zero, fieldtypes(types))))
+    @test A === C
 end

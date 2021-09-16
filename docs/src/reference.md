@@ -54,7 +54,6 @@ StructArrays.createinstance
 ```@docs
 StructArrays.get_ith
 StructArrays.map_params
-StructArrays._map_params
 StructArrays.buildfromschema
 StructArrays.bypass_constructor
 StructArrays.iscompatible
