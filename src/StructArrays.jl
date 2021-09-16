@@ -1,6 +1,6 @@
 module StructArrays
 
-using Base: tuple_type_cons, tuple_type_head, tuple_type_tail, tail
+using Base: afoldl, tail
 
 export StructArray, StructVector, LazyRow, LazyRows
 export collect_structarray

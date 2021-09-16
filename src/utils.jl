@@ -1,4 +1,10 @@
-eltypes(::Type{T}) where {T} = map_params(eltype, T)
+argtail(_, rest...) = rest
+params(::Type{T}) where {T<:Tuple} = T.parameters
+
+split_tuple_type(T) = fieldtype(T, 1), Tuple{argtail(params(T)...)...}
+
+eltypes(nt::NamedTuple{names}) where {names} = NamedTuple{names, eltypes(values(nt))}
+eltypes(t::Tuple) = Tuple{map(eltype, t)...}
 
 alwaysfalse(t) = false
 
@@ -6,59 +12,27 @@ alwaysfalse(t) = false
     StructArrays.map_params(f, T)
 
 Apply `f` to each field type of `Tuple` or `NamedTuple` type `T`, returning a
-new `Tuple` or `NamedTuple` type.
+new `Tuple` or `NamedTuple` object.
 
 ```julia-repl
 julia> StructArrays.map_params(T -> Complex{T}, Tuple{Int32,Float64})
-Tuple{Complex{Int32},Complex{Float64}}
+(Complex{Int32}, Complex{Float64})
 ```
 """
-map_params(f, ::Type{NamedTuple{names, types}}) where {names, types} =
-    NamedTuple{names, map_params(f, types)}
+map_params(f::F, ::Type{NamedTuple{names, types}}) where {F, names, types} =
+    NamedTuple{names}(map_params(f, types))
 
-function map_params(f, ::Type{T}) where {T<:Tuple}
+function map_params(f::F, ::Type{T}) where {F, T<:Tuple}
     if @generated
         types = fieldtypes(T)
-        ex = :(Tuple{})
-        for t ∈ types
-            push!(ex.args, :(f($t)))
-        end
-        ex
+        args = map(t -> :(f($t)), types)
+        Expr(:tuple, args...)
     else
         map_params_fallback(f, T)
     end
 end
 
-map_params_fallback(f, ::Type{T}) where {T<:Tuple} = Tuple{map(f, fieldtypes(T))...}
-
-"""
-    StructArrays._map_params(f, T)
-
-Apply `f` to each field type of `Tuple` or `NamedTuple` type `T`, returning a
-new `Tuple` or `NamedTuple` object.
-
-```julia-repl
-julia> StructArrays._map_params(T -> Complex{T}, Tuple{Int32,Float64})
-(Complex{Int32}, Complex{Float64})
-```
-"""
-_map_params(f::F, ::Type{NamedTuple{names, types}}) where {names, types, F} =
-    NamedTuple{names}(_map_params(f, types))
-
-function _map_params(f::F, ::Type{T}) where {T<:Tuple, F}
-    if @generated
-        types = fieldtypes(T)
-        ex = :()
-        for t ∈ types
-            push!(ex.args, :(f($t)))
-        end
-        ex
-    else
-        _map_params_fallback(f, T)
-    end
-end
-
-_map_params_fallback(f, ::Type{T}) where {T<:Tuple} = map(f, fieldtypes(T))
+map_params_fallback(f, ::Type{T}) where {T<:Tuple} = map(f, fieldtypes(T))
 
 buildfromschema(initializer::F, ::Type{T}) where {T, F} = buildfromschema(initializer, T, staticschema(T))
 
@@ -72,7 +46,7 @@ Construct a [`StructArray{T}`](@ref) with a function `initializer`, using a sche
 `S` is a `Tuple` or `NamedTuple` type. The default value is [`staticschema(T)`](@ref).
 """
 function buildfromschema(initializer::F, ::Type{T}, ::Type{NT}) where {T, NT<:Tup, F}
-    nt = _map_params(initializer, NT)
+    nt = map_params(initializer, NT)
     StructArray{T}(nt)
 end
 
@@ -123,16 +97,16 @@ iscompatible(::Type{Tuple{}}, ::Type{T}) where {T<:Tuple} = false
 iscompatible(::Type{T}, ::Type{Tuple{}}) where {T<:Tuple} = false
 iscompatible(::Type{Tuple{}}, ::Type{Tuple{}}) = true
 
-function iscompatible(::Type{S}, ::Type{T}) where {S<:Tuple, T<:Tuple}
-    iscompatible(tuple_type_head(S), tuple_type_head(T)) && iscompatible(tuple_type_tail(S), tuple_type_tail(T))
+function iscompatible(::Type{T}, ::Type{T′}) where {T<:Tuple, T′<:Tuple}
+    (f, ls), (f′, ls′) = split_tuple_type(T), split_tuple_type(T′)
+    iscompatible(f, f′) && iscompatible(ls, ls′)
 end
 
-iscompatible(::S, ::T) where {S, T<:AbstractArray} = iscompatible(S, T)
+iscompatible(::S, ::V) where {S, V<:AbstractArray} = iscompatible(S, V)
 
-function _promote_typejoin(::Type{S}, ::Type{T}) where {S<:NTuple{N, Any}, T<:NTuple{N, Any}} where N
-    head = _promote_typejoin(Base.tuple_type_head(S), Base.tuple_type_head(T))
-    tail = _promote_typejoin(Base.tuple_type_tail(S), Base.tuple_type_tail(T))
-    return Base.tuple_type_cons(head, tail)
+function _promote_typejoin(::Type{T}, ::Type{T′}) where {T<:NTuple{N, Any}, T′<:NTuple{N, Any}} where N
+    (f, ls), (f′, ls′) = split_tuple_type(T), split_tuple_type(T′)
+    return Tuple{_promote_typejoin(f, f′), params(_promote_typejoin(ls, ls′))...}
 end
 
 _promote_typejoin(::Type{Tuple{}}, ::Type{Tuple{}}) = Tuple{}
@@ -141,7 +115,7 @@ function _promote_typejoin(::Type{NamedTuple{names, types}}, ::Type{NamedTuple{n
     return NamedTuple{names, T}
 end
 
-_promote_typejoin(::Type{S}, ::Type{T}) where {S, T} = Base.promote_typejoin(S, T)
+_promote_typejoin(::Type{T}, ::Type{T′}) where {T, T′} = Base.promote_typejoin(T, T′)
 
 function _promote_typejoin(::Type{Pair{A, B}}, ::Type{Pair{A′, B′}}) where {A, A′, B, B′}
     C = _promote_typejoin(A, A′)

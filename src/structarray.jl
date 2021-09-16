@@ -97,13 +97,13 @@ function StructArray{T}(c::C) where {T, C<:Tup}
     StructArray{T, N, typeof(cols)}(cols)
 end
 
-StructArray(c::C) where {C<:NamedTuple} = StructArray{eltypes(C)}(c)
+StructArray(c::NamedTuple) = StructArray{eltypes(c)}(c)
 StructArray(c::Tuple; names = nothing) = _structarray(c, names)
 
 StructArray{T}(; kwargs...) where {T} = StructArray{T}(values(kwargs))
 StructArray(; kwargs...) = StructArray(values(kwargs))
 
-_structarray(args::T, ::Nothing) where {T<:Tuple} = StructArray{eltypes(T)}(args)
+_structarray(args::Tuple, ::Nothing) = StructArray{eltypes(args)}(args)
 _structarray(args::Tuple, names) = _structarray(args, Tuple(names))
 _structarray(args::Tuple, ::Tuple) = _structarray(args, nothing)
 _structarray(args::NTuple{N, Any}, names::NTuple{N, Symbol}) where {N} = StructArray(NamedTuple{names}(args))
