@@ -349,6 +349,12 @@ function promote_infer()
     T = _promote_typejoin(typeof(x), typeof(y))
     return convert(T, x)
 end
+function map_params_infer()
+    v = StructArray(rand(ComplexF64, 2, 2))
+    f(T) = similar(v, T)
+    types = Tuple{Int, Float64, ComplexF32, String}
+    return StructArrays.map_params(f, types)
+end
 
 @testset "inferrability" begin
     @inferred f_infer()
@@ -363,7 +369,8 @@ end
     @inferred eltype_infer()
     @inferred named_eltype_infer()
     @inferred compatible_infer()
-    @inferred promote_infer() 
+    @inferred promote_infer()
+    @inferred map_params_infer()
 end
 
 @testset "propertynames" begin

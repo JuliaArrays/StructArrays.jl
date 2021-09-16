@@ -1,6 +1,6 @@
 module StructArrays
 
-using Base: afoldl, tail
+using Base: tail
 
 export StructArray, StructVector, LazyRow, LazyRows
 export collect_structarray

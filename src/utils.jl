@@ -34,7 +34,7 @@ end
 
 map_params_fallback(f, ::Type{T}) where {T<:Tuple} = map(f, fieldtypes(T))
 
-buildfromschema(initializer::F, ::Type{T}) where {T, F} = buildfromschema(initializer, T, staticschema(T))
+buildfromschema(initializer::F, ::Type{T}) where {F, T} = buildfromschema(initializer, T, staticschema(T))
 
 """
     StructArrays.buildfromschema(initializer, T[, S])
@@ -45,7 +45,7 @@ Construct a [`StructArray{T}`](@ref) with a function `initializer`, using a sche
 
 `S` is a `Tuple` or `NamedTuple` type. The default value is [`staticschema(T)`](@ref).
 """
-function buildfromschema(initializer::F, ::Type{T}, ::Type{NT}) where {T, NT<:Tup, F}
+function buildfromschema(initializer::F, ::Type{T}, ::Type{NT}) where {F, T, NT<:Tup}
     nt = map_params(initializer, NT)
     StructArray{T}(nt)
 end
