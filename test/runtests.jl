@@ -907,4 +907,13 @@ end
     A = @inferred StructArrays.map_params(f, types)
     B = StructArrays.map_params_fallback(f, types)
     @test typeof(A) === typeof(B)
+    types = Tuple{Int, Float64, ComplexF32}
+    A = @inferred StructArrays.map_params(zero, types)
+    B = StructArrays.map_params_fallback(zero, types)
+    C = map(zero, fieldtypes(types))
+    @test A === B === C
+    namedtypes = NamedTuple{(:a, :b, :c), types}
+    A = @inferred StructArrays.map_params(zero, namedtypes)
+    C = map(zero, NamedTuple{(:a, :b, :c)}(map(zero, fieldtypes(types))))
+    @test A === C
 end
