@@ -13,12 +13,23 @@ julia> StructArrays.map_params(T -> Complex{T}, Tuple{Int32,Float64})
 Tuple{Complex{Int32},Complex{Float64}}
 ```
 """
-map_params(f, ::Type{Tuple{}}) = Tuple{}
-function map_params(f, ::Type{T}) where {T<:Tuple}
-    tuple_type_cons(f(tuple_type_head(T)), map_params(f, tuple_type_tail(T)))
-end
 map_params(f, ::Type{NamedTuple{names, types}}) where {names, types} =
     NamedTuple{names, map_params(f, types)}
+
+function map_params(f, ::Type{T}) where {T<:Tuple}
+    if @generated
+        types = fieldtypes(T)
+        ex = :(Tuple{})
+        for t ∈ types
+            push!(ex.args, :(f($t)))
+        end
+        ex
+    else
+        map_params_fallback(f, T)
+    end
+end
+
+map_params_fallback(f, ::Type{T}) where {T<:Tuple} = Tuple{map(f, fieldtypes(T))...}
 
 """
     StructArrays._map_params(f, T)
@@ -31,12 +42,23 @@ julia> StructArrays._map_params(T -> Complex{T}, Tuple{Int32,Float64})
 (Complex{Int32}, Complex{Float64})
 ```
 """
-_map_params(f, ::Type{Tuple{}}) = ()
-function _map_params(f, ::Type{T}) where {T<:Tuple}
-    (f(tuple_type_head(T)), _map_params(f, tuple_type_tail(T))...)
-end
 _map_params(f::F, ::Type{NamedTuple{names, types}}) where {names, types, F} =
     NamedTuple{names}(_map_params(f, types))
+
+function _map_params(f::F, ::Type{T}) where {T<:Tuple, F}
+    if @generated
+        types = fieldtypes(T)
+        ex = :()
+        for t ∈ types
+            push!(ex.args, :(f($t)))
+        end
+        ex
+    else
+        _map_params_fallback(f, T)
+    end
+end
+
+_map_params_fallback(f, ::Type{T}) where {T<:Tuple} = map(f, fieldtypes(T))
 
 buildfromschema(initializer::F, ::Type{T}) where {T, F} = buildfromschema(initializer, T, staticschema(T))
 

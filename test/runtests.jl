@@ -342,6 +342,7 @@ f_infer() = StructArray{ComplexF64}((rand(2,2), rand(2,2)))
 g_infer() = StructArray([(a=(b="1",), c=2)], unwrap = t -> t <: NamedTuple)
 tup_infer() = StructArray([(1, 2), (3, 4)])
 cols_infer() = StructArray(([1, 2], [1.2, 2.3]))
+nt_infer(nt) = StructArray{typeof(nt)}(undef, 4)
 
 @testset "inferrability" begin
     @inferred f_infer()
@@ -352,6 +353,7 @@ cols_infer() = StructArray(([1, 2], [1.2, 2.3]))
     @test s[1] == (1, 2)
     @test s[2] == (3, 4)
     @inferred cols_infer()
+    @inferred nt_infer((x = 3, y = :a, z = :b))
 end
 
 @testset "propertynames" begin
@@ -878,4 +880,23 @@ end
         @inferred view(u, :, 1)
         @inferred view(u, 1, :)
     end
+end
+
+# Test fallback (non-@generated) variant of _map_params
+@testset "_map_params" begin
+    v = StructArray(rand(ComplexF64, 2, 2))
+    f(T) = similar(v, T)
+    types = Tuple{Int, Float64, ComplexF32, String}
+    A = @inferred StructArrays._map_params(f, types)
+    B = StructArrays._map_params_fallback(f, types)
+    @test typeof(A) === typeof(B)
+end
+
+# Same for map_params
+@testset "map_params" begin
+    types = Tuple{Int, Float64, Int32}
+    f(T) = Complex{T}
+    A = @inferred StructArrays.map_params(f, types)
+    B = StructArrays.map_params_fallback(f, types)
+    @test A === B
 end
