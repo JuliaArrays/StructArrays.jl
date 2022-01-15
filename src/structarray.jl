@@ -390,7 +390,7 @@ end
 
 function Base.deleteat!(s::StructVector{T}, idxs) where T
     t = map(Base.Fix2(deleteat!, idxs), components(s))
-    return createinstance(T, t...)
+    return StructVector{T}(t)
 end
 
 Base.copyto!(I::StructArray, J::StructArray) = (foreachfield(copyto!, I, J); I)
