@@ -198,6 +198,12 @@ end
 
     @test e == c == StructArray(a=[10,1], b=[20,2], c=["A","a"])
 
+    c = StructArray(a=[1,2,3], b=[1,4,6], c=["a","b","c"])
+    d = filter!(c) do el
+        return isodd(el.a) && iseven(el.b)
+    end
+    @test d == c == StructArray(a=[3], b=[6], c=["c"])
+
     c = StructArray{C}(a=[1], b=[2], c=["a"])
     push!(c, C(10, 20, "A"))
     @test c == StructArray{C}(a=[1,10], b=[2,20], c=["a","A"])
@@ -227,6 +233,12 @@ end
     e = prepend!(c, d)
 
     @test e == c == StructArray{C}(a=[10,1], b=[20,2], c=["A","a"])
+
+    c = StructArray{C}(a=[1,2,3], b=[1,4,6], c=["a","b","c"])
+    d = filter!(c) do el
+        return isodd(el.a) && iseven(el.b)
+    end
+    @test d == c == StructArray{C}(a=[3], b=[6], c=["c"])
 end
 
 @testset "iterators" begin
