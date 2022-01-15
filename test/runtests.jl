@@ -161,6 +161,86 @@ end
     @test c == d
 end
 
+struct C
+    a::Int
+    b::Int
+    c::String
+end
+
+@testset "in-place vector methods" begin
+    c = StructArray(a=[1], b=[2], c=["a"])
+    push!(c, (a=10, b=20, c="A"))
+    @test c == StructArray(a=[1,10], b=[2,20], c=["a","A"])
+    @test pop!(c) == (a=10, b=20, c="A")
+    @test c == StructArray(a=[1], b=[2], c=["a"])
+
+    c = StructArray(a=[1], b=[2], c=["a"])
+    pushfirst!(c, (a=10, b=20, c="A"))
+    @test c == StructArray(a=[10,1], b=[20,2], c=["A","a"])
+    @test popfirst!(c) == (a=10, b=20, c="A")
+    @test c == StructArray(a=[1], b=[2], c=["a"])
+
+    c = StructArray(a=[1,2,3], b=[2,3,4], c=["a","b","c"])
+    d = insert!(c, 2, (a=10, b=20, c="A"))
+    @test d == c == StructArray(a=[1,10,2,3], b=[2,20,3,4], c=["a","A","b","c"])
+    d = deleteat!(c, 2)
+    @test d == c == StructArray(a=[1,2,3], b=[2,3,4], c=["a","b","c"])
+
+    c = StructArray(a=[1], b=[2], c=["a"])
+    d = [(a=10, b=20, c="A")]
+    e = append!(c, d)
+
+    @test e == c == StructArray(a=[1,10], b=[2,20], c=["a","A"])
+
+    c = StructArray(a=[1], b=[2], c=["a"])
+    d = [(a=10, b=20, c="A")]
+    e = prepend!(c, d)
+
+    @test e == c == StructArray(a=[10,1], b=[20,2], c=["A","a"])
+
+    c = StructArray(a=[1,2,3], b=[1,4,6], c=["a","b","c"])
+    d = filter!(c) do el
+        return isodd(el.a) && iseven(el.b)
+    end
+    @test d == c == StructArray(a=[3], b=[6], c=["c"])
+
+    c = StructArray{C}(a=[1], b=[2], c=["a"])
+    push!(c, C(10, 20, "A"))
+    @test c == StructArray{C}(a=[1,10], b=[2,20], c=["a","A"])
+    @test pop!(c) == C(10, 20, "A")
+    @test c == StructArray{C}(a=[1], b=[2], c=["a"])
+
+    c = StructArray{C}(a=[1], b=[2], c=["a"])
+    pushfirst!(c, C(10, 20, "A"))
+    @test c == StructArray{C}(a=[10,1], b=[20,2], c=["A","a"])
+    @test popfirst!(c) == C(10, 20, "A")
+    @test c == StructArray{C}(a=[1], b=[2], c=["a"])
+
+    c = StructArray{C}(a=[1,2,3], b=[2,3,4], c=["a","b","c"])
+    d = insert!(c, 2, C(10, 20, "A"))
+    @test d == c == StructArray{C}(a=[1,10,2,3], b=[2,20,3,4], c=["a","A","b","c"])
+    d = deleteat!(c, 2)
+    @test d == c == StructArray{C}(a=[1,2,3], b=[2,3,4], c=["a","b","c"])
+
+    c = StructArray{C}(a=[1], b=[2], c=["a"])
+    d = [C(10, 20, "A")]
+    e = append!(c, d)
+
+    @test e == c == StructArray{C}(a=[1,10], b=[2,20], c=["a","A"])
+
+    c = StructArray{C}(a=[1], b=[2], c=["a"])
+    d = [C(10, 20, "A")]
+    e = prepend!(c, d)
+
+    @test e == c == StructArray{C}(a=[10,1], b=[20,2], c=["A","a"])
+
+    c = StructArray{C}(a=[1,2,3], b=[1,4,6], c=["a","b","c"])
+    d = filter!(c) do el
+        return isodd(el.a) && iseven(el.b)
+    end
+    @test d == c == StructArray{C}(a=[3], b=[6], c=["c"])
+end
+
 @testset "iterators" begin
     c = [1, 2, 3, 1, 1]
     d = StructArrays.GroupPerm(c)
