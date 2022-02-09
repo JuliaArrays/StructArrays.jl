@@ -445,7 +445,15 @@ end
 # broadcast
 import Base.Broadcast: BroadcastStyle, ArrayStyle, AbstractArrayStyle, Broadcasted, DefaultArrayStyle
 
-struct StructArrayStyle{Style} <: AbstractArrayStyle{Any} end
+struct StructArrayStyle{S,N} <: AbstractArrayStyle{N} end
+
+# Here we define the dimension tracking behaviour of StructArrayStyle
+function StructArrayStyle{S,M}(::Val{N}) where {S,M,N}
+    if S <: AbstractArrayStyle{M}
+        return StructArrayStyle{typeof(S(Val(N))),N}()
+    end
+    return StructArrayStyle{S,N}()
+end
 
 @inline combine_style_types(::Type{A}, args...) where A<:AbstractArray =
     combine_style_types(BroadcastStyle(A), args...)
@@ -455,9 +463,9 @@ combine_style_types(s::BroadcastStyle) = s
 
 Base.@pure cst(::Type{SA}) where SA = combine_style_types(array_types(SA).parameters...)
 
-BroadcastStyle(::Type{SA}) where SA<:StructArray = StructArrayStyle{typeof(cst(SA))}()
+BroadcastStyle(::Type{SA}) where SA<:StructArray = StructArrayStyle{typeof(cst(SA)),ndims(SA)}()
 
-Base.similar(bc::Broadcasted{StructArrayStyle{S}}, ::Type{ElType}) where {S<:DefaultArrayStyle,N,ElType} =
+Base.similar(bc::Broadcasted{<:StructArrayStyle{S}}, ::Type{ElType}) where {S<:DefaultArrayStyle,ElType} =
     isstructtype(ElType) ? similar(StructArray{ElType}, axes(bc)) : similar(Array{ElType}, axes(bc))
 
 # for aliasing analysis during broadcast

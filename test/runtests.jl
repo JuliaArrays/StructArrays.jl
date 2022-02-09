@@ -926,8 +926,24 @@ Base.similar(bc::Broadcast.Broadcasted{Broadcast.ArrayStyle{MyArray}}, ::Type{El
     # used inside of broadcast but we also test it here explicitly
     @test isa(@inferred(Base.dataids(s)), NTuple{N, UInt} where {N})
 
-    s = StructArray{ComplexF64}((MyArray(rand(2,2)), MyArray(rand(2,2))))
+    s = StructArray{ComplexF64}((MyArray(rand(2)), MyArray(rand(2))))
     @test_throws MethodError s .+ s
+
+    # test for dimensionality track
+    @test Base.broadcasted(+, s, s) isa Broadcast.Broadcasted{<:Broadcast.AbstractArrayStyle{1}}
+    @test Base.broadcasted(+, s, [1,2]) isa Broadcast.Broadcasted{<:Broadcast.AbstractArrayStyle{1}}
+    @test Base.broadcasted(+, s, [1;;2]) isa Broadcast.Broadcasted{<:Broadcast.AbstractArrayStyle{2}}
+    @test Base.broadcasted(+, [1;;;2], s) isa Broadcast.Broadcasted{<:Broadcast.AbstractArrayStyle{3}}
+
+    a = StructArray([1;2+im])
+    b = StructArray([1;;2+im])
+    @test a .+ b == a .+ collect(b) == collect(a) .+ b == collect(a) .+ collect(b)
+
+    # issue #185
+    A = StructArray(randn(ComplexF64, 3, 3))
+    B = randn(ComplexF64, 3, 3)
+    c = StructArray(randn(ComplexF64, 3))
+    @test (A .= B .* c) === A
 end
 
 @testset "staticarrays" begin
