@@ -449,7 +449,7 @@ struct StructArrayStyle{S, N} <: AbstractArrayStyle{N} end
 
 # Here we define the dimension tracking behavior of StructArrayStyle
 function StructArrayStyle{S, M}(::Val{N}) where {S, M, N}
-    T = S <: AbstractArrayStyle{M} ? typeof(S(Val(N))) : S
+    T = S <: AbstractArrayStyle{M} ? typeof(S(Val{N}())) : S
     return StructArrayStyle{T, N}()
 end
 
@@ -463,8 +463,10 @@ Base.@pure cst(::Type{SA}) where {SA} = combine_style_types(array_types(SA).para
 
 BroadcastStyle(::Type{SA}) where {SA<:StructArray} = StructArrayStyle{typeof(cst(SA)), ndims(SA)}()
 
-Base.similar(bc::Broadcasted{StructArrayStyle{S, N}}, ::Type{ElType}) where {S<:DefaultArrayStyle, N, ElType} =
-    isstructtype(ElType) ? similar(StructArray{ElType}, axes(bc)) : similar(Array{ElType}, axes(bc))
+function Base.similar(bc::Broadcasted{StructArrayStyle{S, N}}, ::Type{ElType}) where {S<:DefaultArrayStyle, N, ElType}
+    ContainerType = isnonemptystructtype(ElType) ? StructArray{ElType} : Array{ElType}
+    return similar(ContainerType, axes(bc))
+end
 
 # for aliasing analysis during broadcast
 Base.dataids(u::StructArray) = mapreduce(Base.dataids, (a, b) -> (a..., b...), values(components(u)), init=())

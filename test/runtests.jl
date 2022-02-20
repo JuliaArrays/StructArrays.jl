@@ -945,7 +945,12 @@ Base.similar(bc::Broadcast.Broadcasted{Broadcast.ArrayStyle{MyArray}}, ::Type{El
     A = StructArray(randn(ComplexF64, 3, 3))
     B = randn(ComplexF64, 3, 3)
     c = StructArray(randn(ComplexF64, 3))
-    @test (A .= B .* c) === A
+    A .= B .* c
+    @test @inferred(B .* c) == A == B .* collect(c)
+
+    # issue #189
+    v = StructArray([(a="s1",), (a="s2",)])
+    @test @inferred(broadcast(el -> el.a, v)) == ["s1", "s2"]
 end
 
 @testset "staticarrays" begin
