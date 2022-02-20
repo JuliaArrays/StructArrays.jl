@@ -938,6 +938,7 @@ Base.similar(bc::Broadcast.Broadcasted{Broadcast.ArrayStyle{MyArray}}, ::Type{El
     a = StructArray([1;2+im])
     b = StructArray([1;;2+im])
     @test a .+ b == a .+ collect(b) == collect(a) .+ b == collect(a) .+ collect(b)
+    @test a .+ Any[1] isa StructArray
 
     # issue #185
     A = StructArray(randn(ComplexF64, 3, 3))
