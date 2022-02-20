@@ -464,8 +464,8 @@ Base.@pure cst(::Type{SA}) where {SA} = combine_style_types(array_types(SA).para
 BroadcastStyle(::Type{SA}) where {SA<:StructArray} = StructArrayStyle{typeof(cst(SA)), ndims(SA)}()
 
 function Base.similar(bc::Broadcasted{StructArrayStyle{S, N}}, ::Type{ElType}) where {S<:DefaultArrayStyle, N, ElType}
-    isstruct = isstructtype(ElType) && fieldcount(ElType) > 0
-    return isstruct ? similar(StructArray{ElType}, axes(bc)) : similar(Array{ElType}, axes(bc))
+    ContainerType = isnonemptystructtype(ElType) ? StructArray{ElType} : Array{ElType}
+    return similar(ContainerType, axes(bc))
 end
 
 # for aliasing analysis during broadcast

@@ -172,6 +172,8 @@ hasfields(::Type{<:NamedTuple{names}}) where {names} = true
 hasfields(::Type{T}) where {T} = !isabstracttype(T)
 hasfields(::Union) = false
 
+isnonemptystructtype(::Type{T}) where {T} = isstructtype(T) && fieldcount(T) != 0
+
 """
     StructArrays.bypass_constructor(T, args)
 
