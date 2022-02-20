@@ -38,7 +38,7 @@ end
     @test _promote_typejoin(Pair{Int, Missing}, Pair{Int, Int}) == Pair{Int, Union{Int, Missing}}
     @test _promote_typejoin(NamedTuple{(:a, :b), Tuple{Int, Missing}}, NamedTuple{(:a, :b), Tuple{Int, Int}}) == NamedTuple{(:a, :b), Tuple{Int, Union{Int, Missing}}}
     @test _promote_typejoin(Tuple{}, Tuple{}) == Tuple{}
-    @test _promote_typejoin(Tuple{Int}, Tuple{Int, Int}) == Tuple{Int, Vararg{Int, N} where N}
+    @test _promote_typejoin(Tuple{Int}, Tuple{Int, Int}) == Tuple{Int, Vararg{Int}}
 
     @test StructArrays.astuple(Tuple{Int}) == Tuple{Int}
     @test StructArrays.strip_params(Tuple{Int}) == Tuple
@@ -507,7 +507,8 @@ end
     @test v isa Array{Int, 1}
 end
 
-const initializer = StructArrays.ArrayInitializer(t -> t <: Union{Tuple, NamedTuple, Pair})
+unwrap(t) = t <: Union{Tuple, NamedTuple, Pair}
+const initializer = StructArrays.ArrayInitializer(unwrap)
 collect_structarray_rec(t) = collect_structarray(t, initializer = initializer)
 
 @testset "collectnamedtuples" begin
