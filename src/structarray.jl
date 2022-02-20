@@ -450,18 +450,18 @@ struct StructArrayStyle{S, N} <: AbstractArrayStyle{N} end
 # Here we define the dimension tracking behavior of StructArrayStyle
 function StructArrayStyle{S, M}(::Val{N}) where {S, M, N}
     T = S <: AbstractArrayStyle{M} ? typeof(S(Val(N))) : S
-    return StructArrayStyle{T,N}()
+    return StructArrayStyle{T, N}()
 end
 
-@inline combine_style_types(::Type{A}, args...) where A<:AbstractArray =
+@inline combine_style_types(::Type{A}, args...) where {A<:AbstractArray} =
     combine_style_types(BroadcastStyle(A), args...)
-@inline combine_style_types(s::BroadcastStyle, ::Type{A}, args...) where A<:AbstractArray =
+@inline combine_style_types(s::BroadcastStyle, ::Type{A}, args...) where {A<:AbstractArray} =
     combine_style_types(Broadcast.result_style(s, BroadcastStyle(A)), args...)
 combine_style_types(s::BroadcastStyle) = s
 
-Base.@pure cst(::Type{SA}) where SA = combine_style_types(array_types(SA).parameters...)
+Base.@pure cst(::Type{SA}) where {SA} = combine_style_types(array_types(SA).parameters...)
 
-BroadcastStyle(::Type{SA}) where SA<:StructArray = StructArrayStyle{typeof(cst(SA)), ndims(SA)}()
+BroadcastStyle(::Type{SA}) where {SA<:StructArray} = StructArrayStyle{typeof(cst(SA)), ndims(SA)}()
 
 Base.similar(bc::Broadcasted{StructArrayStyle{S, N}}, ::Type{ElType}) where {S<:DefaultArrayStyle, N, ElType} =
     isstructtype(ElType) ? similar(StructArray{ElType}, axes(bc)) : similar(Array{ElType}, axes(bc))
