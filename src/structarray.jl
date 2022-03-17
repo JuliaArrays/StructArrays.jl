@@ -420,6 +420,12 @@ for op in [:cat, :hcat, :vcat]
         end
     end
 end
+    
+function Base.reduce(::typeof(vcat), arrs::AbstractVector{<:StructArray})
+    f = key -> reduce(vcat, [getproperty(t, key) for t in arrs])
+    T = mapreduce(eltype, promote_type, arrs)
+    StructArray{T}(map(f, propertynames(arrs[1])))
+end
 
 Base.copy(s::StructArray{T}) where {T} = StructArray{T}(map(copy, components(s)))
 
