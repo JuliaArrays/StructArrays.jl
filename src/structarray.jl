@@ -282,11 +282,21 @@ end
 
 Base.similar(s::StructArray, sz::Base.DimOrInd...) = similar(s, Base.to_shape(sz))
 Base.similar(s::StructArray) = similar(s, Base.to_shape(axes(s)))
-function Base.similar(s::StructArray{T}, sz::Tuple) where {T}
-    StructArray{T}(map(typ -> similar(typ, sz), components(s)))
+function Base.similar(s::StructArray{T,N,C}, ::Type{T}, sz::NTuple{M,Int64}) where {T, N, M, C<:Union{Tuple, NamedTuple}}
+    StructArray{T}(map(typ -> similar(typ, sz), fieldarrays(s)))
 end
 
-@deprecate fieldarrays(x) StructArrays.components(x)
+function Base.similar(s::StructArray{T,N,C}, S::Type, sz::NTuple{M,Int64}) where {T, N, M, C<:Union{Tuple, NamedTuple}}
+    # If not specified, we don't really know what kind of array to use for each
+    # interior type, so we just pick the first one arbitrarily. If users need
+    # something else, they need to be more specific.
+    f1 = fieldarrays(s)[1]
+    if isstructtype(S)
+        return StructArrays.buildfromschema(typ -> similar(f1, typ, sz), S)
+    else
+        return similar(f1, S, sz)
+    end
+end
 
 """
     components(s::StructArray)
