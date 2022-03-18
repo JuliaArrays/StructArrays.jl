@@ -325,6 +325,14 @@ end
     s = similar(t, (3, 5))
     @test eltype(s) == NamedTuple{(:a, :b), Tuple{Float64, Bool}}
     @test size(s) == (3, 5)
+
+    s = similar(t, ComplexF64, 10)
+    @test s isa StructArray{ComplexF64, 1, NamedTuple{(:re, :im), Tuple{Vector{Float64}, Vector{Float64}}}}
+    @test size(s) == (10,)
+
+    s = similar(t, Float32, 2, 2)
+    @test s isa Matrix{Float32}
+    @test size(s) == (2, 2)
 end
 
 @testset "empty" begin
@@ -1095,5 +1103,5 @@ end
 @testset "OffsetArray zero" begin
     s = StructArray{ComplexF64}((rand(2), rand(2)))
     soff = OffsetArray(s, 0:1)
-    @test isa(zero(soff).parent, StructArray)
+    @test isa(parent(zero(soff)), StructArray)
 end
