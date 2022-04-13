@@ -392,6 +392,16 @@ end
 @testset "resize!" begin
     t = StructArray{Pair}(([3, 5], ["a", "b"]))
     resize!(t, 5)
+    sizehint!(t, 10)
+    @test length(t) == 5
+    p = 1 => "c"
+    t[5] = p
+    @test t[5] == p
+end
+
+@testset "resize!" begin
+    t = StructArray{Pair}(([3, 5], ["a", "b"]))
+    resize!(t, 5)
     @test length(t) == 5
     p = 1 => "c"
     t[5] = p
