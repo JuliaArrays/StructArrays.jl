@@ -392,7 +392,6 @@ end
 @testset "resize!" begin
     t = StructArray{Pair}(([3, 5], ["a", "b"]))
     resize!(t, 5)
-    sizehint!(t, 10)
     @test length(t) == 5
     p = 1 => "c"
     t[5] = p
@@ -407,6 +406,17 @@ end
     t[5] = p
     @test t[5] == p
 end
+
+@testset "sizehint!" begin
+    t = StructArray{Pair}(([3, 5], [:a, :b]))
+    sizehint!(t, 5)
+    @test @allocated(resize!(t, 5)) == 0
+    @test length(t) == 5
+    p = 1 => :c
+    t[5] = p
+    @test t[5] == p
+end
+
 
 @testset "concat" begin
     t = StructArray{Pair}(([3, 5], ["a", "b"]))
