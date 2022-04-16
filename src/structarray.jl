@@ -411,6 +411,13 @@ function Base.empty!(s::StructArray)
     foreachfield(empty!, s)
 end
 
+function Base.sizehint!(s::StructArray, i::Integer)
+    for a in components(s)
+        sizehint!(a, i)
+    end
+    return s
+end
+
 for op in [:cat, :hcat, :vcat]
     @eval begin
         function Base.$op(args::StructArray...; kwargs...)
