@@ -1,0 +1,90 @@
+<!DOCTYPE html>
+<html lang="en"><head><meta charset="UTF-8"/><meta name="viewport" content="width=device-width, initial-scale=1.0"/><title>Advanced techniques · StructArrays</title><script data-outdated-warner src="../assets/warner.js"></script><link href="https://cdnjs.cloudflare.com/ajax/libs/lato-font/3.0.0/css/lato-font.min.css" rel="stylesheet" type="text/css"/><link href="https://cdnjs.cloudflare.com/ajax/libs/juliamono/0.039/juliamono-regular.css" rel="stylesheet" type="text/css"/><link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.15.3/css/fontawesome.min.css" rel="stylesheet" type="text/css"/><link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.15.3/css/solid.min.css" rel="stylesheet" type="text/css"/><link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.15.3/css/brands.min.css" rel="stylesheet" type="text/css"/><link href="https://cdnjs.cloudflare.com/ajax/libs/KaTeX/0.13.11/katex.min.css" rel="stylesheet" type="text/css"/><script>documenterBaseURL=".."</script><script src="https://cdnjs.cloudflare.com/ajax/libs/require.js/2.3.6/require.min.js" data-main="../assets/documenter.js"></script><script src="../siteinfo.js"></script><script src="../../versions.js"></script><link class="docs-theme-link" rel="stylesheet" type="text/css" href="../assets/themes/documenter-dark.css" data-theme-name="documenter-dark" data-theme-primary-dark/><link class="docs-theme-link" rel="stylesheet" type="text/css" href="../assets/themes/documenter-light.css" data-theme-name="documenter-light" data-theme-primary/><script src="../assets/themeswap.js"></script></head><body><div id="documenter"><nav class="docs-sidebar"><div class="docs-package-name"><span class="docs-autofit"><a href="../">StructArrays</a></span></div><form class="docs-search" action="../search/"><input class="docs-search-query" id="documenter-search-query" name="q" type="text" placeholder="Search docs"/></form><ul class="docs-menu"><li><a class="tocitem" href="../">Overview</a></li><li><a class="tocitem" href="../examples/">Example usage</a></li><li><a class="tocitem" href="../counterintuitive/">Some counterintuitive behaviors</a></li><li class="is-active"><a class="tocitem" href>Advanced techniques</a><ul class="internal"><li><a class="tocitem" href="#Structures-with-non-standard-data-layout"><span>Structures with non-standard data layout</span></a></li><li><a class="tocitem" href="#Mutate-or-widen-style-accumulation"><span>Mutate-or-widen style accumulation</span></a></li><li><a class="tocitem" href="#Using-StructArrays-in-CUDA-kernels"><span>Using StructArrays in CUDA kernels</span></a></li></ul></li><li><a class="tocitem" href="../reference/">Index</a></li></ul><div class="docs-version-selector field has-addons"><div class="control"><span class="docs-label button is-static is-size-7">Version</span></div><div class="docs-selector control is-expanded"><div class="select is-fullwidth is-size-7"><select id="documenter-version-selector"></select></div></div></div></nav><div class="docs-main"><header class="docs-navbar"><nav class="breadcrumb"><ul class="is-hidden-mobile"><li class="is-active"><a href>Advanced techniques</a></li></ul><ul class="is-hidden-tablet"><li class="is-active"><a href>Advanced techniques</a></li></ul></nav><div class="docs-right"><a class="docs-edit-link" href="https://github.com/JuliaArrays/StructArrays.jl/blob/master/docs/src/advanced.md" title="Edit on GitHub"><span class="docs-icon fab"></span><span class="docs-label is-hidden-touch">Edit on GitHub</span></a><a class="docs-settings-button fas fa-cog" id="documenter-settings-button" href="#" title="Settings"></a><a class="docs-sidebar-button fa fa-bars is-hidden-desktop" id="documenter-sidebar-button" href="#"></a></div></header><article class="content" id="documenter-page"><h1 id="Advanced-techniques"><a class="docs-heading-anchor" href="#Advanced-techniques">Advanced techniques</a><a id="Advanced-techniques-1"></a><a class="docs-heading-anchor-permalink" href="#Advanced-techniques" title="Permalink"></a></h1><h2 id="Structures-with-non-standard-data-layout"><a class="docs-heading-anchor" href="#Structures-with-non-standard-data-layout">Structures with non-standard data layout</a><a id="Structures-with-non-standard-data-layout-1"></a><a class="docs-heading-anchor-permalink" href="#Structures-with-non-standard-data-layout" title="Permalink"></a></h2><p>StructArrays support structures with custom data layout. The user is required to overload <code>staticschema</code> in order to define the custom layout, <code>component</code> to access fields of the custom layout, and <code>createinstance(T, fields...)</code> to create an instance of type <code>T</code> from its custom fields <code>fields</code>. In other word, given <code>x::T</code>, <code>createinstance(T, (component(x, f) for f in fieldnames(staticschema(T)))...)</code> should successfully return an instance of type <code>T</code>.</p><p>Here is an example of a type <code>MyType</code> that has as custom fields either its field <code>data</code> or fields of its field <code>rest</code> (which is a named tuple):</p><pre><code class="language-julia hljs">using StructArrays
+
+struct MyType{T, NT&lt;:NamedTuple}
+    data::T
+    rest::NT
+end
+
+MyType(x; kwargs...) = MyType(x, values(kwargs))
+
+function StructArrays.staticschema(::Type{MyType{T, NamedTuple{names, types}}}) where {T, names, types}
+    return NamedTuple{(:data, names...), Base.tuple_type_cons(T, types)}
+end
+
+function StructArrays.component(m::MyType, key::Symbol)
+    return key === :data ? getfield(m, 1) : getfield(getfield(m, 2), key)
+end
+
+# generate an instance of MyType type
+function StructArrays.createinstance(::Type{MyType{T, NT}}, x, args...) where {T, NT}
+    return MyType(x, NT(args))
+end
+
+s = [MyType(rand(), a=1, b=2) for i in 1:10]
+StructArray(s)</code></pre><p>In the above example, our <code>MyType</code> was composed of <code>data</code> of type <code>Float64</code> and <code>rest</code> of type <code>NamedTuple</code>. In many practical cases where there are custom types involved it&#39;s hard for StructArrays to automatically widen the types in case they are heterogeneous. The following example demonstrates a widening method in that scenario.</p><pre><code class="language-julia hljs">using Tables
+
+# add a source of custom type data
+struct Location{U}
+    x::U
+    y::U
+end
+struct Region{V}
+    area::V
+end
+
+s1 = MyType(Location(1, 0), place = &quot;Delhi&quot;, rainfall = 200)
+s2 = MyType(Location(2.5, 1.9), place = &quot;Mumbai&quot;, rainfall = 1010)
+s3 = MyType(Region([Location(1, 0), Location(2.5, 1.9)]), place = &quot;North India&quot;, rainfall = missing)
+
+s = [s1, s2, s3]
+# Now if we try to do StructArray(s)
+# we will get an error
+
+function meta_table(iter)
+    cols = Tables.columntable(iter)
+    meta_table(first(cols), Base.tail(cols)) 
+end
+
+function meta_table(data, rest::NT) where NT&lt;:NamedTuple
+    F = MyType{eltype(data), StructArrays.eltypes(NT)}
+    return StructArray{F}(; data=data, rest...)
+end
+
+meta_table(s)</code></pre><p>The above strategy has been tested and implemented in <a href="https://github.com/JuliaGeometry/GeometryBasics.jl">GeometryBasics.jl</a>.</p><h2 id="Mutate-or-widen-style-accumulation"><a class="docs-heading-anchor" href="#Mutate-or-widen-style-accumulation">Mutate-or-widen style accumulation</a><a id="Mutate-or-widen-style-accumulation-1"></a><a class="docs-heading-anchor-permalink" href="#Mutate-or-widen-style-accumulation" title="Permalink"></a></h2><p>StructArrays provides a function <code>StructArrays.append!!(dest, src)</code> (unexported) for &quot;mutate-or-widen&quot; style accumulation.  This function can be used via <a href="https://juliafolds.github.io/BangBang.jl/dev/#BangBang.append!!"><code>BangBang.append!!</code></a> and <a href="https://juliafolds.github.io/BangBang.jl/dev/#BangBang.push!!"><code>BangBang.push!!</code></a> as well.</p><p><code>StructArrays.append!!</code> works like <code>append!(dest, src)</code> if <code>dest</code> can contain all element types in <code>src</code> iterator; i.e., it <em>mutates</em> <code>dest</code> in-place:</p><pre><code class="language-julia hljs">julia&gt; dest = StructVector((a=[1], b=[2]))
+1-element StructArray(::Array{Int64,1}, ::Array{Int64,1}) with eltype NamedTuple{(:a, :b),Tuple{Int64,Int64}}:
+ (a = 1, b = 2)
+
+julia&gt; StructArrays.append!!(dest, [(a = 3, b = 4)])
+2-element StructArray(::Array{Int64,1}, ::Array{Int64,1}) with eltype NamedTuple{(:a, :b),Tuple{Int64,Int64}}:
+ (a = 1, b = 2)
+ (a = 3, b = 4)
+
+julia&gt; ans === dest
+true</code></pre><p>Unlike <code>append!</code>, <code>append!!</code> can also <em>widen</em> element type of <code>dest</code> array:</p><pre><code class="language-julia hljs">julia&gt; StructArrays.append!!(dest, [(a = missing, b = 6)])
+3-element StructArray(::Array{Union{Missing, Int64},1}, ::Array{Int64,1}) with eltype NamedTuple{(:a, :b),Tuple{Union{Missing, Int64},Int64}}:
+ NamedTuple{(:a, :b),Tuple{Union{Missing, Int64},Int64}}((1, 2))
+ NamedTuple{(:a, :b),Tuple{Union{Missing, Int64},Int64}}((3, 4))
+ NamedTuple{(:a, :b),Tuple{Union{Missing, Int64},Int64}}((missing, 6))
+
+julia&gt; ans === dest
+false</code></pre><p>Since the original array <code>dest</code> cannot hold the input, a new array is created (<code>ans !== dest</code>).</p><p>Combined with <a href="https://docs.julialang.org/en/latest/manual/performance-tips/#kernel-functions-1">function barriers</a>, <code>append!!</code> is a useful building block for implementing <code>collect</code>-like functions.</p><h2 id="Using-StructArrays-in-CUDA-kernels"><a class="docs-heading-anchor" href="#Using-StructArrays-in-CUDA-kernels">Using StructArrays in CUDA kernels</a><a id="Using-StructArrays-in-CUDA-kernels-1"></a><a class="docs-heading-anchor-permalink" href="#Using-StructArrays-in-CUDA-kernels" title="Permalink"></a></h2><p>It is possible to combine StructArrays with <a href="https://github.com/JuliaGPU/CUDAnative.jl">CUDAnative</a>, in order to create CUDA kernels that work on StructArrays directly on the GPU. Make sure you are familiar with the CUDAnative documentation (esp. kernels with plain <code>CuArray</code>s) before experimenting with kernels based on <code>StructArray</code>s.</p><pre><code class="language-julia hljs">using CUDAnative, CuArrays, StructArrays
+d = StructArray(a = rand(100), b = rand(100))
+
+# move to GPU
+dd = replace_storage(CuArray, d)
+de = similar(dd)
+
+# a simple kernel, to copy the content of `dd` onto `de`
+function kernel!(dest, src)
+    i = (blockIdx().x-1)*blockDim().x + threadIdx().x
+    if i &lt;= length(dest)
+        dest[i] = src[i]
+    end
+    return nothing
+end
+
+threads = 1024
+blocks = cld(length(dd),threads)
+
+@cuda threads=threads blocks=blocks kernel!(de, dd)</code></pre></article><nav class="docs-footer"><a class="docs-footer-prevpage" href="../counterintuitive/">« Some counterintuitive behaviors</a><a class="docs-footer-nextpage" href="../reference/">Index »</a><div class="flexbox-break"></div><p class="footer-message">Powered by <a href="https://github.com/JuliaDocs/Documenter.jl">Documenter.jl</a> and the <a href="https://julialang.org/">Julia Programming Language</a>.</p></nav></div><div class="modal" id="documenter-settings"><div class="modal-background"></div><div class="modal-card"><header class="modal-card-head"><p class="modal-card-title">Settings</p><button class="delete"></button></header><section class="modal-card-body"><p><label class="label">Theme</label><div class="select"><select id="documenter-themepicker"><option value="documenter-light">documenter-light</option><option value="documenter-dark">documenter-dark</option></select></div></p><hr/><p>This document was generated with <a href="https://github.com/JuliaDocs/Documenter.jl">Documenter.jl</a> version 0.27.15 on <span class="colophon-date" title="Saturday 16 April 2022 10:48">Saturday 16 April 2022</span>. Using Julia version 1.7.2.</p></section><footer class="modal-card-foot"></footer></div></div></div></body></html>
