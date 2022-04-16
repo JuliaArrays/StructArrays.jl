@@ -11,7 +11,6 @@ using Test
 using Documenter: doctest
 doctest(StructArrays)
 
-
 @testset "index" begin
     a, b = [1 2; 3 4], [4 5; 6 7]
     t = StructArray((a = a, b = b))
@@ -326,7 +325,6 @@ end
     end
 end
 
-
 struct A
     x::Int
     y::Int
@@ -347,11 +345,11 @@ end
     @test StructArray(a=a, b=b) == StructArray((a=a, b=b))
     @test StructArray{ComplexF64}(re=a, im=b) == StructArray{ComplexF64}((a, b))
     f1() = StructArray(a=[1.2], b=["test"])
-    f2() = StructArray{Pair}(first=[1.2], second=["test"])
+    f2() = StructArray{Pair{Float64, String}}(first=[1.2], second=["test"])
     t1 = @inferred f1()
     t2 = @inferred f2()
     @test t1 == StructArray((a=[1.2], b=["test"]))
-    @test t2 == StructArray{Pair}(([1.2], ["test"]))
+    @test t2 == StructArray{Pair{Float64, String}}(([1.2], ["test"]))
 end
 
 @testset "complex" begin
@@ -390,15 +388,16 @@ end
 end
 
 @testset "resize!" begin
-    t = StructArray{Pair}(([3, 5], ["a", "b"]))
+    t = StructArray{Pair{Int, String}}(([3, 5], ["a", "b"]))
     resize!(t, 5)
     @test length(t) == 5
     p = 1 => "c"
     t[5] = p
     @test t[5] == p
 end
+
 @testset "sizehint!" begin
-    t = StructArray{Pair}(([3, 5], [:a, :b]))
+    t = StructArray{Pair{Int, Symbol}}(([3, 5], [:a, :b]))
     sizehint!(t, 5)
     @test @allocated(resize!(t, 5)) == 0
     @test length(t) == 5
@@ -406,20 +405,23 @@ end
     t[5] = p
     @test t[5] == p
 end
+
 @testset "concat" begin
-    t = StructArray{Pair}(([3, 5], ["a", "b"]))
+    t = StructArray{Pair{Int, String}}(([3, 5], ["a", "b"]))
     push!(t, (2 => "d"))
-    @test t == StructArray{Pair}(([3, 5, 2], ["a", "b", "d"]))
+    @test t == StructArray{Pair{Int, String}}(([3, 5, 2], ["a", "b", "d"]))
     @test pop!(t) == (2 => "d")
     push!(t, (2 => "c"))
-    @test t == StructArray{Pair}(([3, 5, 2], ["a", "b", "c"]))
+    @test t == StructArray{Pair{Int, String}}(([3, 5, 2], ["a", "b", "c"]))
     append!(t, t)
-    @test t == StructArray{Pair}(([3, 5, 2, 3, 5, 2], ["a", "b", "c", "a", "b", "c"]))
-    t = StructArray{Pair}(([3, 5], ["a", "b"]))
-    t2 = StructArray{Pair}(([1, 6], ["a", "b"]))
-    @test cat(t, t2; dims=1)::StructArray == StructArray{Pair}(([3, 5, 1, 6], ["a", "b", "a", "b"])) == vcat(t, t2)
+    @test t == StructArray{Pair{Int, String}}(([3, 5, 2, 3, 5, 2], ["a", "b", "c", "a", "b", "c"]))
+    t = StructArray{Pair{Int, String}}(([3, 5], ["a", "b"]))
+    t2 = StructArray{Pair{Int, String}}(([1, 6], ["a", "b"]))
+    vertical_concat = StructArray{Pair{Int, String}}(([3, 5, 1, 6], ["a", "b", "a", "b"]))
+    @test cat(t, t2; dims=1)::StructArray == vertical_concat == vcat(t, t2)
     @test vcat(t, t2) isa StructArray
-    @test cat(t, t2; dims=2)::StructArray == StructArray{Pair}(([3 1; 5 6], ["a" "a"; "b" "b"])) == hcat(t, t2)
+    horizontal_concat = StructArray{Pair{Int, String}}(([3 1; 5 6], ["a" "a"; "b" "b"]))
+    @test cat(t, t2; dims=2)::StructArray == horizontal_concat == hcat(t, t2)
     @test hcat(t, t2) isa StructArray
 end
 
