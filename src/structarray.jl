@@ -347,7 +347,8 @@ Base.@propagate_inbounds function Base.getindex(x::StructArray{T, <:Any, <:Any, 
 end
 
 @inline function Base.view(s::StructArray{T, N, C}, I...) where {T, N, C}
-    StructArray{T}(map(v -> view(v, I...), components(s)))
+    @boundscheck checkbounds(s, I...)
+    StructArray{T}(map(v -> @inbounds(view(v, I...)), components(s)))
 end
 
 Base.@propagate_inbounds function Base.setindex!(s::StructArray{<:Any, <:Any, <:Any, CartesianIndex{N}}, vals, I::Vararg{Int, N}) where {N}
