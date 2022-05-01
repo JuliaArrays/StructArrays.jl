@@ -15,10 +15,10 @@ struct StructArray{T, N, C<:Tup, I} <: AbstractArray{T, N}
 
     function StructArray{T, N, C}(c) where {T, N, C<:Tup}
         if length(c) > 0
-            ax = axes(c[1])
+            ax = axes(first(c))
             length(ax) == N || error("wrong number of dimensions")
-            for i = 2:length(c)
-                axes(c[i]) == ax || error("all field arrays must have same shape")
+            map(tail(c)) do ci
+                axes(ci) == ax || error("all field arrays must have same shape")
             end
         end
         new{T, N, C, index_type(c)}(c)
