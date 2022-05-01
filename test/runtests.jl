@@ -312,6 +312,8 @@ end
     @test pop!(t) == (1, 2.0)
     @test getproperty(t, 1) == [2]
     @test getproperty(t, 2) == [3.0]
+
+    @test_throws ErrorException StructArray(([1, 2], [3]))
 end
 
 @testset "constructor from slices" begin
@@ -350,6 +352,8 @@ end
     t2 = @inferred f2()
     @test t1 == StructArray((a=[1.2], b=["test"]))
     @test t2 == StructArray{Pair{Float64, String}}(([1.2], ["test"]))
+
+    @test_throws ErrorException StructArray(a=[1, 2], b=[3])
 end
 
 @testset "complex" begin
