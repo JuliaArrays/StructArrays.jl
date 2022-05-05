@@ -1,8 +1,8 @@
 # Overview of StructArrays.jl
 
-This package introduces the type `StructArray` which is an `AbstractArray` whose elements are `struct` (for example `NamedTuples`,  or `ComplexF64`, or a custom user defined `struct`). While a `StructArray` iterates `structs`, the layout is column based (meaning each field of the `struct` is stored in a separate `Array`, and `struct` entries of a StructArray are constructed on-the-fly). 
+This package introduces the type `StructArray` which is an `AbstractArray` whose elements are `struct` (for example `NamedTuples`,  or `ComplexF64`, or a custom user defined `struct`). While a `StructArray` iterates `structs`, the layout uses separate arrays for each field of the `struct`. This is often called [Structure-Of-Arrays (SOA)](https://en.wikipedia.org/wiki/AoS_and_SoA); the concepts will be explained in greater detail below. `struct` entries of a StructArray are constructed on-the-fly. This contrasts with the "Array-Of-Structs" (AOS) layout where individual array elements are explicitly stored as `struct`s.
 
-`Base.getproperty` or the dot syntax can be used to access columns, whereas rows can be accessed with `getindex`. 
+`Base.getproperty` or the dot syntax can be used to access array-fields, whereas elements can be accessed with `getindex` (`[]`).
 
 The package was largely inspired by the `Columns` type in [IndexedTables](https://github.com/JuliaComputing/IndexedTables.jl) which it now replaces.
 
@@ -11,8 +11,8 @@ The package was largely inspired by the `Columns` type in [IndexedTables](https:
 One can create a `StructArray` by providing the struct type and a tuple or NamedTuple of field arrays:
 ```julia
 julia> struct Foo{T}
-       a::T
-       b::T
+           a::T
+           b::T
        end
 
 julia> x = StructArray{Foo}((rand(2,2), rand(2,2)))
@@ -23,10 +23,10 @@ julia> x = StructArray{Foo}((rand(2,2), rand(2,2)))
 julia> x = StructArray{Foo}((a=rand(2,2), b=rand(2,2)))
 2×2 StructArray(::Matrix{Float64}, ::Matrix{Float64}) with eltype Foo:
  Foo{Float64}(0.702413, 0.416194)  Foo{Float64}(0.520032, 0.0856553)
- Foo{Float64}(0.701297, 0.977394)  Foo{Float64}(0.451654, 0.258264) 
+ Foo{Float64}(0.701297, 0.977394)  Foo{Float64}(0.451654, 0.258264)
 ```
 If a struct is not specified, a StructArray of Tuple or NamedTuple type will be created
-```julia 
+```julia
 julia> x = StructArray((rand(2,2), rand(2,2)))
 2×2 StructArray(::Matrix{Float64}, ::Matrix{Float64}) with eltype Tuple{Float64, Float64}:
  (0.754912, 0.803434)  (0.341105, 0.904933)
@@ -69,6 +69,33 @@ julia> rand!(s)
  0.680079+0.874437im  0.625239+0.737254im
   0.92407+0.929336im  0.267358+0.804478im
 ```
+
+Finally, it is possible to create a StructArray from an array-of-structs:
+
+```jldoctest; setup=:(using StructArrays)
+julia> aos = [1+2im, 3+4im]
+2-element Vector{Complex{Int64}}:
+ 1 + 2im
+ 3 + 4im
+
+julia> aos.re     # Vectors do not have fields, so this is an error
+ERROR: type Array has no field re
+[...]
+
+julia> soa = StructArray(aos)
+2-element StructArray(::Vector{Int64}, ::Vector{Int64}) with eltype Complex{Int64}:
+ 1 + 2im
+ 3 + 4im
+
+julia> soa.re
+2-element Vector{Int64}:
+ 1
+ 3
+```
+
+!!! warning
+    Unlike the other cases above, `soa` contains a *copy* of the data in `aos`. For more discussion, see [Some counterintuitive behaviors](@ref).
+
 ## Using custom array types
 
 StructArrays supports using custom array types. It is always possible to pass field arrays of a custom type. The "custom array of structs to struct of custom arrays" transformation will use the `similar` method of the custom array type. This can be useful when working on the GPU for example:

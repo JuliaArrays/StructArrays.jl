@@ -1,42 +1,192 @@
-# Some counterintuitive behaviors 
+# Some counterintuitive behaviors
 
-StructArrays doesn't explicitly store any structs; rather, it materializes a struct element on the fly when `getindex` is called. This is typically very efficient; for example, if all the struct fields are `isbits`, then materializing a new struct does not allocate. However, this can lead to counterintuitive behavior when modifying entries of a StructArray. 
+When created from parent arrays representing each field of the final `struct`, StructArrays creates a "view" which
+doesn't explicitly store any structs; rather, it materializes a struct element on the fly when `getindex` is called. This is typically very efficient; for example, if all the struct fields are `isbits`, then materializing a new struct does not allocate.
 
-## Modifying the field of a struct element
+However, on-the-fly generation means that there is no storage allocated for the created `struct`. Consequently, mutation is transient and may result in counterintuitive behavior.
 
-```julia
+Finally, when created from an array-of-structs, StructArrays creates a copy of the "parent" data. This effectively "detaches" the StructArray from the original data.
+
+These issues are elucidated below.
+
+## Modifying a field of a struct element
+
+For this demonstration, throughout we'll use this mutable struct:
+
+```jldoctest counter1; setup=:(using StructArrays)
 julia> mutable struct Foo{T}
-       a::T
-       b::T
+           a::T
+           b::T
        end
-       
-julia> x = StructArray([Foo(1,2) for i = 1:5])
+```
 
-julia> x[1].a = 10
+### The "view" case (SOA)
 
-julia> x # remains unchanged
-5-element StructArray(::Vector{Int64}, ::Vector{Int64}) with eltype Foo{Int64}:
- Foo{Int64}(1, 2)
+When created from separate parent arrays, you get a view of the parents, which means that modifying the `StructArray` also modifies the parents:
+
+```jldoctest counter1
+julia> a = [1,1,1,1]
+4-element Vector{Int64}:
+ 1
+ 1
+ 1
+ 1
+
+julia> b = [2,2,2,2]
+4-element Vector{Int64}:
+ 2
+ 2
+ 2
+ 2
+
+julia> soa = StructArray{Foo}((a, b))
+4-element StructArray(::Vector{Int64}, ::Vector{Int64}) with eltype Foo:
  Foo{Int64}(1, 2)
  Foo{Int64}(1, 2)
  Foo{Int64}(1, 2)
  Foo{Int64}(1, 2)
 ```
-The assignment `x[1].a = 10` first calls `getindex(x,1)`, then sets property `a` of the accessed element. However, since StructArrays constructs `Foo(x.a[1],x.b[1])` on the fly when when accessing `x[1]`, setting `x[1].a = 10` modifies the materialized struct rather than the StructArray `x`. 
 
-Note that one can modify a field of a StructArray entry via `x.a[1] = 10` (the order of `.` syntax and indexing syntax matters). As an added benefit, this does not require that the struct `Foo` is mutable, as it modifies the underlying component array `x.a` directly.
+Now let's modify some elements:
 
-For mutable structs, it is possible to write code that works for both regular `Array`s and `StructArray`s with the following trick:
-```julia
-x[1] = x[1].a = 10
+```jldoctest counter1
+julia> soa.a[1] = 5
+5
+
+julia> soa[2] = Foo(6, 7)
+Foo{Int64}(6, 7)
+
+julia> b[3] = 8
+8
 ```
- 
-`x[1].a = 10` creates a new `Foo` element, modifies the field `a`, then returns the modified struct. Assigning this to `x[1]` then unpacks `a` and `b` from the modified struct and assigns entries of the component arrays `x.a[1] = a`, `x.b[1] = b`.
+
+All three of these modify both `soa` and the parent arrays `a` and `b`:
+
+```jldoctest counter1
+julia> soa
+4-element StructArray(::Vector{Int64}, ::Vector{Int64}) with eltype Foo:
+ Foo{Int64}(5, 2)
+ Foo{Int64}(6, 7)
+ Foo{Int64}(1, 8)
+ Foo{Int64}(1, 2)
+
+julia> a
+4-element Vector{Int64}:
+ 5
+ 6
+ 1
+ 1
+
+julia> b
+4-element Vector{Int64}:
+ 2
+ 7
+ 8
+ 2
+```
+
+This is because `soa` is a "view" of `a` and `b` (it has no independent storage of its own).
+
+However, you may be surprised by the following:
+
+```jldoctest counter1
+julia> soa[4].b = 9
+9
+
+julia> soa
+4-element StructArray(::Vector{Int64}, ::Vector{Int64}) with eltype Foo:
+ Foo{Int64}(5, 2)
+ Foo{Int64}(6, 7)
+ Foo{Int64}(1, 8)
+ Foo{Int64}(1, 2)
+
+julia> b
+4-element Vector{Int64}:
+ 2
+ 7
+ 8
+ 2
+```
+
+This assignment had no persistent effect on `soa` or `b`. This occurs because `soa[4]` is generated
+on-the-fly; since it returns a `Foo`, which is mutable, you can change its fields. However, the modified `Foo` object
+is not stored anywhere.
+
+To store a modification, one would instead need
+
+```jldoctest counter1
+julia> x = soa[4]; x.b = 10; soa[4] = x     # store the modified `x` in `soa`
+Foo{Int64}(1, 10)
+
+julia> soa
+4-element StructArray(::Vector{Int64}, ::Vector{Int64}) with eltype Foo:
+ Foo{Int64}(5, 2)
+ Foo{Int64}(6, 7)
+ Foo{Int64}(1, 8)
+ Foo{Int64}(1, 10)
+
+julia> b
+4-element Vector{Int64}:
+  2
+  7
+  8
+ 10
+```
+
+!!! note
+    This behavior only arises for *mutable* `struct`s. If `Foo` were immutable, re-assigning the `b` field would be an error, and there would be no opportunity for confusion. Moreover, the performance of immutable struct creation is generally much better than for mutable structs. Thus, it is recommended to use immutable structs with StructArray whenever possible.
+
+### The "copy" case (AOS->SOA)
+
+Above, we created a StructArray from arrays `a` and `b`, which creates a "view." The same is not true if you create a StructArray from an array-of-structs:
+
+```jldoctest counter1
+julia> aos = [Foo(1,2) for i = 1:4]
+4-element Vector{Foo{Int64}}:
+ Foo{Int64}(1, 2)
+ Foo{Int64}(1, 2)
+ Foo{Int64}(1, 2)
+ Foo{Int64}(1, 2)
+
+julia> soa = StructArray(aos)
+4-element StructArray(::Vector{Int64}, ::Vector{Int64}) with eltype Foo{Int64}:
+ Foo{Int64}(1, 2)
+ Foo{Int64}(1, 2)
+ Foo{Int64}(1, 2)
+ Foo{Int64}(1, 2)
+
+julia> soa.a[1] = 5
+5
+
+julia> soa[2] = Foo(6, 7)
+Foo{Int64}(6, 7)
+
+julia> b[3] = 8
+8
+
+julia> soa
+4-element StructArray(::Vector{Int64}, ::Vector{Int64}) with eltype Foo{Int64}:
+ Foo{Int64}(5, 2)
+ Foo{Int64}(6, 7)
+ Foo{Int64}(1, 2)
+ Foo{Int64}(1, 2)
+
+julia> aos
+4-element Vector{Foo{Int64}}:
+ Foo{Int64}(1, 2)
+ Foo{Int64}(1, 2)
+ Foo{Int64}(1, 2)
+ Foo{Int64}(1, 2)
+```
+
+None of the changes to `soa` "propagated" to `aos`. This is because a StructArray has an SOA in-memory layout; to generate this layout, the data need to be copied. Consequently, in this case `soa` is decoupled from `aos`.
 
 ## Broadcasted assignment for array entries
 
-Broadcasted in-place assignment can also behave counterintuitively for StructArrays. 
-```julia
+Broadcasted in-place assignment can also behave counterintuitively for StructArrays.
+```jldoctest; setup=:(using StructArrays)
+julia> using StaticArrays   # for FieldVector
+
 julia> mutable struct Bar{T} <: FieldVector{2,T}
        a::T
        b::T
@@ -61,10 +211,10 @@ julia> x
  [1, 2]
  [1, 2]
  [1, 2]
- [1, 2]       
+ [1, 2]
 ```
 Because setting `x[1] .= 1` creates a `Bar` struct first, broadcasted assignment modifies this new materialized struct rather than the StructArray `x`. Note, however, that `x[1] = x[1] .= 1` works, since it assigns the modified materialized struct to the first entry of `x`.
 
-## Mutable struct types
+## Mutability
 
-Each of these counterintuitive behaviors occur when using StructArrays with mutable elements. However, since the component arrays of a StructArray are generally mutable even if its entries are immutable, a StructArray with immutable elements will in many cases behave identically to (but be more efficient than) a StructArray with mutable elements. Thus, it is recommended to use immutable structs with StructArray whenever possible. 
+The component arrays of a StructArray can be modified in-place mutable even if the `struct` element type of the overall array is immutable. A StructArray with immutable elements will in many cases behave identically to (but be more efficient than) a StructArray with mutable elements.
