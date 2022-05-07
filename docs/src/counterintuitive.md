@@ -161,7 +161,6 @@ julia> soa.a[1] = 5
 julia> soa[2] = Foo(6, 7)
 Foo{Int64}(6, 7)
 
-julia> b[3] = 8
 8
 
 julia> soa
