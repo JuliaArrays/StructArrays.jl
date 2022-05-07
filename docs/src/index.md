@@ -9,41 +9,63 @@ The package was largely inspired by the `Columns` type in [IndexedTables](https:
 ## Collection and initialization
 
 One can create a `StructArray` by providing the struct type and a tuple or NamedTuple of field arrays:
-```julia
+```jldoctest intro
+julia> using StructArrays
+
 julia> struct Foo{T}
            a::T
            b::T
        end
 
-julia> x = StructArray{Foo}((rand(2,2), rand(2,2)))
-2×2 StructArray(::Matrix{Float64}, ::Matrix{Float64}) with eltype Foo:
- Foo{Float64}(0.702413, 0.416194)  Foo{Float64}(0.520032, 0.0856553)
- Foo{Float64}(0.701297, 0.977394)  Foo{Float64}(0.451654, 0.258264)
+julia> adata = [1 2; 3 4]; bdata = [10 20; 30 40];
 
-julia> x = StructArray{Foo}((a=rand(2,2), b=rand(2,2)))
-2×2 StructArray(::Matrix{Float64}, ::Matrix{Float64}) with eltype Foo:
- Foo{Float64}(0.702413, 0.416194)  Foo{Float64}(0.520032, 0.0856553)
- Foo{Float64}(0.701297, 0.977394)  Foo{Float64}(0.451654, 0.258264)
-```
-If a struct is not specified, a StructArray of Tuple or NamedTuple type will be created
-```julia
-julia> x = StructArray((rand(2,2), rand(2,2)))
-2×2 StructArray(::Matrix{Float64}, ::Matrix{Float64}) with eltype Tuple{Float64, Float64}:
- (0.754912, 0.803434)  (0.341105, 0.904933)
- (0.348966, 0.550496)  (0.199761, 0.511388)
-
-julia> x = StructArray((x = rand(2,2), y = rand(2,2)))
-2×2 StructArray(::Matrix{Float64}, ::Matrix{Float64}) with eltype NamedTuple{(:x, :y), Tuple{Float64, Float64}}:
- (x = 0.486, y = 0.00588886)   (x = 0.97401, y = 0.834173)
- (x = 0.394493, y = 0.192362)  (x = 0.107698, y = 0.694548)
+julia> x = StructArray{Foo}((adata, bdata))
+2×2 StructArray(::Matrix{Int64}, ::Matrix{Int64}) with eltype Foo:
+ Foo{Int64}(1, 10)  Foo{Int64}(2, 20)
+ Foo{Int64}(3, 30)  Foo{Int64}(4, 40)
 ```
 
+You can also initialze a StructArray by passing in a NamedTuple, in which case the name (rather than the order) specifies how the input arrays are assigned to fields:
+
+```jldoctest intro
+julia> x = StructArray{Foo}((b = adata, a = bdata))    # initialize a with bdata and vice versa
+2×2 StructArray(::Matrix{Int64}, ::Matrix{Int64}) with eltype Foo:
+ Foo{Int64}(10, 1)  Foo{Int64}(20, 2)
+ Foo{Int64}(30, 3)  Foo{Int64}(40, 4)
+```
+
+If a struct is not specified, a StructArray with Tuple or NamedTuple elements will be created:
+```jldoctest intro
+julia> x = StructArray((adata, bdata))
+2×2 StructArray(::Matrix{Int64}, ::Matrix{Int64}) with eltype Tuple{Int64, Int64}:
+ (1, 10)  (2, 20)
+ (3, 30)  (4, 40)
+
+julia> x = StructArray((a = adata, b = bdata))
+2×2 StructArray(::Matrix{Int64}, ::Matrix{Int64}) with eltype NamedTuple{(:a, :b), Tuple{Int64, Int64}}:
+ (a = 1, b = 10)  (a = 2, b = 20)
+ (a = 3, b = 30)  (a = 4, b = 40)
+```
+
+It's also possible to create a `StructArray` by choosing a particular dimension to interpret as the components of a struct:
+
+```jldoctest intro
+julia> x = StructArray{Complex{Int}}(adata; dims=1)  # along dimension 1, odd indexes are `re` and even indexes are `im`
+2-element StructArray(view(::Matrix{Int64}, 1, :), view(::Matrix{Int64}, 2, :)) with eltype Complex{Int64}:
+ 1 + 3im
+ 2 + 4im
+
+julia> x = StructArray{Complex{Int}}(adata; dims=2)  # along dimension 2, odd indexes are `re` and even indexes are `im`
+2-element StructArray(view(::Matrix{Int64}, :, 1), view(::Matrix{Int64}, :, 2)) with eltype Complex{Int64}:
+ 1 + 2im
+ 3 + 4im
+```
 
 One can also create a `StructArray` from an iterable of structs without creating an intermediate `Array`:
 
-```julia
+```jldoctest intro
 julia> StructArray(log(j+2.0*im) for j in 1:10)
-10-element StructArray(::Array{Float64,1}, ::Array{Float64,1}) with eltype Complex{Float64}:
+10-element StructArray(::Vector{Float64}, ::Vector{Float64}) with eltype ComplexF64:
  0.8047189562170501 + 1.1071487177940904im
  1.0397207708399179 + 0.7853981633974483im
  1.2824746787307684 + 0.5880026035475675im
