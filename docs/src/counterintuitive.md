@@ -161,8 +161,6 @@ julia> soa.a[1] = 5
 julia> soa[2] = Foo(6, 7)
 Foo{Int64}(6, 7)
 
-8
-
 julia> soa
 4-element StructArray(::Vector{Int64}, ::Vector{Int64}) with eltype Foo{Int64}:
  Foo{Int64}(5, 2)
