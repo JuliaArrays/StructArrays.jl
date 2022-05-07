@@ -9,7 +9,9 @@ using Adapt: adapt, Adapt
 using Test
 
 using Documenter: doctest
-doctest(StructArrays)
+if Base.VERSION >= v"1.6"
+    doctest(StructArrays)
+end
 
 @testset "index" begin
     a, b = [1 2; 3 4], [4 5; 6 7]
@@ -1006,7 +1008,7 @@ end
 
     # test custom indices and components
     @test typeof(StructArrays.components(a)) == NamedTuple{(:x, :y), NTuple{2, Vector{Float64}}}
-    @test StructArrays.components(a) == (; x = [1.0], y = [2.0])    
+    @test StructArrays.components(a) == (; x = [1.0], y = [2.0])
 
     # test type stability of creating views with "many" homogeneous components
     for n in 1:10
