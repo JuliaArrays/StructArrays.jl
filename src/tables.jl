@@ -20,6 +20,8 @@ function try_compatible_columns(rows::R, s::StructArray) where {R}
     _schema(NT) == Tables.schema(rows) || return nothing
     return Tables.columntable(rows)
 end
+try_compatible_columns(rows::StructArray{T}, s::StructArray{T}) where {T} = Tables.columntable(rows)
+try_compatible_columns(rows::StructArray{R}, s::StructArray{S}) where {R,S} = nothing
 
 for (f, g) in zip((:append!, :prepend!), (:push!, :pushfirst!))
     @eval function Base.$f(s::StructVector, rows)

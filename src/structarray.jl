@@ -366,14 +366,17 @@ Base.@propagate_inbounds function Base.setindex!(s::StructArray{T, <:Any, <:Any,
 end
 
 for f in (:push!, :pushfirst!)
-    @eval function Base.$f(s::StructVector, vals)
-        foreachfield($f, s, vals)
+    @eval function Base.$f(s::StructVector{T}, vals) where T
+        valsT = maybe_convert_elt(T, vals)
+        foreachfield($f, s, valsT)
         return s
     end
 end
 
 for f in (:append!, :prepend!)
-    @eval function Base.$f(s::StructVector, vals::StructVector)
+    @eval function Base.$f(s::StructVector{T}, vals::StructVector{T}) where T
+        # If these aren't the same type, there's no guarantee that x.a "means" the same thing as y.a,
+        # even when all the field names match.
         foreachfield($f, s, vals)
         return s
     end

@@ -188,4 +188,12 @@ possible internal constructors. `T` should be a concrete type.
 end
 
 # Specialize this for types like LazyRow that shouldn't convert
+"""
+    StructArrays.maybe_convert_elt(T, x)
+
+Element conversion before assignment in a StructArray.
+By default, this calls `convert(T, x)`; however, you can specialize it for other types.
+"""
 maybe_convert_elt(::Type{T}, vals) where T = convert(T, vals)
+maybe_convert_elt(::Type{T}, vals::NamedTuple) where T<:NamedTuple = convert(T, vals)
+maybe_convert_elt(::Type{T}, vals::NamedTuple) where T = vals # support assignment of fields by name
