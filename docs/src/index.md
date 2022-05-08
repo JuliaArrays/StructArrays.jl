@@ -50,12 +50,12 @@ julia> x = StructArray((a = adata, b = bdata))
 It's also possible to create a `StructArray` by choosing a particular dimension to interpret as the components of a struct:
 
 ```jldoctest intro
-julia> x = StructArray{Complex{Int}}(adata; dims=1)  # along dimension 1, odd indexes are `re` and even indexes are `im`
+julia> x = StructArray{Complex{Int}}(adata; dims=1)  # along dimension 1, the first item `re` and the second is `im`
 2-element StructArray(view(::Matrix{Int64}, 1, :), view(::Matrix{Int64}, 2, :)) with eltype Complex{Int64}:
  1 + 3im
  2 + 4im
 
-julia> x = StructArray{Complex{Int}}(adata; dims=2)  # along dimension 2, odd indexes are `re` and even indexes are `im`
+julia> x = StructArray{Complex{Int}}(adata; dims=2)  # along dimension 2, the first item `re` and the second is `im`
 2-element StructArray(view(::Matrix{Int64}, :, 1), view(::Matrix{Int64}, :, 2)) with eltype Complex{Int64}:
  1 + 2im
  3 + 4im
