@@ -351,16 +351,18 @@ end
     StructArray{T}(map(v -> @inbounds(view(v, I...)), components(s)))
 end
 
-Base.@propagate_inbounds function Base.setindex!(s::StructArray{<:Any, <:Any, <:Any, CartesianIndex{N}}, vals, I::Vararg{Int, N}) where {N}
+Base.@propagate_inbounds function Base.setindex!(s::StructArray{T, <:Any, <:Any, CartesianIndex{N}}, vals, I::Vararg{Int, N}) where {T,N}
     @boundscheck checkbounds(s, I...)
-    foreachfield((col, val) -> (@inbounds col[I...] = val), s, vals)
-    s
+    valsT = maybe_convert_elt(T, vals)
+    foreachfield((col, val) -> (@inbounds col[I...] = val), s, valsT)
+    return s
 end
 
-Base.@propagate_inbounds function Base.setindex!(s::StructArray{<:Any, <:Any, <:Any, Int}, vals, I::Int)
+Base.@propagate_inbounds function Base.setindex!(s::StructArray{T, <:Any, <:Any, Int}, vals, I::Int) where T
     @boundscheck checkbounds(s, I)
-    foreachfield((col, val) -> (@inbounds col[I] = val), s, vals)
-    s
+    valsT = maybe_convert_elt(T, vals)
+    foreachfield((col, val) -> (@inbounds col[I] = val), s, valsT)
+    return s
 end
 
 for f in (:push!, :pushfirst!)

@@ -186,3 +186,6 @@ possible internal constructors. `T` should be a concrete type.
     construct = Expr(:new, :T, vars...)
     Expr(:block, assign..., construct)
 end
+
+# Specialize this for types like LazyRow that shouldn't convert
+maybe_convert_elt(::Type{T}, vals) where T = convert(T, vals)

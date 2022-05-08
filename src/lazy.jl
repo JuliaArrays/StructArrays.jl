@@ -57,6 +57,8 @@ iscompatible(::Type{<:LazyRow{R}}, ::Type{S}) where {R, S<:StructArray} = iscomp
 
 (s::ArrayInitializer)(::Type{<:LazyRow{T}}, d) where {T} = buildfromschema(typ -> s(typ, d), T)
 
+maybe_convert_elt(::Type{T}, vals::LazyRow) where T = vals
+
 """
     LazyRows(s::StructArray)
 

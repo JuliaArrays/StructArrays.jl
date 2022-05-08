@@ -9,7 +9,7 @@ using Adapt: adapt, Adapt
 using Test
 
 using Documenter: doctest
-if Base.VERSION >= v"1.6"
+if Base.VERSION >= v"1.6" && Int === Int64
     doctest(StructArrays)
 end
 
@@ -20,6 +20,16 @@ end
     @test (@inferred t[2,1:2]) == StructArray((a = [3, 4], b = [6, 7]))
     @test_throws BoundsError t[3,3]
     @test (@inferred view(t, 2, 1:2)) == StructArray((a = view(a, 2, 1:2), b = view(b, 2, 1:2)))
+
+    # Element type conversion (issue #216)
+    x = StructArray{Complex{Int}}((a, b))
+    x[1,1] = 10
+    x[2,2] = 20im
+    @test x[1,1] === 10 + 0im
+    @test x[2,2] === 0 + 20im
+
+    # Test that explicit `setindex!` returns the entire array
+    @test setindex!(x, 22, 3) === x
 end
 
 @testset "components" begin
