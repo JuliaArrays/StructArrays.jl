@@ -1,0 +1,145 @@
+<!DOCTYPE html>
+<html lang="en"><head><meta charset="UTF-8"/><meta name="viewport" content="width=device-width, initial-scale=1.0"/><title>Overview · StructArrays</title><script data-outdated-warner src="assets/warner.js"></script><link href="https://cdnjs.cloudflare.com/ajax/libs/lato-font/3.0.0/css/lato-font.min.css" rel="stylesheet" type="text/css"/><link href="https://cdnjs.cloudflare.com/ajax/libs/juliamono/0.044/juliamono.css" rel="stylesheet" type="text/css"/><link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.15.3/css/fontawesome.min.css" rel="stylesheet" type="text/css"/><link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.15.3/css/solid.min.css" rel="stylesheet" type="text/css"/><link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.15.3/css/brands.min.css" rel="stylesheet" type="text/css"/><link href="https://cdnjs.cloudflare.com/ajax/libs/KaTeX/0.13.11/katex.min.css" rel="stylesheet" type="text/css"/><script>documenterBaseURL="."</script><script src="https://cdnjs.cloudflare.com/ajax/libs/require.js/2.3.6/require.min.js" data-main="assets/documenter.js"></script><script src="siteinfo.js"></script><script src="../versions.js"></script><link class="docs-theme-link" rel="stylesheet" type="text/css" href="assets/themes/documenter-dark.css" data-theme-name="documenter-dark" data-theme-primary-dark/><link class="docs-theme-link" rel="stylesheet" type="text/css" href="assets/themes/documenter-light.css" data-theme-name="documenter-light" data-theme-primary/><script src="assets/themeswap.js"></script></head><body><div id="documenter"><nav class="docs-sidebar"><div class="docs-package-name"><span class="docs-autofit"><a href>StructArrays</a></span></div><form class="docs-search" action="search/"><input class="docs-search-query" id="documenter-search-query" name="q" type="text" placeholder="Search docs"/></form><ul class="docs-menu"><li class="is-active"><a class="tocitem" href>Overview</a><ul class="internal"><li><a class="tocitem" href="#Collection-and-initialization"><span>Collection and initialization</span></a></li><li><a class="tocitem" href="#Using-custom-array-types"><span>Using custom array types</span></a></li><li><a class="tocitem" href="#Lazy-row-iteration"><span>Lazy row iteration</span></a></li><li><a class="tocitem" href="#Applying-a-function-on-each-field-array"><span>Applying a function on each field array</span></a></li></ul></li><li><a class="tocitem" href="examples/">Example usage</a></li><li><a class="tocitem" href="counterintuitive/">Some counterintuitive behaviors</a></li><li><a class="tocitem" href="advanced/">Advanced techniques</a></li><li><a class="tocitem" href="reference/">Index</a></li></ul><div class="docs-version-selector field has-addons"><div class="control"><span class="docs-label button is-static is-size-7">Version</span></div><div class="docs-selector control is-expanded"><div class="select is-fullwidth is-size-7"><select id="documenter-version-selector"></select></div></div></div></nav><div class="docs-main"><header class="docs-navbar"><nav class="breadcrumb"><ul class="is-hidden-mobile"><li class="is-active"><a href>Overview</a></li></ul><ul class="is-hidden-tablet"><li class="is-active"><a href>Overview</a></li></ul></nav><div class="docs-right"><a class="docs-edit-link" href="https://github.com/JuliaArrays/StructArrays.jl/blob/master/docs/src/index.md" title="Edit on GitHub"><span class="docs-icon fab"></span><span class="docs-label is-hidden-touch">Edit on GitHub</span></a><a class="docs-settings-button fas fa-cog" id="documenter-settings-button" href="#" title="Settings"></a><a class="docs-sidebar-button fa fa-bars is-hidden-desktop" id="documenter-sidebar-button" href="#"></a></div></header><article class="content" id="documenter-page"><h1 id="Overview-of-StructArrays.jl"><a class="docs-heading-anchor" href="#Overview-of-StructArrays.jl">Overview of StructArrays.jl</a><a id="Overview-of-StructArrays.jl-1"></a><a class="docs-heading-anchor-permalink" href="#Overview-of-StructArrays.jl" title="Permalink"></a></h1><p>This package introduces the type <code>StructArray</code> which is an <code>AbstractArray</code> whose elements are <code>struct</code> (for example <code>NamedTuples</code>,  or <code>ComplexF64</code>, or a custom user defined <code>struct</code>). While a <code>StructArray</code> iterates <code>structs</code>, the layout uses separate arrays for each field of the <code>struct</code>. This is often called <a href="https://en.wikipedia.org/wiki/AoS_and_SoA">Structure-Of-Arrays (SOA)</a>; the concepts will be explained in greater detail below. <code>struct</code> entries of a StructArray are constructed on-the-fly. This contrasts with the &quot;Array-Of-Structs&quot; (AOS) layout where individual array elements are explicitly stored as <code>struct</code>s.</p><p><code>Base.getproperty</code> or the dot syntax can be used to access struct fields of element of a <code>StructArray</code>, whereas elements can be accessed with <code>getindex</code> (<code>[]</code>).</p><p>The package was largely inspired by the <code>Columns</code> type in <a href="https://github.com/JuliaComputing/IndexedTables.jl">IndexedTables</a> which it now replaces.</p><h2 id="Collection-and-initialization"><a class="docs-heading-anchor" href="#Collection-and-initialization">Collection and initialization</a><a id="Collection-and-initialization-1"></a><a class="docs-heading-anchor-permalink" href="#Collection-and-initialization" title="Permalink"></a></h2><p>One can create a <code>StructArray</code> by providing the struct type and a tuple or NamedTuple of field arrays:</p><pre><code class="language-julia-repl hljs">julia&gt; using StructArrays
+
+julia&gt; struct Foo{T}
+           a::T
+           b::T
+       end
+
+julia&gt; adata = [1 2; 3 4]; bdata = [10 20; 30 40];
+
+julia&gt; x = StructArray{Foo}((adata, bdata))
+2×2 StructArray(::Matrix{Int64}, ::Matrix{Int64}) with eltype Foo:
+ Foo{Int64}(1, 10)  Foo{Int64}(2, 20)
+ Foo{Int64}(3, 30)  Foo{Int64}(4, 40)</code></pre><p>You can also initialze a StructArray by passing in a NamedTuple, in which case the name (rather than the order) specifies how the input arrays are assigned to fields:</p><pre><code class="language-julia-repl hljs">julia&gt; x = StructArray{Foo}((b = adata, a = bdata))    # initialize a with bdata and vice versa
+2×2 StructArray(::Matrix{Int64}, ::Matrix{Int64}) with eltype Foo:
+ Foo{Int64}(10, 1)  Foo{Int64}(20, 2)
+ Foo{Int64}(30, 3)  Foo{Int64}(40, 4)</code></pre><p>If a struct is not specified, a StructArray with Tuple or NamedTuple elements will be created:</p><pre><code class="language-julia-repl hljs">julia&gt; x = StructArray((adata, bdata))
+2×2 StructArray(::Matrix{Int64}, ::Matrix{Int64}) with eltype Tuple{Int64, Int64}:
+ (1, 10)  (2, 20)
+ (3, 30)  (4, 40)
+
+julia&gt; x = StructArray((a = adata, b = bdata))
+2×2 StructArray(::Matrix{Int64}, ::Matrix{Int64}) with eltype NamedTuple{(:a, :b), Tuple{Int64, Int64}}:
+ (a = 1, b = 10)  (a = 2, b = 20)
+ (a = 3, b = 30)  (a = 4, b = 40)</code></pre><p>It&#39;s also possible to create a <code>StructArray</code> by choosing a particular dimension to interpret as the components of a struct:</p><pre><code class="language-julia-repl hljs">julia&gt; x = StructArray{Complex{Int}}(adata; dims=1)  # along dimension 1, the first item `re` and the second is `im`
+2-element StructArray(view(::Matrix{Int64}, 1, :), view(::Matrix{Int64}, 2, :)) with eltype Complex{Int64}:
+ 1 + 3im
+ 2 + 4im
+
+julia&gt; x = StructArray{Complex{Int}}(adata; dims=2)  # along dimension 2, the first item `re` and the second is `im`
+2-element StructArray(view(::Matrix{Int64}, :, 1), view(::Matrix{Int64}, :, 2)) with eltype Complex{Int64}:
+ 1 + 2im
+ 3 + 4im</code></pre><p>One can also create a <code>StructArray</code> from an iterable of structs without creating an intermediate <code>Array</code>:</p><pre><code class="language-julia-repl hljs">julia&gt; StructArray(log(j+2.0*im) for j in 1:10)
+10-element StructArray(::Vector{Float64}, ::Vector{Float64}) with eltype ComplexF64:
+ 0.8047189562170501 + 1.1071487177940904im
+ 1.0397207708399179 + 0.7853981633974483im
+ 1.2824746787307684 + 0.5880026035475675im
+ 1.4978661367769954 + 0.4636476090008061im
+  1.683647914993237 + 0.3805063771123649im
+ 1.8444397270569681 + 0.3217505543966422im
+  1.985145956776061 + 0.27829965900511133im
+ 2.1097538525880535 + 0.24497866312686414im
+ 2.2213256282451583 + 0.21866894587394195im
+ 2.3221954495706862 + 0.19739555984988078im</code></pre><p>Another option is to create an uninitialized <code>StructArray</code> and then fill it with data. Just like in normal arrays, this is done with the <code>undef</code> syntax:</p><pre><code class="language-julia hljs">julia&gt; s = StructArray{ComplexF64}(undef, 2, 2)
+2×2 StructArray(::Array{Float64,2}, ::Array{Float64,2}) with eltype Complex{Float64}:
+ 6.91646e-310+6.91646e-310im  6.91646e-310+6.91646e-310im
+ 6.91646e-310+6.91646e-310im  6.91646e-310+6.91646e-310im
+
+julia&gt; rand!(s)
+2×2 StructArray(::Array{Float64,2}, ::Array{Float64,2}) with eltype Complex{Float64}:
+ 0.680079+0.874437im  0.625239+0.737254im
+  0.92407+0.929336im  0.267358+0.804478im</code></pre><p>Finally, it is possible to create a StructArray from an array-of-structs:</p><pre><code class="language-julia-repl hljs">julia&gt; aos = [1+2im, 3+4im]
+2-element Vector{Complex{Int64}}:
+ 1 + 2im
+ 3 + 4im
+
+julia&gt; aos.re     # Vectors do not have fields, so this is an error
+ERROR: type Array has no field re
+[...]
+
+julia&gt; soa = StructArray(aos)
+2-element StructArray(::Vector{Int64}, ::Vector{Int64}) with eltype Complex{Int64}:
+ 1 + 2im
+ 3 + 4im
+
+julia&gt; soa.re
+2-element Vector{Int64}:
+ 1
+ 3</code></pre><div class="admonition is-warning"><header class="admonition-header">Warning</header><div class="admonition-body"><p>Unlike the other cases above, <code>soa</code> contains a <em>copy</em> of the data in <code>aos</code>. For more discussion, see <a href="counterintuitive/#Some-counterintuitive-behaviors">Some counterintuitive behaviors</a>.</p></div></div><h2 id="Using-custom-array-types"><a class="docs-heading-anchor" href="#Using-custom-array-types">Using custom array types</a><a id="Using-custom-array-types-1"></a><a class="docs-heading-anchor-permalink" href="#Using-custom-array-types" title="Permalink"></a></h2><p>StructArrays supports using custom array types. It is always possible to pass field arrays of a custom type. The &quot;custom array of structs to struct of custom arrays&quot; transformation will use the <code>similar</code> method of the custom array type. This can be useful when working on the GPU for example:</p><pre><code class="language-julia hljs">julia&gt; using StructArrays, CuArrays
+
+julia&gt; a = CuArray(rand(Float32, 10));
+
+julia&gt; b = CuArray(rand(Float32, 10));
+
+julia&gt; StructArray{ComplexF32}((a, b))
+10-element StructArray(::CuArray{Float32,1}, ::CuArray{Float32,1}) with eltype Complex{Float32}:
+  0.19555175f0 + 0.9604322f0im
+  0.68348145f0 + 0.5778245f0im
+  0.69664395f0 + 0.79825306f0im
+ 0.118531585f0 + 0.3031248f0im
+  0.80057466f0 + 0.8964418f0im
+  0.63772964f0 + 0.2923274f0im
+  0.65374136f0 + 0.7932533f0im
+   0.6043732f0 + 0.65964353f0im
+   0.1106627f0 + 0.090207934f0im
+    0.707458f0 + 0.1700114f0im
+
+julia&gt; c = CuArray(rand(ComplexF32, 10));
+
+julia&gt; StructArray(c)
+10-element StructArray(::Array{Float32,1}, ::Array{Float32,1}) with eltype Complex{Float32}:
+  0.7176411f0 + 0.864058f0im
+   0.252609f0 + 0.14824867f0im
+ 0.26842773f0 + 0.9084332f0im
+ 0.33128333f0 + 0.5106474f0im
+  0.6509278f0 + 0.87059164f0im
+  0.9522146f0 + 0.053706646f0im
+   0.899577f0 + 0.63242567f0im
+   0.325814f0 + 0.59225655f0im
+ 0.56267905f0 + 0.21927536f0im
+ 0.49719965f0 + 0.754143f0im</code></pre><p>If you already have your data in a <code>StructArray</code> with field arrays of a given format (say plain <code>Array</code>) you can change them with <code>replace_storage</code>:</p><pre><code class="language-julia hljs">julia&gt; s = StructArray([1.0+im, 2.0-im])
+2-element StructArray(::Array{Float64,1}, ::Array{Float64,1}) with eltype Complex{Float64}:
+ 1.0 + 1.0im
+ 2.0 - 1.0im
+
+julia&gt; replace_storage(CuArray, s)
+2-element StructArray(::CuArray{Float64,1}, ::CuArray{Float64,1}) with eltype Complex{Float64}:
+ 1.0 + 1.0im
+ 2.0 - 1.0im</code></pre><h2 id="Lazy-row-iteration"><a class="docs-heading-anchor" href="#Lazy-row-iteration">Lazy row iteration</a><a id="Lazy-row-iteration-1"></a><a class="docs-heading-anchor-permalink" href="#Lazy-row-iteration" title="Permalink"></a></h2><p>StructArrays also provides a <code>LazyRow</code> wrapper for lazy row iteration. <code>LazyRow(t, i)</code> does not materialize the i-th row but returns a lazy wrapper around it on which <code>getproperty</code> does the correct thing. This is useful when the row has many fields only some of which are necessary. It also allows changing columns in place.</p><pre><code class="language-julia hljs">julia&gt; t = StructArray((a = [1, 2], b = [&quot;x&quot;, &quot;y&quot;]));
+
+julia&gt; LazyRow(t, 2).a
+2
+
+julia&gt; LazyRow(t, 2).a = 123
+123
+
+julia&gt; t
+2-element StructArray(::Array{Int64,1}, ::Array{String,1}) with eltype NamedTuple{(:a, :b),Tuple{Int64,String}}:
+ (a = 1, b = &quot;x&quot;)
+ (a = 123, b = &quot;y&quot;)</code></pre><p>To iterate in a lazy way one can simply iterate <code>LazyRows</code>:</p><pre><code class="language-julia hljs">julia&gt; map(t -&gt; t.b ^ t.a, LazyRows(t))
+2-element Array{String,1}:
+ &quot;x&quot;
+ &quot;yy&quot;</code></pre><h2 id="Applying-a-function-on-each-field-array"><a class="docs-heading-anchor" href="#Applying-a-function-on-each-field-array">Applying a function on each field array</a><a id="Applying-a-function-on-each-field-array-1"></a><a class="docs-heading-anchor-permalink" href="#Applying-a-function-on-each-field-array" title="Permalink"></a></h2><pre><code class="language-julia hljs">julia&gt; struct Foo
+       a::Int
+       b::String
+       end
+
+julia&gt; s = StructArray([Foo(11, &quot;a&quot;), Foo(22, &quot;b&quot;), Foo(33, &quot;c&quot;), Foo(44, &quot;d&quot;), Foo(55, &quot;e&quot;)]);
+
+julia&gt; s
+5-element StructArray(::Vector{Int64}, ::Vector{String}) with eltype Foo:
+ Foo(11, &quot;a&quot;)
+ Foo(22, &quot;b&quot;)
+ Foo(33, &quot;c&quot;)
+ Foo(44, &quot;d&quot;)
+ Foo(55, &quot;e&quot;)
+
+julia&gt; StructArrays.foreachfield(v -&gt; deleteat!(v, 3), s)
+
+julia&gt; s
+4-element StructArray(::Vector{Int64}, ::Vector{String}) with eltype Foo:
+ Foo(11, &quot;a&quot;)
+ Foo(22, &quot;b&quot;)
+ Foo(44, &quot;d&quot;)
+ Foo(55, &quot;e&quot;)</code></pre></article><nav class="docs-footer"><a class="docs-footer-nextpage" href="examples/">Example usage »</a><div class="flexbox-break"></div><p class="footer-message">Powered by <a href="https://github.com/JuliaDocs/Documenter.jl">Documenter.jl</a> and the <a href="https://julialang.org/">Julia Programming Language</a>.</p></nav></div><div class="modal" id="documenter-settings"><div class="modal-background"></div><div class="modal-card"><header class="modal-card-head"><p class="modal-card-title">Settings</p><button class="delete"></button></header><section class="modal-card-body"><p><label class="label">Theme</label><div class="select"><select id="documenter-themepicker"><option value="documenter-light">documenter-light</option><option value="documenter-dark">documenter-dark</option></select></div></p><hr/><p>This document was generated with <a href="https://github.com/JuliaDocs/Documenter.jl">Documenter.jl</a> version 0.27.16 on <span class="colophon-date" title="Sunday 8 May 2022 09:23">Sunday 8 May 2022</span>. Using Julia version 1.7.2.</p></section><footer class="modal-card-foot"></footer></div></div></div></body></html>
