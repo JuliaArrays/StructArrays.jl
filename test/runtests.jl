@@ -45,8 +45,18 @@ Base.convert(::Type{Millimeters}, x::Meters) = Millimeters(x.x*1000)
     @test x[1,1] === 10 + 0im
     @test x[2,2] === 0 + 20im
 
+    # Test that explicit `setindex!` returns the entire array
+    # (Julia's parser ensures that chained assignment returns the value)
+    @test setindex!(x, 22, 3) === x
+end
+
+@testset "eltype conversion" begin
     v = StructArray{Complex{Int}}(([1,2,3], [4,5,6]))
     @test append!(v, [7, 8]) == [1+4im, 2+5im, 3+6im, 7+0im, 8+0im]
+    # push!(v, (9, 10))         # tuples support field assignment by position
+    # @test v[end] === 9 + 10im
+    push!(v, (im=12, re=11))  # NamedTuples support field assignment by name
+    @test v[end] === 11 + 12im
 
     z = StructArray{Meters}(undef, 0)
     push!(z, Millimeters(1100))
@@ -56,10 +66,8 @@ Base.convert(::Type{Millimeters}, x::Meters) = Millimeters(x.x*1000)
     @test z[2] === Meters(1.2)
     append!(z, StructArray{Millimeters}(([1500.0],)))
     @test z[3] === Meters(1.5)
-
-    # Test that explicit `setindex!` returns the entire array
-    # (Julia's parser ensures that chained assignment returns the value)
-    @test setindex!(x, 22, 3) === x
+    insert!(z, 3, Millimeters(2000))
+    @test z[3] === Meters(2.0)
 end
 
 @testset "components" begin

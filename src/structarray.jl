@@ -382,8 +382,9 @@ for f in (:append!, :prepend!)
     end
 end
 
-function Base.insert!(s::StructVector, i::Integer, vals)
-    foreachfield((v, val) -> insert!(v, i, val), s, vals)
+function Base.insert!(s::StructVector{T}, i::Integer, vals) where T
+    valsT = maybe_convert_elt(T, vals)
+    foreachfield((v, val) -> insert!(v, i, val), s, valsT)
     return s
 end
 
