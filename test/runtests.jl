@@ -53,10 +53,17 @@ end
 @testset "eltype conversion" begin
     v = StructArray{Complex{Int}}(([1,2,3], [4,5,6]))
     @test append!(v, [7, 8]) == [1+4im, 2+5im, 3+6im, 7+0im, 8+0im]
-    # push!(v, (9, 10))         # tuples support field assignment by position
-    # @test v[end] === 9 + 10im
     push!(v, (im=12, re=11))  # NamedTuples support field assignment by name
     @test v[end] === 11 + 12im
+    v[end] = (re=9, im=10)
+    @test v[end] === 9 + 10im
+
+    # For some eltypes, the structarray is "nameless" and we can use regular Tuples
+    v = StructArray([SVector(true, false), SVector(false, false)])
+    v[end] = (true, true)
+    @test v[end] === SVector(true, true)
+    push!(v, (false, false))
+    @test v[end] === SVector(false, false)
 
     z = StructArray{Meters}(undef, 0)
     push!(z, Millimeters(1100))
