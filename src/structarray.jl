@@ -351,34 +351,40 @@ end
     StructArray{T}(map(v -> @inbounds(view(v, I...)), components(s)))
 end
 
-Base.@propagate_inbounds function Base.setindex!(s::StructArray{<:Any, <:Any, <:Any, CartesianIndex{N}}, vals, I::Vararg{Int, N}) where {N}
+Base.@propagate_inbounds function Base.setindex!(s::StructArray{T, <:Any, <:Any, CartesianIndex{N}}, vals, I::Vararg{Int, N}) where {T,N}
     @boundscheck checkbounds(s, I...)
-    foreachfield((col, val) -> (@inbounds col[I...] = val), s, vals)
-    s
+    valsT = maybe_convert_elt(T, vals)
+    foreachfield((col, val) -> (@inbounds col[I...] = val), s, valsT)
+    return s
 end
 
-Base.@propagate_inbounds function Base.setindex!(s::StructArray{<:Any, <:Any, <:Any, Int}, vals, I::Int)
+Base.@propagate_inbounds function Base.setindex!(s::StructArray{T, <:Any, <:Any, Int}, vals, I::Int) where T
     @boundscheck checkbounds(s, I)
-    foreachfield((col, val) -> (@inbounds col[I] = val), s, vals)
-    s
+    valsT = maybe_convert_elt(T, vals)
+    foreachfield((col, val) -> (@inbounds col[I] = val), s, valsT)
+    return s
 end
 
 for f in (:push!, :pushfirst!)
-    @eval function Base.$f(s::StructVector, vals)
-        foreachfield($f, s, vals)
+    @eval function Base.$f(s::StructVector{T}, vals) where T
+        valsT = maybe_convert_elt(T, vals)
+        foreachfield($f, s, valsT)
         return s
     end
 end
 
 for f in (:append!, :prepend!)
-    @eval function Base.$f(s::StructVector, vals::StructVector)
+    @eval function Base.$f(s::StructVector{T}, vals::StructVector{T}) where T
+        # If these aren't the same type, there's no guarantee that x.a "means" the same thing as y.a,
+        # even when all the field names match.
         foreachfield($f, s, vals)
         return s
     end
 end
 
-function Base.insert!(s::StructVector, i::Integer, vals)
-    foreachfield((v, val) -> insert!(v, i, val), s, vals)
+function Base.insert!(s::StructVector{T}, i::Integer, vals) where T
+    valsT = maybe_convert_elt(T, vals)
+    foreachfield((v, val) -> insert!(v, i, val), s, valsT)
     return s
 end
 

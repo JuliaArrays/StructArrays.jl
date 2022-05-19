@@ -9,9 +9,26 @@ using Adapt: adapt, Adapt
 using Test
 
 using Documenter: doctest
-if Base.VERSION >= v"1.6"
+if Base.VERSION >= v"1.6" && Int === Int64
     doctest(StructArrays)
 end
+
+# Most types should not be viewed as equivalent merely
+# because they have the same field names. (Exception:
+# NamedTuples are distinguished only by field names, so they
+# are treated as equivalent to any struct with the same
+# field names.) To test proper behavior, define two types
+# that are "structurally" equivalent...
+struct Meters
+    x::Float64
+end
+struct Millimeters
+    x::Float64
+end
+# ...but not naively transferrable
+Base.convert(::Type{Meters}, x::Millimeters) = Meters(x.x/1000)
+Base.convert(::Type{Millimeters}, x::Meters) = Millimeters(x.x*1000)
+
 
 @testset "index" begin
     a, b = [1 2; 3 4], [4 5; 6 7]
@@ -20,6 +37,44 @@ end
     @test (@inferred t[2,1:2]) == StructArray((a = [3, 4], b = [6, 7]))
     @test_throws BoundsError t[3,3]
     @test (@inferred view(t, 2, 1:2)) == StructArray((a = view(a, 2, 1:2), b = view(b, 2, 1:2)))
+
+    # Element type conversion (issue #216)
+    x = StructArray{Complex{Int}}((a, b))
+    x[1,1] = 10
+    x[2,2] = 20im
+    @test x[1,1] === 10 + 0im
+    @test x[2,2] === 0 + 20im
+
+    # Test that explicit `setindex!` returns the entire array
+    # (Julia's parser ensures that chained assignment returns the value)
+    @test setindex!(x, 22, 3) === x
+end
+
+@testset "eltype conversion" begin
+    v = StructArray{Complex{Int}}(([1,2,3], [4,5,6]))
+    @test append!(v, [7, 8]) == [1+4im, 2+5im, 3+6im, 7+0im, 8+0im]
+    push!(v, (im=12, re=11))  # NamedTuples support field assignment by name
+    @test v[end] === 11 + 12im
+    v[end] = (re=9, im=10)
+    @test v[end] === 9 + 10im
+
+    # For some eltypes, the structarray is "nameless" and we can use regular Tuples
+    v = StructArray([SVector(true, false), SVector(false, false)])
+    v[end] = (true, true)
+    @test v[end] === SVector(true, true)
+    push!(v, (false, false))
+    @test v[end] === SVector(false, false)
+
+    z = StructArray{Meters}(undef, 0)
+    push!(z, Millimeters(1100))
+    @test length(z) == 1
+    @test z[1] === Meters(1.1)
+    append!(z, [Millimeters(1200)])
+    @test z[2] === Meters(1.2)
+    append!(z, StructArray{Millimeters}(([1500.0],)))
+    @test z[3] === Meters(1.5)
+    insert!(z, 3, Millimeters(2000))
+    @test z[3] === Meters(2.0)
 end
 
 @testset "components" begin
