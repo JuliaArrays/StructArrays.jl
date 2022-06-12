@@ -1,6 +1,6 @@
 using StructArrays
 using StructArrays: staticschema, iscompatible, _promote_typejoin, append!!
-using OffsetArrays: OffsetArray
+using OffsetArrays: OffsetArray, OffsetVector, OffsetMatrix
 using StaticArrays
 import Tables, PooledArrays, WeakRefStrings
 using TypedTables: Table
@@ -318,21 +318,57 @@ end
     s = similar(t)
     @test eltype(s) == NamedTuple{(:a, :b), Tuple{Float64, Bool}}
     @test size(s) == (10,)
+    @test s isa StructArray
+
     t = StructArray(a = rand(10, 2), b = rand(Bool, 10, 2))
     s = similar(t, 3, 5)
     @test eltype(s) == NamedTuple{(:a, :b), Tuple{Float64, Bool}}
     @test size(s) == (3, 5)
+    @test s isa StructArray
+
     s = similar(t, (3, 5))
     @test eltype(s) == NamedTuple{(:a, :b), Tuple{Float64, Bool}}
     @test size(s) == (3, 5)
+    @test s isa StructArray
+
+    s = similar(t, (0:2, 5))
+    @test eltype(s) == NamedTuple{(:a, :b), Tuple{Float64, Bool}}
+    @test axes(s) == (0:2, 1:5)
+    @test s isa StructArray
+    @test s.a isa OffsetArray
+    @test s.b isa OffsetArray
 
     s = similar(t, ComplexF64, 10)
     @test s isa StructArray{ComplexF64, 1, NamedTuple{(:re, :im), Tuple{Vector{Float64}, Vector{Float64}}}}
     @test size(s) == (10,)
 
+    s = similar(t, ComplexF64, 0:9)
+    VectorType = OffsetVector{Float64, Vector{Float64}}
+    @test s isa StructArray{ComplexF64, 1, NamedTuple{(:re, :im), Tuple{VectorType, VectorType}}}
+    @test axes(s) == (0:9,)
+
     s = similar(t, Float32, 2, 2)
     @test s isa Matrix{Float32}
     @test size(s) == (2, 2)
+
+    s = similar(t, Float32, 0:1, 2)
+    @test s isa OffsetMatrix{Float32, Matrix{Float32}}
+    @test axes(s) == (0:1, 1:2)
+end
+
+@testset "similar type" begin
+    t = StructArray(a = rand(10), b = rand(10))
+    T = typeof(t)
+    s = similar(T, 3)
+    @test typeof(s) == typeof(t)
+    @test size(s) == (3,)
+
+    s = similar(T, 0:2)
+    @test axes(s) == (0:2,)
+    @test s isa StructArray{NamedTuple{(:a, :b), Tuple{Float64, Float64}}}
+    VectorType = OffsetVector{Float64, Vector{Float64}}
+    @test s.a isa VectorType
+    @test s.b isa VectorType
 end
 
 @testset "empty" begin
@@ -811,6 +847,10 @@ end
     rs = reshape(s, (2, 2))
     @test rs.a == [1 3; 2 4]
     @test rs.b == ["a" "c"; "b" "d"]
+
+    rs = reshape(s, (0:1, :))
+    @test rs.a == OffsetArray([1 3; 2 4], (-1, 0))
+    @test rs.b == OffsetArray(["a" "c"; "b" "d"], (-1, 0))
 end
 
 @testset "lazy" begin
@@ -1104,4 +1144,11 @@ end
     s = StructArray{ComplexF64}((rand(2), rand(2)))
     soff = OffsetArray(s, 0:1)
     @test isa(parent(zero(soff)), StructArray)
+end
+
+# issue #230
+@testset "StaticArray zero" begin
+    u = StructArray([SVector(1.0)])
+    @test zero(u) == StructArray([SVector(0.0)])
+    @test typeof(zero(u)) == typeof(StructArray([SVector(0.0)]))
 end
