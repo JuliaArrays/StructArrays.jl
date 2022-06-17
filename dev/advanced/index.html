@@ -56,7 +56,36 @@ julia&gt; sa.b
  2
  2
  2
- 2</code></pre><p>The above strategy has been tested and implemented in <a href="https://github.com/JuliaGeometry/GeometryBasics.jl">GeometryBasics.jl</a>.</p><h2 id="Mutate-or-widen-style-accumulation"><a class="docs-heading-anchor" href="#Mutate-or-widen-style-accumulation">Mutate-or-widen style accumulation</a><a id="Mutate-or-widen-style-accumulation-1"></a><a class="docs-heading-anchor-permalink" href="#Mutate-or-widen-style-accumulation" title="Permalink"></a></h2><p>StructArrays provides a function <code>StructArrays.append!!(dest, src)</code> (unexported) for &quot;mutate-or-widen&quot; style accumulation.  This function can be used via <a href="https://juliafolds.github.io/BangBang.jl/dev/#BangBang.append!!"><code>BangBang.append!!</code></a> and <a href="https://juliafolds.github.io/BangBang.jl/dev/#BangBang.push!!"><code>BangBang.push!!</code></a> as well.</p><p><code>StructArrays.append!!</code> works like <code>append!(dest, src)</code> if <code>dest</code> can contain all element types in <code>src</code> iterator; i.e., it <em>mutates</em> <code>dest</code> in-place:</p><pre><code class="language-julia hljs">julia&gt; dest = StructVector((a=[1], b=[2]))
+ 2</code></pre><p>In the above example, our <code>MyType</code> was composed of <code>data</code> of type <code>Float64</code> and <code>rest</code> of type <code>NamedTuple</code>. In many practical cases where there are custom types involved it&#39;s hard for StructArrays to automatically widen the types in case they are heterogeneous. The following example demonstrates a widening method in that scenario.</p><pre><code class="language-julia hljs">using Tables
+
+# add a source of custom type data
+struct Location{U}
+    x::U
+    y::U
+end
+struct Region{V}
+    area::V
+end
+
+s1 = MyType(Location(1, 0), place = &quot;Delhi&quot;, rainfall = 200)
+s2 = MyType(Location(2.5, 1.9), place = &quot;Mumbai&quot;, rainfall = 1010)
+s3 = MyType(Region([Location(1, 0), Location(2.5, 1.9)]), place = &quot;North India&quot;, rainfall = missing)
+
+s = [s1, s2, s3]
+# Now if we try to do StructArray(s)
+# we will get an error
+
+function meta_table(iter)
+    cols = Tables.columntable(iter)
+    meta_table(first(cols), Base.tail(cols))
+end
+
+function meta_table(data, rest::NT) where NT&lt;:NamedTuple
+    F = MyType{eltype(data), StructArrays.eltypes(NT)}
+    return StructArray{F}(; data=data, rest...)
+end
+
+meta_table(s)</code></pre><p>The above strategy has been tested and implemented in <a href="https://github.com/JuliaGeometry/GeometryBasics.jl">GeometryBasics.jl</a>.</p><h2 id="Mutate-or-widen-style-accumulation"><a class="docs-heading-anchor" href="#Mutate-or-widen-style-accumulation">Mutate-or-widen style accumulation</a><a id="Mutate-or-widen-style-accumulation-1"></a><a class="docs-heading-anchor-permalink" href="#Mutate-or-widen-style-accumulation" title="Permalink"></a></h2><p>StructArrays provides a function <code>StructArrays.append!!(dest, src)</code> (unexported) for &quot;mutate-or-widen&quot; style accumulation.  This function can be used via <a href="https://juliafolds.github.io/BangBang.jl/dev/#BangBang.append!!"><code>BangBang.append!!</code></a> and <a href="https://juliafolds.github.io/BangBang.jl/dev/#BangBang.push!!"><code>BangBang.push!!</code></a> as well.</p><p><code>StructArrays.append!!</code> works like <code>append!(dest, src)</code> if <code>dest</code> can contain all element types in <code>src</code> iterator; i.e., it <em>mutates</em> <code>dest</code> in-place:</p><pre><code class="language-julia hljs">julia&gt; dest = StructVector((a=[1], b=[2]))
 1-element StructArray(::Array{Int64,1}, ::Array{Int64,1}) with eltype NamedTuple{(:a, :b),Tuple{Int64,Int64}}:
  (a = 1, b = 2)
 
@@ -92,4 +121,4 @@ end
 threads = 1024
 blocks = cld(length(dd),threads)
 
-@cuda threads=threads blocks=blocks kernel!(de, dd)</code></pre></article><nav class="docs-footer"><a class="docs-footer-prevpage" href="../counterintuitive/">« Some counterintuitive behaviors</a><a class="docs-footer-nextpage" href="../reference/">Index »</a><div class="flexbox-break"></div><p class="footer-message">Powered by <a href="https://github.com/JuliaDocs/Documenter.jl">Documenter.jl</a> and the <a href="https://julialang.org/">Julia Programming Language</a>.</p></nav></div><div class="modal" id="documenter-settings"><div class="modal-background"></div><div class="modal-card"><header class="modal-card-head"><p class="modal-card-title">Settings</p><button class="delete"></button></header><section class="modal-card-body"><p><label class="label">Theme</label><div class="select"><select id="documenter-themepicker"><option value="documenter-light">documenter-light</option><option value="documenter-dark">documenter-dark</option></select></div></p><hr/><p>This document was generated with <a href="https://github.com/JuliaDocs/Documenter.jl">Documenter.jl</a> version 0.27.19 on <span class="colophon-date" title="Friday 17 June 2022 16:28">Friday 17 June 2022</span>. Using Julia version 1.7.3.</p></section><footer class="modal-card-foot"></footer></div></div></div></body></html>
+@cuda threads=threads blocks=blocks kernel!(de, dd)</code></pre></article><nav class="docs-footer"><a class="docs-footer-prevpage" href="../counterintuitive/">« Some counterintuitive behaviors</a><a class="docs-footer-nextpage" href="../reference/">Index »</a><div class="flexbox-break"></div><p class="footer-message">Powered by <a href="https://github.com/JuliaDocs/Documenter.jl">Documenter.jl</a> and the <a href="https://julialang.org/">Julia Programming Language</a>.</p></nav></div><div class="modal" id="documenter-settings"><div class="modal-background"></div><div class="modal-card"><header class="modal-card-head"><p class="modal-card-title">Settings</p><button class="delete"></button></header><section class="modal-card-body"><p><label class="label">Theme</label><div class="select"><select id="documenter-themepicker"><option value="documenter-light">documenter-light</option><option value="documenter-dark">documenter-dark</option></select></div></p><hr/><p>This document was generated with <a href="https://github.com/JuliaDocs/Documenter.jl">Documenter.jl</a> version 0.27.19 on <span class="colophon-date" title="Friday 17 June 2022 16:29">Friday 17 June 2022</span>. Using Julia version 1.7.3.</p></section><footer class="modal-card-foot"></footer></div></div></div></body></html>
