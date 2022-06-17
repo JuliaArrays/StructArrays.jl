@@ -91,41 +91,6 @@ julia> sa.b
  2
 ```
 
-In the above example, our `MyType` was composed of `data` of type `Float64` and `rest` of type `NamedTuple`. In many practical cases where there are custom types involved it's hard for StructArrays to automatically widen the types in case they are heterogeneous. The following example demonstrates a widening method in that scenario.
-
-```julia
-using Tables
-
-# add a source of custom type data
-struct Location{U}
-    x::U
-    y::U
-end
-struct Region{V}
-    area::V
-end
-
-s1 = MyType(Location(1, 0), place = "Delhi", rainfall = 200)
-s2 = MyType(Location(2.5, 1.9), place = "Mumbai", rainfall = 1010)
-s3 = MyType(Region([Location(1, 0), Location(2.5, 1.9)]), place = "North India", rainfall = missing)
-
-s = [s1, s2, s3]
-# Now if we try to do StructArray(s)
-# we will get an error
-
-function meta_table(iter)
-    cols = Tables.columntable(iter)
-    meta_table(first(cols), Base.tail(cols))
-end
-
-function meta_table(data, rest::NT) where NT<:NamedTuple
-    F = MyType{eltype(data), StructArrays.eltypes(NT)}
-    return StructArray{F}(; data=data, rest...)
-end
-
-meta_table(s)
-```
-
 The above strategy has been tested and implemented in [GeometryBasics.jl](https://github.com/JuliaGeometry/GeometryBasics.jl).
 
 ## Mutate-or-widen style accumulation
