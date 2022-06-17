@@ -167,7 +167,7 @@ function Base.IndexStyle(::Type{S}) where {S<:StructArray}
     index_type(S) === Int ? IndexLinear() : IndexCartesian()
 end
 
-function _undef_array(::Type{T}, sz; unwrap::F = alwaysfalse) where {T, F}
+function undef_array(::Type{T}, sz; unwrap::F = alwaysfalse) where {T, F}
     if unwrap(T)
         return StructArray{T}(undef, sz; unwrap = unwrap)
     else
@@ -175,12 +175,16 @@ function _undef_array(::Type{T}, sz; unwrap::F = alwaysfalse) where {T, F}
     end
 end
 
-function _similar(v::AbstractArray, ::Type{Z}; unwrap::F = alwaysfalse) where {Z, F}
+function similar_array(v::AbstractArray, ::Type{Z}; unwrap::F = alwaysfalse) where {Z, F}
     if unwrap(Z)
-        return buildfromschema(typ -> _similar(v, typ; unwrap = unwrap), Z)
+        return buildfromschema(typ -> similar_array(v, typ; unwrap = unwrap), Z)
     else
         return similar(v, Z)
     end
+end
+
+function similar_structarray(v::AbstractArray, ::Type{Z}; unwrap::F = alwaysfalse) where {Z, F}
+    buildfromschema(typ -> similar_array(v, typ; unwrap = unwrap), Z)
 end
 
 """
@@ -204,13 +208,9 @@ julia> StructArray{ComplexF64}(undef, (2,3))
 StructArray(::Base.UndefInitializer, sz::Dims)
 
 function StructArray{T}(::Base.UndefInitializer, sz::Dims; unwrap::F = alwaysfalse) where {T, F}
-    buildfromschema(typ -> _undef_array(typ, sz; unwrap = unwrap), T)
+    buildfromschema(typ -> undef_array(typ, sz; unwrap = unwrap), T)
 end
 StructArray{T}(u::Base.UndefInitializer, d::Integer...; unwrap::F = alwaysfalse) where {T, F} = StructArray{T}(u, convert(Dims, d); unwrap = unwrap)
-
-function similar_structarray(v::AbstractArray, ::Type{Z}; unwrap::F = alwaysfalse) where {Z, F}
-    buildfromschema(typ -> _similar(v, typ; unwrap = unwrap), Z)
-end
 
 """
     StructArray(A; unwrap = T->false)
@@ -276,14 +276,34 @@ Base.convert(::Type{StructArray}, v::StructArray) = v
 Base.convert(::Type{StructVector}, v::AbstractVector) = StructVector(v)
 Base.convert(::Type{StructVector}, v::StructVector) = v
 
-function Base.similar(::Type{<:StructArray{T, <:Any, C}}, sz::Dims) where {T, C}
-    buildfromschema(typ -> similar(typ, sz), T, C)
+# Mimic OffsetArrays signatures
+const OffsetAxisKnownLength = Union{Integer, AbstractUnitRange}
+const OffsetAxis = Union{OffsetAxisKnownLength, Colon}
+
+const OffsetShapeKnownLength = Tuple{OffsetAxisKnownLength,Vararg{OffsetAxisKnownLength}}
+const OffsetShape = Tuple{OffsetAxis,Vararg{OffsetAxis}}
+
+# Helper function to avoid adding too many dispatches to `Base.similar`
+function _similar(s::StructArray{T}, ::Type{T}, sz) where {T}
+    return StructArray{T}(map(typ -> similar(typ, sz), components(s)))
 end
 
-Base.similar(s::StructArray, sz::Base.DimOrInd...) = similar(s, Base.to_shape(sz))
-Base.similar(s::StructArray) = similar(s, Base.to_shape(axes(s)))
-function Base.similar(s::StructArray{T}, sz::Tuple) where {T}
-    StructArray{T}(map(typ -> similar(typ, sz), components(s)))
+function _similar(s::StructArray{T}, S::Type, sz) where {T}
+    # If not specified, we don't really know what kind of array to use for each
+    # interior type, so we just pick the first one arbitrarily. If users need
+    # something else, they need to be more specific.
+    c1 = first(components(s))
+    return isnonemptystructtype(S) ? buildfromschema(typ -> similar(c1, typ, sz), S) : similar(c1, S, sz)
+end
+
+for type in (:Dims, :OffsetShapeKnownLength)
+    @eval function Base.similar(::Type{<:StructArray{T, N, C}}, sz::$(type)) where {T, N, C}
+        return buildfromschema(typ -> similar(typ, sz), T, C)
+    end
+
+    @eval function Base.similar(s::StructArray, S::Type, sz::$(type))
+        return _similar(s, S, sz)
+    end
 end
 
 @deprecate fieldarrays(x) StructArrays.components(x)
@@ -437,8 +457,10 @@ end
 
 Base.copy(s::StructArray{T}) where {T} = StructArray{T}(map(copy, components(s)))
 
-function Base.reshape(s::StructArray{T}, d::Dims) where {T}
-    StructArray{T}(map(x -> reshape(x, d), components(s)))
+for type in (:Dims, :OffsetShape)
+    @eval function Base.reshape(s::StructArray{T}, d::$(type)) where {T}
+        StructArray{T}(map(x -> reshape(x, d), components(s)))
+    end
 end
 
 function showfields(io::IO, fields::NTuple{N, Any}) where N
