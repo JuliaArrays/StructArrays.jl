@@ -354,6 +354,24 @@ end
     s = similar(t, Float32, 0:1, 2)
     @test s isa OffsetMatrix{Float32, Matrix{Float32}}
     @test axes(s) == (0:1, 1:2)
+
+    s = similar(t, ComplexF64, (Base.OneTo(2),))
+    @test s isa StructArray
+    @test s.re isa Vector{Float64}
+    @test axes(s) == (1:2,)
+
+    s = similar(t, Int, (Base.OneTo(2),))
+    @test s isa Vector{Int}
+    @test axes(s) == (1:2,)
+
+    s = similar(t, ComplexF64, (Base.IdentityUnitRange(5:7),))
+    @test s isa StructArray
+    @test s.re isa OffsetVector{Float64}
+    @test axes(s) == (5:7,)
+
+    s = similar(t, Int, (Base.IdentityUnitRange(5:7),))
+    @test s isa OffsetVector{Int}
+    @test axes(s) == (5:7,)
 end
 
 @testset "similar type" begin
@@ -844,11 +862,28 @@ end
 
 @testset "reshape" begin
     s = StructArray(a=[1,2,3,4], b=["a","b","c","d"])
+
     rs = reshape(s, (2, 2))
     @test rs.a == [1 3; 2 4]
     @test rs.b == ["a" "c"; "b" "d"]
 
+    rs = reshape(s, (:,))
+    @test rs.a == s.a
+    @test rs.b == s.b
+
+    rs = reshape(s, (2, :))
+    @test rs.a == [1 3; 2 4]
+    @test rs.b == ["a" "c"; "b" "d"]
+
+    rs = reshape(s, (2, Base.OneTo(2)))
+    @test rs.a == [1 3; 2 4]
+    @test rs.b == ["a" "c"; "b" "d"]
+
     rs = reshape(s, (0:1, :))
+    @test rs.a == OffsetArray([1 3; 2 4], (-1, 0))
+    @test rs.b == OffsetArray(["a" "c"; "b" "d"], (-1, 0))
+
+    rs = reshape(s, (0:1, 1:2))
     @test rs.a == OffsetArray([1 3; 2 4], (-1, 0))
     @test rs.b == OffsetArray(["a" "c"; "b" "d"], (-1, 0))
 end
@@ -1070,6 +1105,28 @@ Base.similar(bc::Broadcast.Broadcasted{Broadcast.ArrayStyle{MyArray}}, ::Type{El
     # issue #189
     v = StructArray([(a="s1",), (a="s2",)])
     @test @inferred(broadcast(el -> el.a, v)) == ["s1", "s2"]
+end
+
+@testset "map" begin
+    s = StructArray(a=[1, 2, 3])
+
+    t = @inferred(map(x -> x, s))
+    @test t isa StructArray
+    @test t == s
+
+    t = @inferred(map(x -> x.a, s))
+    @test t isa Vector
+    @test t == [1, 2, 3]
+
+    t = VERSION >= v"1.7" ? @inferred(map(x -> (a=x.a, b=2), s)) : map(x -> (a=x.a, b=2), s)
+    @test t isa StructArray
+    @test map(x -> (a=x.a, b=2), s) == [(a=1, b=2), (a=2, b=2), (a=3, b=2)]
+
+    so = reshape(s, Base.IdentityUnitRange(11:13))
+    to = @inferred(map(x -> x, so))
+    @test to isa StructArray
+    @test axes(to) == axes(so)
+    @test to == so
 end
 
 @testset "staticarrays" begin
