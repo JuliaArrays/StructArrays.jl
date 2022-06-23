@@ -21,6 +21,10 @@ julia> StructArrays.map_params(T -> Complex{T}, Tuple{Int32,Float64})
 map_params(f::F, ::Type{NamedTuple{names, types}}) where {F, names, types} =
     NamedTuple{names}(map_params(f, types))
 
+# pass Any when field types are not specified
+map_params(f::F, T::Type{NamedTuple{names}}) where {F, names} =
+    map_params(f, T{Tuple{fieldtypes(T)...}})
+
 function map_params(f::F, ::Type{T}) where {F, T<:Tuple}
     if @generated
         types = fieldtypes(T)

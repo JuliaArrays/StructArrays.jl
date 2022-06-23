@@ -331,6 +331,20 @@ end
     @test size(s) == (3, 5)
     @test s isa StructArray
 
+    s = similar(t, NamedTuple{(:x,)}, (3, 5))
+    @test eltype(s) == NamedTuple{(:x,)}
+    @test size(s) == (3, 5)
+    @test s isa StructArray
+    s = similar(t, NamedTuple{(:x,), Tuple{NamedTuple{(:y,)}}}, (3, 5))
+    @test eltype(s) == NamedTuple{(:x,), Tuple{NamedTuple{(:y,)}}}
+    @test size(s) == (3, 5)
+    @test s isa StructArray
+
+    s = similar(t, Any, (3, 5))
+    @test eltype(s) == Any
+    @test size(s) == (3, 5)
+    @test s isa Array
+
     s = similar(t, (0:2, 5))
     @test eltype(s) == NamedTuple{(:a, :b), Tuple{Float64, Bool}}
     @test axes(s) == (0:2, 1:5)
@@ -413,6 +427,10 @@ end
     @test size(t) == (5,)
     @test t == convert(StructVector, v)
     @test t == convert(StructVector, t)
+
+    t = StructVector([(a=1,), (a=missing,)])::StructVector
+    @test isequal(t.a, [1, missing])
+    @test eltype(t) <: NamedTuple{(:a,)}
 end
 
 @testset "tuple case" begin
@@ -1117,6 +1135,12 @@ end
     t = @inferred(map(x -> x.a, s))
     @test t isa Vector
     @test t == [1, 2, 3]
+
+    t = map(x -> (a=x.a,), StructVector(a=[1, missing]))::StructVector
+    @test isequal(t.a, [1, missing])
+    @test eltype(t) <: NamedTuple{(:a,)}
+    t = map(x -> (a=rand(["", 1, nothing]),), StructVector(a=1:10))::StructVector
+    @test eltype(t) <: NamedTuple{(:a,)}
 
     t = VERSION >= v"1.7" ? @inferred(map(x -> (a=x.a, b=2), s)) : map(x -> (a=x.a, b=2), s)
     @test t isa StructArray
