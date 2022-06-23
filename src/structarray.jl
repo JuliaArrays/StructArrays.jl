@@ -276,13 +276,6 @@ Base.convert(::Type{StructArray}, v::StructArray) = v
 Base.convert(::Type{StructVector}, v::AbstractVector) = StructVector(v)
 Base.convert(::Type{StructVector}, v::StructVector) = v
 
-# Mimic OffsetArrays signatures
-const OffsetAxisKnownLength = Union{Integer, AbstractUnitRange}
-const OffsetAxis = Union{OffsetAxisKnownLength, Colon}
-
-const OffsetShapeKnownLength = Tuple{OffsetAxisKnownLength,Vararg{OffsetAxisKnownLength}}
-const OffsetShape = Tuple{OffsetAxis,Vararg{OffsetAxis}}
-
 # Helper function to avoid adding too many dispatches to `Base.similar`
 function _similar(s::StructArray{T}, ::Type{T}, sz) where {T}
     return StructArray{T}(map(typ -> similar(typ, sz), components(s)))
@@ -296,7 +289,13 @@ function _similar(s::StructArray{T}, S::Type, sz) where {T}
     return isnonemptystructtype(S) ? buildfromschema(typ -> similar(c1, typ, sz), S) : similar(c1, S, sz)
 end
 
-for type in (:Dims, :OffsetShapeKnownLength)
+for type in (
+        :Dims,
+        # mimic OffsetArrays signature
+        :(Tuple{Union{Integer, AbstractUnitRange}, Vararg{Union{Integer, AbstractUnitRange}}}),
+        # disambiguation with Base
+        :(Tuple{Union{Integer, Base.OneTo}, Vararg{Union{Integer, Base.OneTo}}}),
+    )
     @eval function Base.similar(::Type{<:StructArray{T, N, C}}, sz::$(type)) where {T, N, C}
         return buildfromschema(typ -> similar(typ, sz), T, C)
     end
@@ -457,7 +456,16 @@ end
 
 Base.copy(s::StructArray{T}) where {T} = StructArray{T}(map(copy, components(s)))
 
-for type in (:Dims, :OffsetShape)
+for type in (
+        :Dims,
+        # mimic OffsetArrays signature
+        :(Tuple{Union{Integer, AbstractUnitRange, Colon}, Vararg{Union{Integer, AbstractUnitRange, Colon}}}),
+        # disambiguation with Base
+        :(Tuple{Union{Integer, Base.OneTo}, Vararg{Union{Integer, Base.OneTo}}}),
+        :(Tuple{Vararg{Union{Colon, Integer}}}),
+        :(Tuple{Vararg{Union{Colon, Int}}}),
+        :(Tuple{Colon}),
+    )
     @eval function Base.reshape(s::StructArray{T}, d::$(type)) where {T}
         StructArray{T}(map(x -> reshape(x, d), components(s)))
     end
