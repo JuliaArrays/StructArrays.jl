@@ -1207,18 +1207,19 @@ end
     v = StructArray(rand(ComplexF64, 2, 2))
     f(T) = similar(v, T)
     types = Tuple{Int, Float64, ComplexF32, String}
-    A = @inferred StructArrays.map_params(f, types)
-    B = StructArrays.map_params_fallback(f, types)
+    A = @inferred StructArrays.map_params_as_tuple(f, types)
+    B = StructArrays.map_params_as_tuple_fallback(f, types)
     @test typeof(A) === typeof(B)
     types = Tuple{Int, Float64, ComplexF32}
     A = @inferred StructArrays.map_params(zero, types)
-    B = StructArrays.map_params_fallback(zero, types)
-    C = map(zero, fieldtypes(types))
-    @test A === B === C
+    B = map(zero, fieldtypes(types))
+    C = StructArrays.map_params_as_tuple(zero, types)
+    D = StructArrays.map_params_as_tuple_fallback(zero, types)
+    @test A === B === C === D
     namedtypes = NamedTuple{(:a, :b, :c), types}
     A = @inferred StructArrays.map_params(zero, namedtypes)
-    C = map(zero, NamedTuple{(:a, :b, :c)}(map(zero, fieldtypes(types))))
-    @test A === C
+    B = map(zero, NamedTuple{(:a, :b, :c)}(map(zero, fieldtypes(types))))
+    @test A === B
 end
 
 @testset "OffsetArray zero" begin
