@@ -1216,23 +1216,23 @@ end
     @test typeof(A) === typeof(B) === typeof(C) === typeof(D)
 
     types = Tuple{Int, Float64, ComplexF32}
-    A = @inferred StructArrays.map_params(zero, types)
-    B = map(zero, fieldtypes(types))
+    A = map(zero, fieldtypes(types))
+    B = @inferred StructArrays.map_params(zero, types)
     C = StructArrays.map_params_as_tuple(zero, types)
     D = StructArrays.map_params_as_tuple_fallback(zero, types)
     @test A === B === C === D
 
     namedtypes = NamedTuple{(:a, :b, :c), types}
-    A = @inferred StructArrays.map_params(zero, namedtypes)
-    B = map(zero, NamedTuple{(:a, :b, :c)}(map(zero, fieldtypes(types))))
+    A = map(zero, NamedTuple{(:a, :b, :c)}(map(zero, fieldtypes(types))))
+    B = @inferred StructArrays.map_params(zero, namedtypes)
     C = StructArrays.map_params_as_tuple(zero, types)
     D = StructArrays.map_params_as_tuple_fallback(zero, types)
     @test A === B
     @test Tuple(A) === C === D
 
     nonconcretenamedtypes = NamedTuple{(:a, :b, :c)}
-    A = @inferred StructArrays.map_params(f, nonconcretenamedtypes)
-    B = map(f, NamedTuple{(:a, :b, :c)}((Any, Any, Any)))
+    A = map(f, NamedTuple{(:a, :b, :c)}((Any, Any, Any)))
+    B = @inferred StructArrays.map_params(f, nonconcretenamedtypes)
     C = StructArrays.map_params_as_tuple(f, nonconcretenamedtypes)
     D = StructArrays.map_params_as_tuple_fallback(f, nonconcretenamedtypes)
     @test typeof(A) === typeof(B)
