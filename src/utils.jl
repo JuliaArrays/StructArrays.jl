@@ -26,7 +26,7 @@ function map_params_as_tuple(f::F, ::Type{T}) where {F, T<:Tup}
         args = map(t -> :(f($t)), types)
         Expr(:tuple, args...)
     else
-        map_params_fallback(f, T)
+        map_params_as_tuple_fallback(f, T)
     end
 end
 
