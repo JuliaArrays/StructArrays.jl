@@ -331,14 +331,16 @@ end
     @test size(s) == (3, 5)
     @test s isa StructArray
 
-    s = similar(t, NamedTuple{(:x,)}, (3, 5))
-    @test eltype(s) == NamedTuple{(:x,)}
-    @test size(s) == (3, 5)
-    @test s isa StructArray
-    s = similar(t, NamedTuple{(:x,), Tuple{NamedTuple{(:y,)}}}, (3, 5))
-    @test eltype(s) == NamedTuple{(:x,), Tuple{NamedTuple{(:y,)}}}
-    @test size(s) == (3, 5)
-    @test s isa StructArray
+    for ET in (
+            NamedTuple{(:x,)},
+            NamedTuple{(:x,), Tuple{NamedTuple{(:y,)}}},
+            NamedTuple{(:x, :y), Tuple{Int, S}} where S
+        )
+        s = similar(t, ET, (3, 5))
+        @test eltype(s) === ET
+        @test size(s) == (3, 5)
+        @test s isa StructArray
+    end
 
     s = similar(t, Any, (3, 5))
     @test eltype(s) == Any
