@@ -331,6 +331,22 @@ end
     @test size(s) == (3, 5)
     @test s isa StructArray
 
+    for ET in (
+            NamedTuple{(:x,)},
+            NamedTuple{(:x,), Tuple{NamedTuple{(:y,)}}},
+            NamedTuple{(:x, :y), Tuple{Int, S}} where S
+        )
+        s = similar(t, ET, (3, 5))
+        @test eltype(s) === ET
+        @test size(s) == (3, 5)
+        @test s isa StructArray
+    end
+
+    s = similar(t, Any, (3, 5))
+    @test eltype(s) == Any
+    @test size(s) == (3, 5)
+    @test s isa Array
+
     s = similar(t, (0:2, 5))
     @test eltype(s) == NamedTuple{(:a, :b), Tuple{Float64, Bool}}
     @test axes(s) == (0:2, 1:5)
@@ -413,6 +429,10 @@ end
     @test size(t) == (5,)
     @test t == convert(StructVector, v)
     @test t == convert(StructVector, t)
+
+    t = StructVector([(a=1,), (a=missing,)])::StructVector
+    @test isequal(t.a, [1, missing])
+    @test eltype(t) <: NamedTuple{(:a,)}
 end
 
 @testset "tuple case" begin
@@ -1118,6 +1138,12 @@ end
     @test t isa Vector
     @test t == [1, 2, 3]
 
+    t = map(x -> (a=x.a,), StructVector(a=[1, missing]))::StructVector
+    @test isequal(t.a, [1, missing])
+    @test eltype(t) <: NamedTuple{(:a,)}
+    t = map(x -> (a=rand(["", 1, nothing]),), StructVector(a=1:10))::StructVector
+    @test eltype(t) <: NamedTuple{(:a,)}
+
     t = VERSION >= v"1.7" ? @inferred(map(x -> (a=x.a, b=2), s)) : map(x -> (a=x.a, b=2), s)
     @test t isa StructArray
     @test map(x -> (a=x.a, b=2), s) == [(a=1, b=2), (a=2, b=2), (a=3, b=2)]
@@ -1182,19 +1208,37 @@ end
 @testset "map_params" begin
     v = StructArray(rand(ComplexF64, 2, 2))
     f(T) = similar(v, T)
+
     types = Tuple{Int, Float64, ComplexF32, String}
-    A = @inferred StructArrays.map_params(f, types)
-    B = StructArrays.map_params_fallback(f, types)
-    @test typeof(A) === typeof(B)
+    namedtypes = NamedTuple{(:a, :b, :c, :d), types}
+    A = @inferred StructArrays.map_params_as_tuple(f, types)
+    B = StructArrays.map_params_as_tuple_fallback(f, types)
+    C = @inferred StructArrays.map_params_as_tuple(f, namedtypes)
+    D = StructArrays.map_params_as_tuple_fallback(f, namedtypes)
+    @test typeof(A) === typeof(B) === typeof(C) === typeof(D)
+
     types = Tuple{Int, Float64, ComplexF32}
-    A = @inferred StructArrays.map_params(zero, types)
-    B = StructArrays.map_params_fallback(zero, types)
-    C = map(zero, fieldtypes(types))
-    @test A === B === C
+    A = map(zero, fieldtypes(types))
+    B = @inferred StructArrays.map_params(zero, types)
+    C = StructArrays.map_params_as_tuple(zero, types)
+    D = StructArrays.map_params_as_tuple_fallback(zero, types)
+    @test A === B === C === D
+
     namedtypes = NamedTuple{(:a, :b, :c), types}
-    A = @inferred StructArrays.map_params(zero, namedtypes)
-    C = map(zero, NamedTuple{(:a, :b, :c)}(map(zero, fieldtypes(types))))
-    @test A === C
+    A = map(zero, NamedTuple{(:a, :b, :c)}(map(zero, fieldtypes(types))))
+    B = @inferred StructArrays.map_params(zero, namedtypes)
+    C = StructArrays.map_params_as_tuple(zero, types)
+    D = StructArrays.map_params_as_tuple_fallback(zero, types)
+    @test A === B
+    @test Tuple(A) === C === D
+
+    nonconcretenamedtypes = NamedTuple{(:a, :b, :c)}
+    A = map(f, NamedTuple{(:a, :b, :c)}((Any, Any, Any)))
+    B = @inferred StructArrays.map_params(f, nonconcretenamedtypes)
+    C = StructArrays.map_params_as_tuple(f, nonconcretenamedtypes)
+    D = StructArrays.map_params_as_tuple_fallback(f, nonconcretenamedtypes)
+    @test typeof(A) === typeof(B)
+    @test typeof(Tuple(A)) === typeof(C) === typeof(D)
 end
 
 @testset "OffsetArray zero" begin
