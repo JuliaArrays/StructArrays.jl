@@ -50,3 +50,5 @@ function createinstance(::Type{T}, args...) where {T}
 end
 
 createinstance(::Type{T}, args...) where {T<:Tup} = T(args)
+
+createinstance(::Type{T}) where {T} = (x...) -> createinstance(T, x...)

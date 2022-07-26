@@ -1190,11 +1190,23 @@ Base.BroadcastStyle(::Broadcast.ArrayStyle{MyArray2}, S::Broadcast.DefaultArrayS
         end
         testset = Any[StructArray([1;2+im]),
                     1:2, 
-                    (1,2), 
+                    (1,2),
+                    StructArray(@SArray [1 1+2im]),
+                    (@SArray [1 2])
                     ]
         for aa in testset, bb in testset, cc in testset
             _test(aa, bb, cc)
         end
+    end
+
+    @testset "StructStaticArray" begin
+        bclog(s) = log.(s)
+        test_allocated(f, s) = @test (@allocated f(s)) == 0
+        a = @SMatrix [float(i) for i in 1:10, j in 1:10]
+        b = @SMatrix [0. for i in 1:10, j in 1:10]
+        s = StructArray{ComplexF64}((a , b))
+        @test (@inferred bclog(s)) isa typeof(s)
+        test_allocated(bclog, s)
     end
 end
 
