@@ -6,6 +6,7 @@ import Tables, PooledArrays, WeakRefStrings
 using TypedTables: Table
 using DataAPI: refarray, refvalue
 using Adapt: adapt, Adapt
+using JLArrays
 using Test
 
 using Documenter: doctest
@@ -1207,6 +1208,16 @@ Base.BroadcastStyle(::Broadcast.ArrayStyle{MyArray2}, S::Broadcast.DefaultArrayS
         s = StructArray{ComplexF64}((a , b))
         @test (@inferred bclog(s)) isa typeof(s)
         test_allocated(bclog, s)
+    end
+
+    @testset "StructJLArray" begin
+        bcabs(a) = abs.(a)
+        bcmul2(a) = 2 .* a
+        a = StructArray(randn(ComplexF32, 10, 10))
+        sa = jl(a)
+        @test collect(@inferred(bcabs(sa))) == bcabs(a)
+        @test @inferred(bcmul2(sa)) isa StructArray
+        @test (sa .+= 1) isa StructArray
     end
 end
 
