@@ -1100,17 +1100,26 @@ Adapt.adapt_storage(::ArrayConverter, xs::AbstractArray) = convert(Array, xs)
     @test t.b.d isa Array
 end
 
-struct MyArray{T,N} <: AbstractArray{T,N}
-    A::Array{T,N}
+for S in (1, 2, 3)
+    MyArray = Symbol(:MyArray, S)
+    @eval begin
+        struct $MyArray{T,N} <: AbstractArray{T,N}
+            A::Array{T,N}
+        end
+        $MyArray{T}(::UndefInitializer, sz::Dims) where T = $MyArray(Array{T}(undef, sz))
+        Base.IndexStyle(::Type{<:$MyArray}) = IndexLinear()
+        Base.getindex(A::$MyArray, i::Int) = A.A[i]
+        Base.setindex!(A::$MyArray, val, i::Int) = A.A[i] = val
+        Base.size(A::$MyArray) = Base.size(A.A)
+        Base.BroadcastStyle(::Type{<:$MyArray}) = Broadcast.ArrayStyle{$MyArray}()
+    end
 end
-MyArray{T}(::UndefInitializer, sz::Dims) where T = MyArray(Array{T}(undef, sz))
-Base.IndexStyle(::Type{<:MyArray}) = IndexLinear()
-Base.getindex(A::MyArray, i::Int) = A.A[i]
-Base.setindex!(A::MyArray, val, i::Int) = A.A[i] = val
-Base.size(A::MyArray) = Base.size(A.A)
-Base.BroadcastStyle(::Type{<:MyArray}) = Broadcast.ArrayStyle{MyArray}()
-Base.similar(bc::Broadcast.Broadcasted{Broadcast.ArrayStyle{MyArray}}, ::Type{ElType}) where ElType =
-    MyArray{ElType}(undef, size(bc))
+Base.similar(bc::Broadcast.Broadcasted{Broadcast.ArrayStyle{MyArray1}}, ::Type{ElType}) where ElType =
+    MyArray1{ElType}(undef, size(bc))
+Base.similar(bc::Broadcast.Broadcasted{Broadcast.ArrayStyle{MyArray2}}, ::Type{ElType}) where ElType =
+    MyArray2{ElType}(undef, size(bc))
+Base.BroadcastStyle(::Broadcast.ArrayStyle{MyArray1}, ::Broadcast.ArrayStyle{MyArray3}) = Broadcast.ArrayStyle{MyArray1}()
+Base.BroadcastStyle(::Broadcast.ArrayStyle{MyArray2}, S::Broadcast.DefaultArrayStyle) = S
 
 @testset "broadcast" begin
     s = StructArray{ComplexF64}((rand(2,2), rand(2,2)))
@@ -1128,19 +1137,34 @@ Base.similar(bc::Broadcast.Broadcasted{Broadcast.ArrayStyle{MyArray}}, ::Type{El
     # used inside of broadcast but we also test it here explicitly
     @test isa(@inferred(Base.dataids(s)), NTuple{N, UInt} where {N})
 
-    s = StructArray{ComplexF64}((MyArray(rand(2)), MyArray(rand(2))))
-    @test_throws MethodError s .+ s
+    # Make sure we can handle style with similar defined
+    # And we can handle most conflict
+    # s1 and s2 has similar defined, but s3 not
+    # s2 are conflict with s1 and s3. (And it's weaker than DefaultArrayStyle)
+    s1 = StructArray{ComplexF64}((MyArray1(rand(2)), MyArray1(rand(2))))
+    s2 = StructArray{ComplexF64}((MyArray2(rand(2)), MyArray2(rand(2))))
+    s3 = StructArray{ComplexF64}((MyArray3(rand(2)), MyArray3(rand(2))))
+    s4 = StructArray{ComplexF64}((rand(2), rand(2)))
+
+    function _test_similar(a, b, c)
+        try
+            d = StructArray{ComplexF64}((a.re .+ b.re .- c.re, a.im .+ b.im .- c.im))
+            @test typeof(a .+ b .- c) == typeof(d)
+        catch
+            @test_throws MethodError a .+ b .- c
+        end
+    end
+    for s in (s1,s2,s3,s4), s′ in (s1,s2,s3,s4), s″ in (s1,s2,s3,s4)
+        _test_similar(s, s′, s″)
+    end
 
     # test for dimensionality track
+    s = s1
     @test Base.broadcasted(+, s, s) isa Broadcast.Broadcasted{<:Broadcast.AbstractArrayStyle{1}}
     @test Base.broadcasted(+, s, 1:2) isa Broadcast.Broadcasted{<:Broadcast.AbstractArrayStyle{1}}
     @test Base.broadcasted(+, s, reshape(1:2,1,2)) isa Broadcast.Broadcasted{<:Broadcast.AbstractArrayStyle{2}}
     @test Base.broadcasted(+, reshape(1:2,1,1,2), s) isa Broadcast.Broadcasted{<:Broadcast.AbstractArrayStyle{3}}
-
-    a = StructArray([1;2+im])
-    b = StructArray([1;;2+im])
-    @test a .+ b == a .+ collect(b) == collect(a) .+ b == collect(a) .+ collect(b)
-    @test a .+ Any[1] isa StructArray
+    @test Base.broadcasted(+, s, MyArray1(rand(2))) isa Broadcast.Broadcasted{<:Broadcast.AbstractArrayStyle{Any}}
 
     # issue #185
     A = StructArray(randn(ComplexF64, 3, 3))
@@ -1155,6 +1179,23 @@ Base.similar(bc::Broadcast.Broadcasted{Broadcast.ArrayStyle{MyArray}}, ::Type{El
 
     @test identity.(StructArray(x=StructArray(a=1:3)))::StructArray == [(x=(a=1,),), (x=(a=2,),), (x=(a=3,),)]
     @test (x -> x.x.a).(StructArray(x=StructArray(a=1:3))) == [1, 2, 3]
+
+    @testset "ambiguity check" begin
+        function _test(a, b, c)
+            if a isa StructArray || b isa StructArray || c isa StructArray
+                d = @inferred a .+ b .- c
+                @test d == collect(a) .+ collect(b) .- collect(c)
+                @test d isa StructArray
+            end
+        end
+        testset = Any[StructArray([1;2+im]),
+                    1:2, 
+                    (1,2), 
+                    ]
+        for aa in testset, bb in testset, cc in testset
+            _test(aa, bb, cc)
+        end
+    end
 end
 
 @testset "map" begin
