@@ -1,0 +1,66 @@
+<!DOCTYPE html>
+<html lang="en"><head><meta charset="UTF-8"/><meta name="viewport" content="width=device-width, initial-scale=1.0"/><title>Example usage · StructArrays</title><script data-outdated-warner src="../assets/warner.js"></script><link href="https://cdnjs.cloudflare.com/ajax/libs/lato-font/3.0.0/css/lato-font.min.css" rel="stylesheet" type="text/css"/><link href="https://cdnjs.cloudflare.com/ajax/libs/juliamono/0.045/juliamono.min.css" rel="stylesheet" type="text/css"/><link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.15.4/css/fontawesome.min.css" rel="stylesheet" type="text/css"/><link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.15.4/css/solid.min.css" rel="stylesheet" type="text/css"/><link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.15.4/css/brands.min.css" rel="stylesheet" type="text/css"/><link href="https://cdnjs.cloudflare.com/ajax/libs/KaTeX/0.13.24/katex.min.css" rel="stylesheet" type="text/css"/><script>documenterBaseURL=".."</script><script src="https://cdnjs.cloudflare.com/ajax/libs/require.js/2.3.6/require.min.js" data-main="../assets/documenter.js"></script><script src="../siteinfo.js"></script><script src="../../versions.js"></script><link class="docs-theme-link" rel="stylesheet" type="text/css" href="../assets/themes/documenter-dark.css" data-theme-name="documenter-dark" data-theme-primary-dark/><link class="docs-theme-link" rel="stylesheet" type="text/css" href="../assets/themes/documenter-light.css" data-theme-name="documenter-light" data-theme-primary/><script src="../assets/themeswap.js"></script></head><body><div id="documenter"><nav class="docs-sidebar"><div class="docs-package-name"><span class="docs-autofit"><a href="../">StructArrays</a></span></div><form class="docs-search" action="../search/"><input class="docs-search-query" id="documenter-search-query" name="q" type="text" placeholder="Search docs"/></form><ul class="docs-menu"><li><a class="tocitem" href="../">Overview</a></li><li class="is-active"><a class="tocitem" href>Example usage</a><ul class="internal"><li><a class="tocitem" href="#Example-usage-to-store-complex-numbers"><span>Example usage to store complex numbers</span></a></li><li><a class="tocitem" href="#Example-usage-to-store-a-data-table"><span>Example usage to store a data table</span></a></li><li><a class="tocitem" href="#Example-usage-with-StaticArray-elements"><span>Example usage with StaticArray elements</span></a></li></ul></li><li><a class="tocitem" href="../counterintuitive/">Some counterintuitive behaviors</a></li><li><a class="tocitem" href="../advanced/">Advanced techniques</a></li><li><a class="tocitem" href="../reference/">Index</a></li></ul><div class="docs-version-selector field has-addons"><div class="control"><span class="docs-label button is-static is-size-7">Version</span></div><div class="docs-selector control is-expanded"><div class="select is-fullwidth is-size-7"><select id="documenter-version-selector"></select></div></div></div></nav><div class="docs-main"><header class="docs-navbar"><nav class="breadcrumb"><ul class="is-hidden-mobile"><li class="is-active"><a href>Example usage</a></li></ul><ul class="is-hidden-tablet"><li class="is-active"><a href>Example usage</a></li></ul></nav><div class="docs-right"><a class="docs-edit-link" href="https://github.com/JuliaArrays/StructArrays.jl/blob/master/docs/src/examples.md" title="Edit on GitHub"><span class="docs-icon fab"></span><span class="docs-label is-hidden-touch">Edit on GitHub</span></a><a class="docs-settings-button fas fa-cog" id="documenter-settings-button" href="#" title="Settings"></a><a class="docs-sidebar-button fa fa-bars is-hidden-desktop" id="documenter-sidebar-button" href="#"></a></div></header><article class="content" id="documenter-page"><h2 id="Example-usage-to-store-complex-numbers"><a class="docs-heading-anchor" href="#Example-usage-to-store-complex-numbers">Example usage to store complex numbers</a><a id="Example-usage-to-store-complex-numbers-1"></a><a class="docs-heading-anchor-permalink" href="#Example-usage-to-store-complex-numbers" title="Permalink"></a></h2><pre><code class="language-julia hljs">julia&gt; using StructArrays, Random
+
+julia&gt; Random.seed!(4);
+
+julia&gt; s = StructArray{ComplexF64}((rand(2,2), rand(2,2)))
+2×2 StructArray(::Array{Float64,2}, ::Array{Float64,2}) with eltype Complex{Float64}:
+ 0.680079+0.625239im   0.92407+0.267358im
+ 0.874437+0.737254im  0.929336+0.804478im
+
+julia&gt; s[1, 1]
+0.680079235935741 + 0.6252391193298537im
+
+julia&gt; s.re
+2×2 Array{Float64,2}:
+ 0.680079  0.92407
+ 0.874437  0.929336
+
+julia&gt; StructArrays.components(s) # obtain all field arrays as a named tuple
+(re = [0.680079 0.92407; 0.874437 0.929336], im = [0.625239 0.267358; 0.737254 0.804478])</code></pre><p>Note that the same approach can be used directly from an <code>Array</code> of complex numbers:</p><pre><code class="language-julia hljs">julia&gt; StructArray([1+im, 3-2im])
+2-element StructArray(::Array{Int64,1}, ::Array{Int64,1}) with eltype Complex{Int64}:
+ 1 + 1im
+ 3 - 2im</code></pre><h2 id="Example-usage-to-store-a-data-table"><a class="docs-heading-anchor" href="#Example-usage-to-store-a-data-table">Example usage to store a data table</a><a id="Example-usage-to-store-a-data-table-1"></a><a class="docs-heading-anchor-permalink" href="#Example-usage-to-store-a-data-table" title="Permalink"></a></h2><pre><code class="language-julia hljs">julia&gt; t = StructArray((a = [1, 2], b = [&quot;x&quot;, &quot;y&quot;]))
+2-element StructArray(::Array{Int64,1}, ::Array{String,1}) with eltype NamedTuple{(:a, :b),Tuple{Int64,String}}:
+ (a = 1, b = &quot;x&quot;)
+ (a = 2, b = &quot;y&quot;)
+
+julia&gt; t[1]
+(a = 1, b = &quot;x&quot;)
+
+julia&gt; t.a
+2-element Array{Int64,1}:
+ 1
+ 2
+
+julia&gt; push!(t, (a = 3, b = &quot;z&quot;))
+3-element StructArray(::Array{Int64,1}, ::Array{String,1}) with eltype NamedTuple{(:a, :b),Tuple{Int64,String}}:
+ (a = 1, b = &quot;x&quot;)
+ (a = 2, b = &quot;y&quot;)
+ (a = 3, b = &quot;z&quot;)</code></pre><h2 id="Example-usage-with-StaticArray-elements"><a class="docs-heading-anchor" href="#Example-usage-with-StaticArray-elements">Example usage with StaticArray elements</a><a id="Example-usage-with-StaticArray-elements-1"></a><a class="docs-heading-anchor-permalink" href="#Example-usage-with-StaticArray-elements" title="Permalink"></a></h2><pre><code class="language-julia hljs">julia&gt; using StructArrays, StaticArrays
+
+julia&gt; x = StructArray([SVector{2}(1,2) for i = 1:5])
+5-element StructArray(::Vector{Tuple{Int64, Int64}}) with eltype SVector{2, Int64}:
+ [1, 2]
+ [1, 2]
+ [1, 2]
+ [1, 2]
+ [1, 2]
+
+julia&gt; A = StructArray([SMatrix{2,2}([1 2;3 4]) for i = 1:5])
+5-element StructArray(::Vector{NTuple{4, Int64}}) with eltype SMatrix{2, 2, Int64, 4}:
+ [1 2; 3 4]
+ [1 2; 3 4]
+ [1 2; 3 4]
+ [1 2; 3 4]
+ [1 2; 3 4]
+
+julia&gt; B = StructArray([SArray{Tuple{2,2,2}}(reshape(1:8,2,2,2)) for i = 1:5]); B[1]
+2×2×2 SArray{Tuple{2, 2, 2}, Int64, 3, 8} with indices SOneTo(2)×SOneTo(2)×SOneTo(2):
+[:, :, 1] =
+ 1  3
+ 2  4
+
+[:, :, 2] =
+ 5  7
+ 6  8</code></pre></article><nav class="docs-footer"><a class="docs-footer-prevpage" href="../">« Overview</a><a class="docs-footer-nextpage" href="../counterintuitive/">Some counterintuitive behaviors »</a><div class="flexbox-break"></div><p class="footer-message">Powered by <a href="https://github.com/JuliaDocs/Documenter.jl">Documenter.jl</a> and the <a href="https://julialang.org/">Julia Programming Language</a>.</p></nav></div><div class="modal" id="documenter-settings"><div class="modal-background"></div><div class="modal-card"><header class="modal-card-head"><p class="modal-card-title">Settings</p><button class="delete"></button></header><section class="modal-card-body"><p><label class="label">Theme</label><div class="select"><select id="documenter-themepicker"><option value="documenter-light">documenter-light</option><option value="documenter-dark">documenter-dark</option></select></div></p><hr/><p>This document was generated with <a href="https://github.com/JuliaDocs/Documenter.jl">Documenter.jl</a> version 0.27.22 on <span class="colophon-date" title="Thursday 18 August 2022 09:33">Thursday 18 August 2022</span>. Using Julia version 1.8.0.</p></section><footer class="modal-card-foot"></footer></div></div></div></body></html>
