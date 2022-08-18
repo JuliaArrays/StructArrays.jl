@@ -1,4 +1,4 @@
-import StaticArrays: StaticArray, FieldArray, tuple_prod
+import StaticArraysCore: StaticArray, FieldArray, tuple_prod
 
 """
     StructArrays.staticschema(::Type{<:StaticArray{S, T}}) where {S, T}
