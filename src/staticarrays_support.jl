@@ -61,8 +61,16 @@ replace_structarray_args(::Tuple{}) = ()
     ET = eltype(sa)
     isnonemptystructtype(ET) || return sa
     elements = Tuple(sa)
-    arrs = ntuple(Val(fieldcount(ET))) do i
-        similar_type(sa, fieldtype(ET, i))(_getfields(elements, i))
+    @static if VERSION >= v"1.7"
+        arrs = ntuple(Val(fieldcount(ET))) do i
+            similar_type(sa, fieldtype(ET, i))(_getfields(elements, i))
+        end
+    else
+        _fieldtype(::Type{T}) where {T} = i -> fieldtype(T, i)
+        __fieldtype = _fieldtype(ET)
+        arrs = ntuple(Val(fieldcount(ET))) do i
+            similar_type(sa, __fieldtype(i))(_getfields(elements, i))
+        end 
     end
     return StructArray{ET}(arrs)
 end
