@@ -14,12 +14,11 @@ struct StructArray{T, N, C<:Tup, I} <: AbstractArray{T, N}
     components::C
 
     function StructArray{T, N, C}(c) where {T, N, C<:Tup}
-        if length(c) > 0
-            ax = axes(first(c))
-            length(ax) == N || error("wrong number of dimensions")
-            map(tail(c)) do ci
-                axes(ci) == ax || error("all field arrays must have same shape")
-            end
+        isempty(c) && error("Only eltypes with fields are supported")
+        ax = axes(first(c))
+        length(ax) == N || error("wrong number of dimensions")
+        map(tail(c)) do ci
+            axes(ci) == ax || error("all field arrays must have same shape")
         end
         new{T, N, C, index_type(c)}(c)
     end
@@ -333,9 +332,7 @@ staticschema(::Type{StructArray{T, N, C, I}}) where {T, N, C, I} = staticschema(
 createinstance(::Type{<:StructArray{T}}, args...) where {T} = StructArray{T}(args)
 
 Base.size(s::StructArray) = size(components(s)[1])
-Base.size(s::StructArray{<:Any, <:Any, <:EmptyTup}) = (0,)
 Base.axes(s::StructArray) = axes(components(s)[1])
-Base.axes(s::StructArray{<:Any, <:Any, <:EmptyTup}) = (1:0,)
 
 """
     StructArrays.get_ith(cols::Union{Tuple,NamedTuple}, I...)

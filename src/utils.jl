@@ -33,7 +33,6 @@ end
 map_params_as_tuple_fallback(f, ::Type{T}) where {T<:Tup} = map(f, fieldtypes(T))
 
 buildfromschema(initializer::F, ::Type{T}) where {F, T} = buildfromschema(initializer, T, staticschema(T))
-buildfromschema(initializer, ::Type, ::Type{NamedTuple{(), Tuple{}}}) = error("Only structs with fields are supported")
 
 """
     StructArrays.buildfromschema(initializer, T[, S])
