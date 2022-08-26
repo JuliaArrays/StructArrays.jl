@@ -7,7 +7,7 @@ const EmptyTup = Union{Tuple{}, NamedTuple{(), Tuple{}}}
 Default to `getfield`. It should be overloaded for custom types with a custom
 schema. See [`StructArrays.staticschema`](@ref).
 """
-component(x, i) = getfield(x, i)
+@generated component(x::T, i) where {T} = fieldcount(T) == 0 ? :(x) : :(getfield(x, i))
 
 """
     StructArrays.staticschema(T)
@@ -26,9 +26,13 @@ NamedTuple{(:re, :im),Tuple{Float64,Float64}}
 ```
 """
 @generated function staticschema(::Type{T}) where {T}
-    name_tuple = Expr(:tuple, [QuoteNode(f) for f in fieldnames(T)]...)
-    type_tuple = Expr(:curly, :Tuple, [Expr(:call, :fieldtype, :T, i) for i in 1:fieldcount(T)]...)
-    Expr(:curly, :NamedTuple, name_tuple, type_tuple)
+    if fieldcount(T) == 0
+        :(Tuple{T})
+    else
+        name_tuple = Expr(:tuple, [QuoteNode(f) for f in fieldnames(T)]...)
+        type_tuple = Expr(:curly, :Tuple, [Expr(:call, :fieldtype, :T, i) for i in 1:fieldcount(T)]...)
+        Expr(:curly, :NamedTuple, name_tuple, type_tuple)
+    end
 end
 
 staticschema(::Type{T}) where {T<:Tup} = T

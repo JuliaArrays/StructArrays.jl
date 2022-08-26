@@ -333,9 +333,7 @@ staticschema(::Type{StructArray{T, N, C, I}}) where {T, N, C, I} = staticschema(
 createinstance(::Type{<:StructArray{T}}, args...) where {T} = StructArray{T}(args)
 
 Base.size(s::StructArray) = size(components(s)[1])
-Base.size(s::StructArray{<:Any, <:Any, <:EmptyTup}) = (0,)
 Base.axes(s::StructArray) = axes(components(s)[1])
-Base.axes(s::StructArray{<:Any, <:Any, <:EmptyTup}) = (1:0,)
 
 """
     StructArrays.get_ith(cols::Union{Tuple,NamedTuple}, I...)

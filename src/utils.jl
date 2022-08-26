@@ -180,10 +180,14 @@ Create an instance of type `T` from a tuple of field values `args`, bypassing
 possible internal constructors. `T` should be a concrete type.
 """
 @generated function bypass_constructor(::Type{T}, args) where {T}
-    vars = ntuple(_ -> gensym(), fieldcount(T))
-    assign = [:($var::$(fieldtype(T, i)) = getfield(args, $i)) for (i, var) in enumerate(vars)]
-    construct = Expr(:new, :T, vars...)
-    Expr(:block, assign..., construct)
+    if fieldcount(T) == 0
+        :(only(args))
+    else
+        vars = ntuple(_ -> gensym(), fieldcount(T))
+        assign = [:($var::$(fieldtype(T, i)) = getfield(args, $i)) for (i, var) in enumerate(vars)]
+        construct = Expr(:new, :T, vars...)
+        Expr(:block, assign..., construct)
+    end
 end
 
 # Specialize this for types like LazyRow that shouldn't convert

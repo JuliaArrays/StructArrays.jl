@@ -433,6 +433,12 @@ end
     t = StructVector([(a=1,), (a=missing,)])::StructVector
     @test isequal(t.a, [1, missing])
     @test eltype(t) <: NamedTuple{(:a,)}
+
+    @test StructArray([nothing])::StructArray == [nothing]
+    @test StructArray(Nothing[])::StructArray == Nothing[]
+    @test StructArray(1:3)::StructArray == 1:3
+    @test StructArray(Int[])::StructArray == Int[]
+    @test_broken StructArray([])::StructArray == []
 end
 
 @testset "tuple case" begin
