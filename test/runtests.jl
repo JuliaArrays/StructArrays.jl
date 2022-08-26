@@ -1253,3 +1253,14 @@ end
     @test zero(u) == StructArray([SVector(0.0)])
     @test typeof(zero(u)) == typeof(StructArray([SVector(0.0)]))
 end
+
+@testset "parametric type" begin
+    struct PS{A, B}
+        a::A
+        b::B
+    end
+
+    xs = StructArray([(a=1, b=2), (a=3, b=nothing)])
+    ss = map(x -> PS(x.a, x.b), xs)
+    @test ss == [PS(1, 2), PS(3, nothing)]
+end

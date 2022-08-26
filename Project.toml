@@ -4,15 +4,17 @@ version = "0.6.12"
 
 [deps]
 Adapt = "79e6a3ab-5dfb-504d-930d-738a2a938a0e"
+ConstructionBase = "187b0558-2788-49d3-abe0-74a17ed4e7c9"
 DataAPI = "9a962f9c-6df0-11e9-0e5d-c546b8b5ee8a"
 StaticArraysCore = "1e83bf80-4336-4d27-bf5d-d5a4f845583c"
 Tables = "bd369af6-aec1-5ad0-b16a-f7cc5008161c"
 
 [compat]
 Adapt = "1, 2, 3"
+ConstructionBase = "1"
 DataAPI = "1"
-StaticArraysCore = "1.1"
 StaticArrays = "1.5.4"
+StaticArraysCore = "1.1"
 Tables = "1"
 julia = "1.6"
 

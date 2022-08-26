@@ -1,6 +1,7 @@
 module StructArrays
 
 using Base: tail
+using ConstructionBase: constructorof
 
 export StructArray, StructVector, LazyRow, LazyRows
 export collect_structarray
