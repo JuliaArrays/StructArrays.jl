@@ -434,8 +434,8 @@ end
     @test isequal(t.a, [1, missing])
     @test eltype(t) <: NamedTuple{(:a,)}
 
-    @test_throws Exception StructArray([nothing])
-    @test_throws Exception StructArray([1, 2, 3])
+    @test_throws ErrorException StructArray([nothing])
+    @test_throws ErrorException StructArray([1, 2, 3])
 end
 
 @testset "tuple case" begin
@@ -456,6 +456,9 @@ end
     @test getproperty(t, 2) == [3.0]
 
     @test_throws ErrorException StructArray(([1, 2], [3]))
+
+    @test_throws ErrorException StructArray{Tuple{}}(())
+    @test_throws ErrorException StructArray{Tuple{}, 1, Tuple{}}(())
 end
 
 @testset "constructor from slices" begin

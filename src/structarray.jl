@@ -14,7 +14,7 @@ struct StructArray{T, N, C<:Tup, I} <: AbstractArray{T, N}
     components::C
 
     function StructArray{T, N, C}(c) where {T, N, C<:Tup}
-        isempty(c) && error("Only eltypes with fields are supported")
+        isempty(c) && error("only eltypes with fields are supported")
         ax = axes(first(c))
         length(ax) == N || error("wrong number of dimensions")
         map(tail(c)) do ci
