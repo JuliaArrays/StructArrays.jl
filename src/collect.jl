@@ -122,9 +122,9 @@ _widenstructarray(dest::AbstractArray, i, ::Type{T}) where {T} = _widenarray(des
 
 _widenarray(dest::AbstractArray{T}, i, ::Type{T}) where {T} = dest
 function _widenarray(dest::AbstractArray, i, ::Type{T}) where T
-    new = similar(dest, T, length(dest))
+    new = similar(dest, T)
     copyto!(new, firstindex(new), dest, firstindex(dest), i-1)
-    new
+    return new
 end
 
 """
