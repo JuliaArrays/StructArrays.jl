@@ -817,10 +817,18 @@ pair_structarray((first, last)) = StructArray{Pair{eltype(first), eltype(last)}}
 end
 
 @testset "collect2D" begin
-    s = (l for l in [(a=i, b=j) for i in 1:3, j in 1:4])
+    s = ((a=i, b=j) for i in 1:3, j in 1:4)
     v = collect_structarray(s)
     @test size(v) == (3, 4)
+    @test eltype(v) == @NamedTuple{a::Int, b::Int}
     @test v.a == [i for i in 1:3, j in 1:4]
+    @test v.b == [j for i in 1:3, j in 1:4]
+
+    s = (i == 1 ? (a=nothing, b=j) : (a=i, b=j) for i in 1:3, j in 1:4)
+    v = collect_structarray(s)
+    @test size(v) == (3, 4)
+    @test eltype(v) == @NamedTuple{a::Union{Int, Nothing}, b::Int}
+    @test v.a == [i == 1 ? nothing : i for i in 1:3, j in 1:4]
     @test v.b == [j for i in 1:3, j in 1:4]
 end
 
