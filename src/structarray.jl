@@ -350,16 +350,17 @@ map(c -> c[I...], Tuple(cols))
 end
 @inline get_ith(::Tuple{}, I...) = ()
 
-Base.@propagate_inbounds function Base.getindex(x::StructArray{T, <:Any, <:Any, CartesianIndex{N}}, I::Vararg{Int, N}) where {T, N}
+Base.@propagate_inbounds Base.getindex(x::StructArray, I...) = _getindex(x, to_indices(x, I)...)
+
+Base.@propagate_inbounds function _getindex(x::StructArray{T}, I::Vararg{Int}) where {T}
     cols = components(x)
     @boundscheck checkbounds(x, I...)
     return createinstance(T, get_ith(cols, I...)...)
 end
 
-Base.@propagate_inbounds function Base.getindex(x::StructArray{T, <:Any, <:Any, Int}, I::Int) where {T}
-    cols = components(x)
-    @boundscheck checkbounds(x, I)
-    return createinstance(T, get_ith(cols, I)...)
+@inline function _getindex(s::StructArray{T}, I...) where {T}
+    @boundscheck checkbounds(s, I...)
+    StructArray{T}(map(v -> @inbounds(getindex(v, I...)), components(s)))
 end
 
 @inline function Base.view(s::StructArray{T, N, C}, I...) where {T, N, C}

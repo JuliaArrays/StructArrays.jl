@@ -48,6 +48,9 @@ Base.convert(::Type{Millimeters}, x::Meters) = Millimeters(x.x*1000)
     # Test that explicit `setindex!` returns the entire array
     # (Julia's parser ensures that chained assignment returns the value)
     @test setindex!(x, 22, 3) === x
+
+    s = StructArray(a=1:5)
+    @test s[2:3].a === 2:3
 end
 
 @testset "eltype conversion" begin
