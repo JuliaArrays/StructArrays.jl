@@ -194,5 +194,5 @@ Element conversion before assignment in a StructArray.
 By default, this calls `convert(T, x)`; however, you can specialize it for other types.
 """
 maybe_convert_elt(::Type{T}, vals) where T = convert(T, vals)
-maybe_convert_elt(::Type{T}, vals::Tuple) where T = T <: Tuple ? convert(T, vals) : vals  # assignment of fields by position
-maybe_convert_elt(::Type{T}, vals::NamedTuple) where T = T<:NamedTuple ? convert(T, vals) : vals # assignment of fields by name
+maybe_convert_elt(::Type{T}, vals::Tuple) where T = vals
+maybe_convert_elt(::Type{T}, vals::NamedTuple) where T = vals
