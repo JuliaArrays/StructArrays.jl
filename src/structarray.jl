@@ -368,6 +368,11 @@ end
     StructArray{T}(map(v -> @inbounds(view(v, I...)), components(s)))
 end
 
+function Base.parentindices(s::StructArray)
+    allequal(parentindices(c) for c in components(s)) || throw(ArgumentError("inconsistent parentindices of components"))
+    return parentindices(component(s, 1))
+end
+
 Base.@propagate_inbounds function Base.setindex!(s::StructArray{T, <:Any, <:Any, CartesianIndex{N}}, vals, I::Vararg{Int, N}) where {T,N}
     @boundscheck checkbounds(s, I...)
     valsT = maybe_convert_elt(T, vals)
