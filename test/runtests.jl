@@ -1142,6 +1142,9 @@ Base.similar(bc::Broadcast.Broadcasted{Broadcast.ArrayStyle{MyArray}}, ::Type{El
     # issue #189
     v = StructArray([(a="s1",), (a="s2",)])
     @test @inferred(broadcast(el -> el.a, v)) == ["s1", "s2"]
+
+    @test identity.(StructArray(x=StructArray(a=1:3)))::StructArray == [(x=(a=1,),), (x=(a=2,),), (x=(a=3,),)]
+    @test (x -> x.x.a).(StructArray(x=StructArray(a=1:3))) == [1, 2, 3]
 end
 
 @testset "map" begin

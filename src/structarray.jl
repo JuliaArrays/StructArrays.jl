@@ -505,7 +505,7 @@ Base.@pure cst(::Type{SA}) where {SA} = combine_style_types(array_types(SA).para
 
 BroadcastStyle(::Type{SA}) where {SA<:StructArray} = StructArrayStyle{typeof(cst(SA)), ndims(SA)}()
 
-function Base.similar(bc::Broadcasted{StructArrayStyle{S, N}}, ::Type{ElType}) where {S<:DefaultArrayStyle, N, ElType}
+function Base.similar(bc::Broadcasted{StructArrayStyle{S, N}}, ::Type{ElType}) where {S<:Union{DefaultArrayStyle,StructArrayStyle}, N, ElType}
     ContainerType = isnonemptystructtype(ElType) ? StructArray{ElType} : Array{ElType}
     return similar(ContainerType, axes(bc))
 end
