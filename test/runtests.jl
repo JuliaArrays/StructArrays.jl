@@ -37,7 +37,8 @@ Base.convert(::Type{Millimeters}, x::Meters) = Millimeters(x.x*1000)
     @test (@inferred t[2,1:2]) == StructArray((a = [3, 4], b = [6, 7]))
     @test_throws BoundsError t[3,3]
     @test (@inferred view(t, 2, 1:2)) == StructArray((a = view(a, 2, 1:2), b = view(b, 2, 1:2)))
-    @test parentindices(view(t, 2, 1:2)) == (2, 1:2)
+    @test @inferred(parentindices(view(t, 2, 1:2))) == (2, 1:2)
+    @test_throws ArgumentError parentindices(StructArray((view([1, 2], [1]), view([1, 2], [2]))))
 
     # Element type conversion (issue #216)
     x = StructArray{Complex{Int}}((a, b))

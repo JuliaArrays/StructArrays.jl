@@ -369,8 +369,9 @@ end
 end
 
 function Base.parentindices(s::StructArray)
-    allequal(parentindices(c) for c in components(s)) || throw(ArgumentError("inconsistent parentindices of components"))
-    return parentindices(component(s, 1))
+    res = parentindices(component(s, 1))
+    all(c -> parentindices(c) == res, components(s)) || throw(ArgumentError("inconsistent parentindices of components"))
+    return res
 end
 
 Base.@propagate_inbounds function Base.setindex!(s::StructArray{T, <:Any, <:Any, CartesianIndex{N}}, vals, I::Vararg{Int, N}) where {T,N}
