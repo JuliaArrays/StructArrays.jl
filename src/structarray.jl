@@ -117,9 +117,6 @@ Construct a `StructArray` from slices of `A` along `dims`.
 The `unwrap` keyword argument is a function that determines whether to
 recursively convert fields of type `FT` to `StructArray`s.
 
-!!! compat "Julia 1.1"
-     This function requires at least Julia 1.1.
-
 ```julia-repl
 julia> X = [1.0 2.0; 3.0 4.0]
 2×2 Array{Float64,2}:
