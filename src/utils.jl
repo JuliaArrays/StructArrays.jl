@@ -196,3 +196,15 @@ By default, this calls `convert(T, x)`; however, you can specialize it for other
 maybe_convert_elt(::Type{T}, vals) where T = convert(T, vals)
 maybe_convert_elt(::Type{T}, vals::Tuple) where T = T <: Tuple ? convert(T, vals) : vals  # assignment of fields by position
 maybe_convert_elt(::Type{T}, vals::NamedTuple) where T = T<:NamedTuple ? convert(T, vals) : vals # assignment of fields by name
+
+"""
+    findconsistentvalue(f, componenents::Union{Tuple, NamedTuple})
+
+Compute the unique value that `f` takes on each `component ∈ componenents`.
+If not all values are equal, return `nothing`. Otherwise, return the unique value.
+"""
+function findconsistentvalue(f::F, (col, cols...)::Tup) where F
+    val = f(col)
+    isconsistent = mapfoldl(isequal(val)∘f, &, cols; init=true)
+    return ifelse(isconsistent, val, nothing)
+end

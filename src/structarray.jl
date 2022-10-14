@@ -14,12 +14,10 @@ struct StructArray{T, N, C<:Tup, I} <: AbstractArray{T, N}
     components::C
 
     function StructArray{T, N, C}(c) where {T, N, C<:Tup}
-        isempty(c) && error("only eltypes with fields are supported")
-        ax = axes(first(c))
-        length(ax) == N || error("wrong number of dimensions")
-        map(tail(c)) do ci
-            axes(ci) == ax || error("all field arrays must have same shape")
-        end
+        isempty(c) && throw(ArgumentError("only eltypes with fields are supported"))
+        ax = findconsistentvalue(axes, c)
+        (ax === nothing) && throw(ArgumentError("all component arrays must have the same shape"))
+        length(ax) == N || throw(ArgumentError("wrong number of dimensions"))
         new{T, N, C, index_type(c)}(c)
     end
 end
@@ -118,9 +116,6 @@ Construct a `StructArray` from slices of `A` along `dims`.
 
 The `unwrap` keyword argument is a function that determines whether to
 recursively convert fields of type `FT` to `StructArray`s.
-
-!!! compat "Julia 1.1"
-     This function requires at least Julia 1.1.
 
 ```julia-repl
 julia> X = [1.0 2.0; 3.0 4.0]
@@ -369,8 +364,8 @@ end
 end
 
 function Base.parentindices(s::StructArray)
-    res = parentindices(component(s, 1))
-    all(c -> parentindices(c) == res, components(s)) || throw(ArgumentError("inconsistent parentindices of components"))
+    res = findconsistentvalue(parentindices, components(s))
+    (res === nothing) && throw(ArgumentError("inconsistent parentindices of components"))
     return res
 end
 
