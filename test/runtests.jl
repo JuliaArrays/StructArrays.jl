@@ -105,6 +105,14 @@ end
     @test StructArrays.strip_params(Tuple{Int}) == Tuple
     @test StructArrays.astuple(NamedTuple{(:a,), Tuple{Float64}}) == Tuple{Float64}
     @test StructArrays.strip_params(NamedTuple{(:a,), Tuple{Float64}}) == NamedTuple{(:a,)}
+
+    cols = (a=rand(2), b=rand(2), c=rand(2))
+    @test StructArrays.findconsistentvalue(length, cols) == 2
+    @test StructArrays.findconsistentvalue(length, Tuple(cols)) == 2
+
+    cols = (a=rand(2), b=rand(2), c=rand(3))
+    @test isnothing(StructArrays.findconsistentvalue(length, cols))
+    @test isnothing(StructArrays.findconsistentvalue(length, Tuple(cols)))
 end
 
 @testset "indexstyle" begin
@@ -439,8 +447,8 @@ end
     @test isequal(t.a, [1, missing])
     @test eltype(t) <: NamedTuple{(:a,)}
 
-    @test_throws ErrorException StructArray([nothing])
-    @test_throws ErrorException StructArray([1, 2, 3])
+    @test_throws ArgumentError StructArray([nothing])
+    @test_throws ArgumentError StructArray([1, 2, 3])
 end
 
 @testset "tuple case" begin
@@ -460,10 +468,10 @@ end
     @test getproperty(t, 1) == [2]
     @test getproperty(t, 2) == [3.0]
 
-    @test_throws ErrorException StructArray(([1, 2], [3]))
+    @test_throws ArgumentError StructArray(([1, 2], [3]))
 
-    @test_throws ErrorException StructArray{Tuple{}}(())
-    @test_throws ErrorException StructArray{Tuple{}, 1, Tuple{}}(())
+    @test_throws ArgumentError StructArray{Tuple{}}(())
+    @test_throws ArgumentError StructArray{Tuple{}, 1, Tuple{}}(())
 end
 
 @testset "constructor from slices" begin
@@ -503,7 +511,7 @@ end
     @test t1 == StructArray((a=[1.2], b=["test"]))
     @test t2 == StructArray{Pair{Float64, String}}(([1.2], ["test"]))
 
-    @test_throws ErrorException StructArray(a=[1, 2], b=[3])
+    @test_throws ArgumentError StructArray(a=[1, 2], b=[3])
 end
 
 @testset "complex" begin
