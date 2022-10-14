@@ -57,4 +57,6 @@ StructArrays.map_params
 StructArrays.buildfromschema
 StructArrays.bypass_constructor
 StructArrays.iscompatible
+StructArrays.maybe_convert_elt
+StructArrays.findconsistentvalue
 ```
