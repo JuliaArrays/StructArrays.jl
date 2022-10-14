@@ -16,7 +16,7 @@ struct StructArray{T, N, C<:Tup, I} <: AbstractArray{T, N}
     function StructArray{T, N, C}(c) where {T, N, C<:Tup}
         isempty(c) && throw(ArgumentError("only eltypes with fields are supported"))
         ax = findconsistentvalue(axes, c)
-        isnothing(ax) && throw(ArgumentError("all component arrays must have the same shape"))
+        (ax === nothing) && throw(ArgumentError("all component arrays must have the same shape"))
         length(ax) == N || throw(ArgumentError("wrong number of dimensions"))
         new{T, N, C, index_type(c)}(c)
     end
@@ -365,7 +365,7 @@ end
 
 function Base.parentindices(s::StructArray)
     res = findconsistentvalue(parentindices, components(s))
-    isnothing(res) && throw(ArgumentError("inconsistent parentindices of components"))
+    (res === nothing) && throw(ArgumentError("inconsistent parentindices of components"))
     return res
 end
 
