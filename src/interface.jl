@@ -51,4 +51,8 @@ end
 
 createinstance(::Type{T}, args...) where {T<:Tup} = T(args)
 
-createinstance(::Type{T}) where {T} = (x...) -> createinstance(T, x...)
+struct Instantiator{T} end
+
+Instantiator(::Type{T}) where {T} = Instantiator{T}()
+
+(::Instantiator{T})(args...) where {T} = createinstance(T, args...)

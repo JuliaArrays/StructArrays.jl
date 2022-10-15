@@ -1101,6 +1101,19 @@ Adapt.adapt_storage(::ArrayConverter, xs::AbstractArray) = convert(Array, xs)
     @test t.b.d isa Array
 end
 
+# The following code defines `MyArray1/2/3` with different `BroadcastStyle`s.
+# 1. `MyArray1` and `MyArray1` have `similar` defined.
+#     We use them to simulate `BroadcastStyle` overloading `Base.copyto!`.
+# 2. `MyArray3` has no `similar` defined. 
+#    We use it to simulate `BroadcastStyle` overloading `Base.copy`.
+# 3. Their resolved style could be summaryized as (`-` means conflict)
+#              |  MyArray1  |  MyArray2  |  MyArray3  |  Array
+#    -------------------------------------------------------------
+#    MyArray1  |  MyArray1  |      -     |  MyArray1  |  MyArray1
+#    MyArray2  |      -     |  MyArray2  |      -     |  MyArray2
+#    MyArray3  |  MyArray1  |      -     |  MyArray3  |  MyArray3
+#    Array     |  MyArray1  |  Array     |  MyArray3  |  Array
+
 for S in (1, 2, 3)
     MyArray = Symbol(:MyArray, S)
     @eval begin
@@ -1139,9 +1152,9 @@ Base.BroadcastStyle(::Broadcast.ArrayStyle{MyArray2}, S::Broadcast.DefaultArrayS
     @test isa(@inferred(Base.dataids(s)), NTuple{N, UInt} where {N})
 
     # Make sure we can handle style with similar defined
-    # And we can handle most conflict
-    # s1 and s2 has similar defined, but s3 not
-    # s2 are conflict with s1 and s3. (And it's weaker than DefaultArrayStyle)
+    # And we can handle most conflicts
+    # `s1` and `s2` have similar defined, but `s3` does not
+    # `s2` conflicts with `s1` and `s3` and is weaker than `DefaultArrayStyle`
     s1 = StructArray{ComplexF64}((MyArray1(rand(2)), MyArray1(rand(2))))
     s2 = StructArray{ComplexF64}((MyArray2(rand(2)), MyArray2(rand(2))))
     s3 = StructArray{ComplexF64}((MyArray3(rand(2)), MyArray3(rand(2))))
