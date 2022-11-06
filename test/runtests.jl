@@ -1232,6 +1232,8 @@ Base.BroadcastStyle(::Broadcast.ArrayStyle{MyArray2}, S::Broadcast.DefaultArrayS
         bcmul2(a) = 2 .* a
         a = StructArray(randn(ComplexF32, 10, 10))
         sa = jl(a)
+        backend = StructArrays.GPUArraysCore.backend
+        @test @inferred(backend(sa)) === backend(sa.re) === backend(sa.im)
         @test collect(@inferred(bcabs(sa))) == bcabs(a)
         @test @inferred(bcmul2(sa)) isa StructArray
         @test (sa .+= 1) isa StructArray

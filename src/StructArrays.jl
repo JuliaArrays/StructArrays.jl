@@ -32,9 +32,11 @@ Adapt.adapt_structure(to, s::StructArray) = replace_storage(x->Adapt.adapt(to, x
 # for GPU broadcast
 import GPUArraysCore
 function GPUArraysCore.backend(::Type{T}) where {T<:StructArray}
-    backs = map(GPUArraysCore.backend, fieldtypes(array_types(T)))
-    all(Base.Fix2(===, backs[1]), tail(backs)) || error("backend mismatch!")
-    return backs[1]
+    backends = map_params(GPUArraysCore.backend, array_types(T))
+    backend, others = backends[1], tail(backends)
+    isconsistent = mapfoldl(isequal(backend), &, others; init=true)
+    isconsistent || throw(ArgumentError("all component arrays must have the same GPU backend"))
+    return backend
 end
 
 end # module
