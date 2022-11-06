@@ -7,6 +7,7 @@ using TypedTables: Table
 using DataAPI: refarray, refvalue
 using Adapt: adapt, Adapt
 using JLArrays
+using Random
 using Test
 
 using Documenter: doctest
@@ -1151,29 +1152,39 @@ Base.BroadcastStyle(::Broadcast.ArrayStyle{MyArray2}, S::Broadcast.DefaultArrayS
     # used inside of broadcast but we also test it here explicitly
     @test isa(@inferred(Base.dataids(s)), NTuple{N, UInt} where {N})
 
-    # Make sure we can handle style with similar defined
-    # And we can handle most conflicts
-    # `s1` and `s2` have similar defined, but `s3` does not
-    # `s2` conflicts with `s1` and `s3` and is weaker than `DefaultArrayStyle`
-    s1 = StructArray{ComplexF64}((MyArray1(rand(2)), MyArray1(rand(2))))
-    s2 = StructArray{ComplexF64}((MyArray2(rand(2)), MyArray2(rand(2))))
-    s3 = StructArray{ComplexF64}((MyArray3(rand(2)), MyArray3(rand(2))))
-    s4 = StructArray{ComplexF64}((rand(2), rand(2)))
 
-    function _test_similar(a, b, c)
-        try
-            d = StructArray{ComplexF64}((a.re .+ b.re .- c.re, a.im .+ b.im .- c.im))
-            @test typeof(a .+ b .- c) == typeof(d)
-        catch
-            @test_throws MethodError a .+ b .- c
+    @testset "style conflict check" begin
+        using StructArrays: StructArrayStyle
+        # Make sure we can handle style with similar defined
+        # And we can handle most conflicts
+        # `s1` and `s2` have similar defined, but `s3` does not
+        # `s2` conflicts with `s1` and `s3` and is weaker than `DefaultArrayStyle`
+        s1 = StructArray{ComplexF64}((MyArray1(rand(2)), MyArray1(rand(2))))
+        s2 = StructArray{ComplexF64}((MyArray2(rand(2)), MyArray2(rand(2))))
+        s3 = StructArray{ComplexF64}((MyArray3(rand(2)), MyArray3(rand(2))))
+        s4 = StructArray{ComplexF64}((rand(2), rand(2)))
+        test_set = Any[s1, s2, s3, s4]
+        tested_style = Any[]
+        dotaddadd((a, b, c),) = @. a + b + c
+        for is in Iterators.product(randperm(4), randperm(4), randperm(4))
+            as = map(i -> test_set[i], is)
+            ares = map(a->a.re, as)
+            aims = map(a->a.im, as)
+            style = Broadcast.combine_styles(ares...)
+            if !(style in tested_style)
+                push!(tested_style, style)
+                if style isa Broadcast.ArrayStyle{MyArray3}
+                    @test_throws MethodError dotaddadd(as)
+                else
+                    d = StructArray{ComplexF64}((dotaddadd(ares), dotaddadd(aims)))
+                    @test @inferred(dotaddadd(as))::typeof(d) == d
+                end
+            end
         end
+        @test length(tested_style) == 5
     end
-    for s in (s1,s2,s3,s4), s′ in (s1,s2,s3,s4), s″ in (s1,s2,s3,s4)
-        _test_similar(s, s′, s″)
-    end
-
     # test for dimensionality track
-    s = s1
+    s = StructArray{ComplexF64}((MyArray1(rand(2)), MyArray1(rand(2))))
     @test Base.broadcasted(+, s, s) isa Broadcast.Broadcasted{<:Broadcast.AbstractArrayStyle{1}}
     @test Base.broadcasted(+, s, 1:2) isa Broadcast.Broadcasted{<:Broadcast.AbstractArrayStyle{1}}
     @test Base.broadcasted(+, s, reshape(1:2,1,2)) isa Broadcast.Broadcasted{<:Broadcast.AbstractArrayStyle{2}}
@@ -1197,22 +1208,25 @@ Base.BroadcastStyle(::Broadcast.ArrayStyle{MyArray2}, S::Broadcast.DefaultArrayS
     @test (x -> x.x.x.a).(StructArray(x=StructArray(x=StructArray(a=1:3)))) == [1, 2, 3]
 
     @testset "ambiguity check" begin
-        function _test(a, b, c)
-            if a isa StructArray || b isa StructArray || c isa StructArray
-                d = @inferred a .+ b .- c
-                @test d == collect(a) .+ collect(b) .- collect(c)
-                @test d isa StructArray
-            end
-        end
-        testset = Any[StructArray([1;2+im]),
+        test_set = Any[StructArray([1;2+im]),
                     1:2, 
                     (1,2),
-                    StructArray(@SArray [1 1+2im]),
-                    (@SArray [1 2])
-                    ]
-        for aa in testset, bb in testset, cc in testset
-            _test(aa, bb, cc)
+                    StructArray(@SArray [1;1+2im]),
+                    (@SArray [1 2]),
+                    1]
+        tested_style = StructArrayStyle[]
+        dotaddsub((a, b, c),) = @. a + b - c
+        for is in Iterators.product(randperm(6), randperm(6), randperm(6))
+            as = map(i -> test_set[i], is)
+            if any(a -> a isa StructArray, as)
+                style = Broadcast.combine_styles(as...)
+                if !(style in tested_style)
+                    push!(tested_style, style)
+                    @test @inferred(dotaddsub(as))::StructArray == dotaddsub(map(collect, as))
+                end
+            end
         end
+        @test length(tested_style) == 4
     end
 
     @testset "StructStaticArray" begin
