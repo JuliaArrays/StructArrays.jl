@@ -7,7 +7,6 @@ using TypedTables: Table
 using DataAPI: refarray, refvalue
 using Adapt: adapt, Adapt
 using JLArrays
-using Random
 using Test
 
 using Documenter: doctest
@@ -1166,11 +1165,11 @@ Base.BroadcastStyle(::Broadcast.ArrayStyle{MyArray2}, S::Broadcast.DefaultArrayS
         test_set = Any[s1, s2, s3, s4]
         tested_style = Any[]
         dotaddadd((a, b, c),) = @. a + b + c
-        for is in Iterators.product(randperm(4), randperm(4), randperm(4))
-            as = map(i -> test_set[i], is)
+        for as in Iterators.product(test_set, test_set, test_set)
             ares = map(a->a.re, as)
             aims = map(a->a.im, as)
             style = Broadcast.combine_styles(ares...)
+            @test Broadcast.combine_styles(as...) === StructArrayStyle{typeof(style),1}()
             if !(style in tested_style)
                 push!(tested_style, style)
                 if style isa Broadcast.ArrayStyle{MyArray3}
@@ -1216,8 +1215,7 @@ Base.BroadcastStyle(::Broadcast.ArrayStyle{MyArray2}, S::Broadcast.DefaultArrayS
                     1]
         tested_style = StructArrayStyle[]
         dotaddsub((a, b, c),) = @. a + b - c
-        for is in Iterators.product(randperm(6), randperm(6), randperm(6))
-            as = map(i -> test_set[i], is)
+        for as in Iterators.product(test_set, test_set, test_set)
             if any(a -> a isa StructArray, as)
                 style = Broadcast.combine_styles(as...)
                 if !(style in tested_style)
@@ -1227,6 +1225,12 @@ Base.BroadcastStyle(::Broadcast.ArrayStyle{MyArray2}, S::Broadcast.DefaultArrayS
             end
         end
         @test length(tested_style) == 4
+    end
+
+    @testset "allocation test" begin
+        a = StructArray{ComplexF64}(undef, 1)
+        allocated(a) = @allocated  a .+ 1
+        @test allocated(a) == 2allocated(a.re)
     end
 
     @testset "StructStaticArray" begin
