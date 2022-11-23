@@ -7,6 +7,7 @@ using TypedTables: Table
 using DataAPI: refarray, refvalue
 using Adapt: adapt, Adapt
 using Test
+using SparseArrays
 
 using Documenter: doctest
 if Base.VERSION >= v"1.6" && Int === Int64
@@ -566,6 +567,43 @@ end
     p = 1 => :c
     t[5] = p
     @test t[5] == p
+end
+
+@testset "fill!" begin
+    @testset "dense array, complex" begin
+        A = zeros(3,3)
+        B = zeros(3,3)
+        S = StructArray{Complex{eltype(A)}}((A, B))
+        fill!(S, 2+3im)
+        @test all(==(2), A)
+        @test all(==(3), B)
+    end
+
+    @testset "offset array, custom struct" begin
+        struct Vec3D{T} <: FieldVector{3, T}
+            x :: T
+            y :: T
+            z :: T
+        end
+
+        A = zeros(3:6, 3:6)
+        B = zeros(3:6, 3:6)
+        C = zeros(3:6, 3:6)
+        S = StructArray{Vec3D{eltype(A)}}((A, B, C))
+        fill!(S, Vec3D(1,2,3))
+        @test all(==(1), A)
+        @test all(==(2), B)
+        @test all(==(3), C)
+    end
+
+    @testset "sparse matrix, complex" begin
+        A = spzeros(3)
+        B = spzeros(3)
+        S = StructArray{Complex{eltype(A)}}((A,B))
+        fill!(S, 0)
+        @test all(iszero, A)
+        @test all(iszero, B)
+    end
 end
 
 @testset "concat" begin

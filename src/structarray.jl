@@ -425,6 +425,11 @@ function Base.copyto!(I::StructArray, doffs::Integer, J::StructArray, soffs::Int
     return I
 end
 
+function Base.fill!(I::StructArray{T}, x) where {T}
+    foreachfield((I, x) -> fill!(I, x), I, convert(T, x))
+    return I
+end
+
 function Base.resize!(s::StructArray, i::Integer)
     for a in components(s)
         resize!(a, i)
