@@ -585,6 +585,11 @@ end
     horizontal_concat = StructArray{Pair{Int, String}}(([3 1; 5 6], ["a" "a"; "b" "b"]))
     @test cat(t, t2; dims=2)::StructArray == horizontal_concat == hcat(t, t2)
     @test hcat(t, t2) isa StructArray
+
+    t3 = StructArray(x=view([1], 1:1:1), y=view([:a], 1:1:1))
+    @test @inferred(vcat(t3)) == t3
+    @inferred vcat(t3, t3)
+    @inferred vcat(t3, collect(t3))
 end
 
 f_infer() = StructArray{ComplexF64}((rand(2,2), rand(2,2)))

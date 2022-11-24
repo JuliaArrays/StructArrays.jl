@@ -446,9 +446,8 @@ end
 for op in [:cat, :hcat, :vcat]
     @eval begin
         function Base.$op(args::StructArray...; kwargs...)
-            f = key -> $op((getproperty(t, key) for t in args)...; kwargs...)
             T = mapreduce(eltype, promote_type, args)
-            StructArray{T}(map(f, propertynames(args[1])))
+            StructArray{T}(map((oargs...) -> $op(oargs...; kwargs...), map(components, args)...))
         end
     end
 end
