@@ -596,6 +596,17 @@ end
         @test all(==(3), C)
     end
 
+    @testset "Tuple" begin
+        S = StructArray{Tuple{Int,Int}}(([1,2], [3,4]))
+        fill!(S, (4,5))
+        @test all(==((4,5)), S)
+
+        S = StructArray{@NamedTuple{a::Int,b::Int}}(([1,2], [3,4]))
+        fill!(S, (a=10.0, b=20.0))
+        @test all(==(10), S.a)
+        @test all(==(20), S.b)
+    end
+
     @testset "sparse matrix, complex" begin
         A = spzeros(3)
         B = spzeros(3)

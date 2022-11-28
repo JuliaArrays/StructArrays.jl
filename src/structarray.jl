@@ -426,7 +426,8 @@ function Base.copyto!(I::StructArray, doffs::Integer, J::StructArray, soffs::Int
 end
 
 function Base.fill!(I::StructArray{T}, x) where {T}
-    foreachfield((I, x) -> fill!(I, x), I, convert(T, x))
+    xT = maybe_convert_elt(T, x)
+    foreachfield((I, x) -> fill!(I, x), I, xT)
     return I
 end
 
