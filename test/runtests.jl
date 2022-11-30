@@ -7,6 +7,7 @@ using TypedTables: Table
 using DataAPI: refarray, refvalue
 using Adapt: adapt, Adapt
 using JLArrays
+using GPUArraysCore: backend
 using Test
 using SparseArrays
 
@@ -1305,11 +1306,13 @@ Base.BroadcastStyle(::Broadcast.ArrayStyle{MyArray2}, S::Broadcast.DefaultArrayS
         bcmul2(a) = 2 .* a
         a = StructArray(randn(ComplexF32, 10, 10))
         sa = jl(a)
-        backend = StructArrays.GPUArraysCore.backend
-        @test @inferred(backend(sa)) === backend(sa.re) === backend(sa.im)
+        @test sa isa StructArray
+        @test @inferred(backend(sa)) === backend(sa.re) === backend(sa.im) === backend(jl(a.re))
         @test collect(@inferred(bcabs(sa))) == bcabs(a)
+        @test backend(bcabs(sa)) === backend(sa)
         @test @inferred(bcmul2(sa)) isa StructArray
-        @test (sa .+= 1) isa StructArray
+        @test backend(bcmul2(sa)) === backend(sa)
+        @test (sa .+= 1) === sa
     end
 end
 
