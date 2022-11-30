@@ -427,7 +427,7 @@ end
 
 function Base.fill!(I::StructArray{T}, x) where {T}
     xT = maybe_convert_elt(T, x)
-    foreachfield((I, x) -> fill!(I, x), I, xT)
+    foreachfield(fill!, I, xT)
     return I
 end
 
