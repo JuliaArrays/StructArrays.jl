@@ -50,3 +50,9 @@ function createinstance(::Type{T}, args...) where {T}
 end
 
 createinstance(::Type{T}, args...) where {T<:Tup} = T(args)
+
+struct Instantiator{T} end
+
+Instantiator(::Type{T}) where {T} = Instantiator{T}()
+
+(::Instantiator{T})(args...) where {T} = createinstance(T, args...)

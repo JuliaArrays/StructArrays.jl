@@ -6,6 +6,7 @@ import Tables, PooledArrays, WeakRefStrings
 using TypedTables: Table
 using DataAPI: refarray, refvalue
 using Adapt: adapt, Adapt
+using JLArrays
 using Test
 using SparseArrays
 
@@ -634,6 +635,10 @@ end
     horizontal_concat = StructArray{Pair{Int, String}}(([3 1; 5 6], ["a" "a"; "b" "b"]))
     @test cat(t, t2; dims=2)::StructArray == horizontal_concat == hcat(t, t2)
     @test hcat(t, t2) isa StructArray
+
+    # check that cat(dims=1) doesn't commit type piracy (#254)
+    # We only test that this works, the return value is immaterial
+    @test cat(dims=1) == vcat()
 end
 
 f_infer() = StructArray{ComplexF64}((rand(2,2), rand(2,2)))
@@ -1149,17 +1154,39 @@ Adapt.adapt_storage(::ArrayConverter, xs::AbstractArray) = convert(Array, xs)
     @test t.b.d isa Array
 end
 
-struct MyArray{T,N} <: AbstractArray{T,N}
-    A::Array{T,N}
+# The following code defines `MyArray1/2/3` with different `BroadcastStyle`s.
+# 1. `MyArray1` and `MyArray1` have `similar` defined.
+#     We use them to simulate `BroadcastStyle` overloading `Base.copyto!`.
+# 2. `MyArray3` has no `similar` defined. 
+#    We use it to simulate `BroadcastStyle` overloading `Base.copy`.
+# 3. Their resolved style could be summaryized as (`-` means conflict)
+#              |  MyArray1  |  MyArray2  |  MyArray3  |  Array
+#    -------------------------------------------------------------
+#    MyArray1  |  MyArray1  |      -     |  MyArray1  |  MyArray1
+#    MyArray2  |      -     |  MyArray2  |      -     |  MyArray2
+#    MyArray3  |  MyArray1  |      -     |  MyArray3  |  MyArray3
+#    Array     |  MyArray1  |  Array     |  MyArray3  |  Array
+
+for S in (1, 2, 3)
+    MyArray = Symbol(:MyArray, S)
+    @eval begin
+        struct $MyArray{T,N} <: AbstractArray{T,N}
+            A::Array{T,N}
+        end
+        $MyArray{T}(::UndefInitializer, sz::Dims) where T = $MyArray(Array{T}(undef, sz))
+        Base.IndexStyle(::Type{<:$MyArray}) = IndexLinear()
+        Base.getindex(A::$MyArray, i::Int) = A.A[i]
+        Base.setindex!(A::$MyArray, val, i::Int) = A.A[i] = val
+        Base.size(A::$MyArray) = Base.size(A.A)
+        Base.BroadcastStyle(::Type{<:$MyArray}) = Broadcast.ArrayStyle{$MyArray}()
+    end
 end
-MyArray{T}(::UndefInitializer, sz::Dims) where T = MyArray(Array{T}(undef, sz))
-Base.IndexStyle(::Type{<:MyArray}) = IndexLinear()
-Base.getindex(A::MyArray, i::Int) = A.A[i]
-Base.setindex!(A::MyArray, val, i::Int) = A.A[i] = val
-Base.size(A::MyArray) = Base.size(A.A)
-Base.BroadcastStyle(::Type{<:MyArray}) = Broadcast.ArrayStyle{MyArray}()
-Base.similar(bc::Broadcast.Broadcasted{Broadcast.ArrayStyle{MyArray}}, ::Type{ElType}) where ElType =
-    MyArray{ElType}(undef, size(bc))
+Base.similar(bc::Broadcast.Broadcasted{Broadcast.ArrayStyle{MyArray1}}, ::Type{ElType}) where ElType =
+    MyArray1{ElType}(undef, size(bc))
+Base.similar(bc::Broadcast.Broadcasted{Broadcast.ArrayStyle{MyArray2}}, ::Type{ElType}) where ElType =
+    MyArray2{ElType}(undef, size(bc))
+Base.BroadcastStyle(::Broadcast.ArrayStyle{MyArray1}, ::Broadcast.ArrayStyle{MyArray3}) = Broadcast.ArrayStyle{MyArray1}()
+Base.BroadcastStyle(::Broadcast.ArrayStyle{MyArray2}, S::Broadcast.DefaultArrayStyle) = S
 
 @testset "broadcast" begin
     s = StructArray{ComplexF64}((rand(2,2), rand(2,2)))
@@ -1177,19 +1204,44 @@ Base.similar(bc::Broadcast.Broadcasted{Broadcast.ArrayStyle{MyArray}}, ::Type{El
     # used inside of broadcast but we also test it here explicitly
     @test isa(@inferred(Base.dataids(s)), NTuple{N, UInt} where {N})
 
-    s = StructArray{ComplexF64}((MyArray(rand(2)), MyArray(rand(2))))
-    @test_throws MethodError s .+ s
 
+    @testset "style conflict check" begin
+        using StructArrays: StructArrayStyle
+        # Make sure we can handle style with similar defined
+        # And we can handle most conflicts
+        # `s1` and `s2` have similar defined, but `s3` does not
+        # `s2` conflicts with `s1` and `s3` and is weaker than `DefaultArrayStyle`
+        s1 = StructArray{ComplexF64}((MyArray1(rand(2)), MyArray1(rand(2))))
+        s2 = StructArray{ComplexF64}((MyArray2(rand(2)), MyArray2(rand(2))))
+        s3 = StructArray{ComplexF64}((MyArray3(rand(2)), MyArray3(rand(2))))
+        s4 = StructArray{ComplexF64}((rand(2), rand(2)))
+        test_set = Any[s1, s2, s3, s4]
+        tested_style = Any[]
+        dotaddadd((a, b, c),) = @. a + b + c
+        for as in Iterators.product(test_set, test_set, test_set)
+            ares = map(a->a.re, as)
+            aims = map(a->a.im, as)
+            style = Broadcast.combine_styles(ares...)
+            @test Broadcast.combine_styles(as...) === StructArrayStyle{typeof(style),1}()
+            if !(style in tested_style)
+                push!(tested_style, style)
+                if style isa Broadcast.ArrayStyle{MyArray3}
+                    @test_throws MethodError dotaddadd(as)
+                else
+                    d = StructArray{ComplexF64}((dotaddadd(ares), dotaddadd(aims)))
+                    @test @inferred(dotaddadd(as))::typeof(d) == d
+                end
+            end
+        end
+        @test length(tested_style) == 5
+    end
     # test for dimensionality track
+    s = StructArray{ComplexF64}((MyArray1(rand(2)), MyArray1(rand(2))))
     @test Base.broadcasted(+, s, s) isa Broadcast.Broadcasted{<:Broadcast.AbstractArrayStyle{1}}
     @test Base.broadcasted(+, s, 1:2) isa Broadcast.Broadcasted{<:Broadcast.AbstractArrayStyle{1}}
     @test Base.broadcasted(+, s, reshape(1:2,1,2)) isa Broadcast.Broadcasted{<:Broadcast.AbstractArrayStyle{2}}
     @test Base.broadcasted(+, reshape(1:2,1,1,2), s) isa Broadcast.Broadcasted{<:Broadcast.AbstractArrayStyle{3}}
-
-    a = StructArray([1;2+im])
-    b = StructArray([1;;2+im])
-    @test a .+ b == a .+ collect(b) == collect(a) .+ b == collect(a) .+ collect(b)
-    @test a .+ Any[1] isa StructArray
+    @test Base.broadcasted(+, s, MyArray1(rand(2))) isa Broadcast.Broadcasted{<:Broadcast.AbstractArrayStyle{Any}}
 
     # issue #185
     A = StructArray(randn(ComplexF64, 3, 3))
@@ -1204,6 +1256,61 @@ Base.similar(bc::Broadcast.Broadcasted{Broadcast.ArrayStyle{MyArray}}, ::Type{El
 
     @test identity.(StructArray(x=StructArray(a=1:3)))::StructArray == [(x=(a=1,),), (x=(a=2,),), (x=(a=3,),)]
     @test (x -> x.x.a).(StructArray(x=StructArray(a=1:3))) == [1, 2, 3]
+    @test identity.(StructArray(x=StructArray(x=StructArray(a=1:3))))::StructArray == [(x=(x=(a=1,),),), (x=(x=(a=2,),),), (x=(x=(a=3,),),)]
+    @test (x -> x.x.x.a).(StructArray(x=StructArray(x=StructArray(a=1:3)))) == [1, 2, 3]
+
+    @testset "ambiguity check" begin
+        test_set = Any[StructArray([1;2+im]),
+                    1:2, 
+                    (1,2),
+                    StructArray(@SArray [1;1+2im]),
+                    (@SArray [1 2]),
+                    1]
+        tested_style = StructArrayStyle[]
+        dotaddsub((a, b, c),) = @. a + b - c
+        for as in Iterators.product(test_set, test_set, test_set)
+            if any(a -> a isa StructArray, as)
+                style = Broadcast.combine_styles(as...)
+                if !(style in tested_style)
+                    push!(tested_style, style)
+                    @test @inferred(dotaddsub(as))::StructArray == dotaddsub(map(collect, as))
+                end
+            end
+        end
+        @test length(tested_style) == 4
+    end
+
+    @testset "allocation test" begin
+        a = StructArray{ComplexF64}(undef, 1)
+        allocated(a) = @allocated  a .+ 1
+        @test allocated(a) == 2allocated(a.re)
+    end
+
+    @testset "StructStaticArray" begin
+        bclog(s) = log.(s)
+        test_allocated(f, s) = @test (@allocated f(s)) == 0
+        a = @SMatrix [float(i) for i in 1:10, j in 1:10]
+        b = @SMatrix [0. for i in 1:10, j in 1:10]
+        s = StructArray{ComplexF64}((a , b))
+        @test (@inferred bclog(s)) isa typeof(s)
+        test_allocated(bclog, s)
+        @test abs.(s) .+ ((1,) .+ (1,2,3,4,5,6,7,8,9,10)) isa SMatrix
+        bc = Base.broadcasted(+, s, s);
+        bc = Base.broadcasted(+, bc, bc, s);
+        @test @inferred(Broadcast.axes(bc)) === axes(s)
+    end
+
+    @testset "StructJLArray" begin
+        bcabs(a) = abs.(a)
+        bcmul2(a) = 2 .* a
+        a = StructArray(randn(ComplexF32, 10, 10))
+        sa = jl(a)
+        backend = StructArrays.GPUArraysCore.backend
+        @test @inferred(backend(sa)) === backend(sa.re) === backend(sa.im)
+        @test collect(@inferred(bcabs(sa))) == bcabs(a)
+        @test @inferred(bcmul2(sa)) isa StructArray
+        @test (sa .+= 1) isa StructArray
+    end
 end
 
 @testset "map" begin
