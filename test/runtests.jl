@@ -586,6 +586,10 @@ end
     horizontal_concat = StructArray{Pair{Int, String}}(([3 1; 5 6], ["a" "a"; "b" "b"]))
     @test cat(t, t2; dims=2)::StructArray == horizontal_concat == hcat(t, t2)
     @test hcat(t, t2) isa StructArray
+
+    # check that cat(dims=1) doesn't commit type piracy (#254)
+    # We only test that this works, the return value is immaterial
+    @test cat(dims=1) == vcat()
 end
 
 f_infer() = StructArray{ComplexF64}((rand(2,2), rand(2,2)))
