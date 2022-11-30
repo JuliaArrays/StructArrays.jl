@@ -486,7 +486,7 @@ function Base.showarg(io::IO, s::StructArray{T}, toplevel) where T
 end
 
 # broadcast
-import Base.Broadcast: BroadcastStyle, ArrayStyle, AbstractArrayStyle, Broadcasted, DefaultArrayStyle
+import Base.Broadcast: BroadcastStyle, AbstractArrayStyle, Broadcasted, DefaultArrayStyle, Unknown
 
 struct StructArrayStyle{S, N} <: AbstractArrayStyle{N} end
 
@@ -496,19 +496,39 @@ function StructArrayStyle{S, M}(::Val{N}) where {S, M, N}
     return StructArrayStyle{T, N}()
 end
 
+# StructArrayStyle is a wrapped style.
+# Here we try our best to resolve style conflict.
+function BroadcastStyle(b::AbstractArrayStyle{M}, a::StructArrayStyle{S, N}) where {S, N, M}
+    N′ = M === Any || N === Any ? Any : max(M, N)
+    S′ = Broadcast.result_style(S(), b)
+    return S′ isa StructArrayStyle ? typeof(S′)(Val{N′}()) : StructArrayStyle{typeof(S′), N′}()
+end
+BroadcastStyle(::StructArrayStyle, ::DefaultArrayStyle) = Unknown()
+
 @inline combine_style_types(::Type{A}, args...) where {A<:AbstractArray} =
     combine_style_types(BroadcastStyle(A), args...)
 @inline combine_style_types(s::BroadcastStyle, ::Type{A}, args...) where {A<:AbstractArray} =
     combine_style_types(Broadcast.result_style(s, BroadcastStyle(A)), args...)
+combine_style_types(::StructArrayStyle{S}) where {S} = S() # avoid nested StructArrayStyle
 combine_style_types(s::BroadcastStyle) = s
 
 Base.@pure cst(::Type{SA}) where {SA} = combine_style_types(array_types(SA).parameters...)
 
 BroadcastStyle(::Type{SA}) where {SA<:StructArray} = StructArrayStyle{typeof(cst(SA)), ndims(SA)}()
 
-function Base.similar(bc::Broadcasted{StructArrayStyle{S, N}}, ::Type{ElType}) where {S<:Union{DefaultArrayStyle,StructArrayStyle}, N, ElType}
-    ContainerType = isnonemptystructtype(ElType) ? StructArray{ElType} : Array{ElType}
-    return similar(ContainerType, axes(bc))
+# Here we use `similar` defined for `S` to build the dest Array.
+function Base.similar(bc::Broadcasted{StructArrayStyle{S, N}}, ::Type{ElType}) where {S, N, ElType}
+    bc′ = convert(Broadcasted{S}, bc)
+    return isnonemptystructtype(ElType) ? buildfromschema(T -> similar(bc′, T), ElType) : similar(bc′, ElType)
+end
+
+# Unwrapper to recover the behaviour defined by parent style.
+@inline function Base.copyto!(dest::AbstractArray, bc::Broadcasted{StructArrayStyle{S, N}}) where {S, N}
+    return copyto!(dest, convert(Broadcasted{S}, bc))
+end
+
+@inline function Broadcast.materialize!(::StructArrayStyle{S}, dest, bc::Broadcasted) where {S}
+    return Broadcast.materialize!(S(), dest, bc)
 end
 
 # for aliasing analysis during broadcast
