@@ -636,8 +636,11 @@ end
     horizontal_concat = StructArray{Pair{Int, String}}(([3 1; 5 6], ["a" "a"; "b" "b"]))
     @test cat(t, t2; dims=2)::StructArray == horizontal_concat == hcat(t, t2)
     @test hcat(t, t2) isa StructArray
-
-    # check that cat(dims=1) doesn't commit type piracy (#254)
+    t3 = StructArray(x=view([1], 1:1:1), y=view([:a], 1:1:1))
+    @test @inferred(vcat(t3)) == t3
+    @inferred vcat(t3, t3)
+    @inferred vcat(t3, collect(t3))
+    # Check that `cat(dims=1)` doesn't commit type piracy (#254)
     # We only test that this works, the return value is immaterial
     @test cat(dims=1) == vcat()
 end
