@@ -450,12 +450,13 @@ function Base.sizehint!(s::StructArray, i::Integer)
 end
 
 for op in [:cat, :hcat, :vcat]
+    curried_op = Symbol(:curried, op)
     @eval begin
-        function Base.$op(arg1::StructArray, argsrest::StructArray...; kwargs...)
-            args = (arg1, argsrest...)
-            f = key -> $op((getproperty(t, key) for t in args)...; kwargs...)
+        function Base.$op(arg::StructArray, others::StructArray...; kwargs...)
+            $curried_op(A...) = $op(A...; kwargs...)
+            args = (arg, others...)
             T = mapreduce(eltype, promote_type, args)
-            StructArray{T}(map(f, propertynames(arg1)))
+            StructArray{T}(map($curried_op, map(components, args)...))
         end
     end
 end
