@@ -1183,6 +1183,7 @@ for S in (1, 2, 3)
         Base.setindex!(A::$MyArray, val, i::Int) = A.A[i] = val
         Base.size(A::$MyArray) = Base.size(A.A)
         Base.BroadcastStyle(::Type{<:$MyArray}) = Broadcast.ArrayStyle{$MyArray}()
+        StructArrays._use_default_bc(::Broadcast.ArrayStyle{$MyArray}) = true
     end
 end
 Base.similar(bc::Broadcast.Broadcasted{Broadcast.ArrayStyle{MyArray1}}, ::Type{ElType}) where ElType =
@@ -1247,6 +1248,16 @@ Base.BroadcastStyle(::Broadcast.ArrayStyle{MyArray2}, S::Broadcast.DefaultArrayS
     @test Base.broadcasted(+, reshape(1:2,1,1,2), s) isa Broadcast.Broadcasted{<:Broadcast.AbstractArrayStyle{3}}
     @test Base.broadcasted(+, s, MyArray1(rand(2))) isa Broadcast.Broadcasted{<:Broadcast.AbstractArrayStyle{Any}}
 
+    #parent_style
+    @test StructArrays.parent_style(StructArrayStyle{Broadcast.DefaultArrayStyle{0},2}()) == Broadcast.DefaultArrayStyle{2}
+    @test StructArrays.parent_style(StructArrayStyle{Broadcast.Style{Tuple},2}()) == Broadcast.Style{Tuple}
+
+    # allocation test for overloaded `broadcast_unalias`
+    StructArrays._use_default_bc(::Broadcast.ArrayStyle{MyArray1}) = false
+    f(s) = s .+= 1
+    f(s)
+    @test (@allocated f(s)) == 0
+    
     # issue #185
     A = StructArray(randn(ComplexF64, 3, 3))
     B = randn(ComplexF64, 3, 3)
@@ -1316,6 +1327,14 @@ Base.BroadcastStyle(::Broadcast.ArrayStyle{MyArray2}, S::Broadcast.DefaultArrayS
         @test @inferred(bcmul2(sa)) isa StructArray
         @test backend(bcmul2(sa)) === backend(sa)
         @test (sa .+= 1) === sa
+    end
+
+    @testset "StructSparseArray" begin
+        a = sprand(10, 10, 0.5)
+        b = sprand(10, 10, 0.5)
+        c = StructArray{ComplexF64}((a, b))
+        d = identity.(c)
+        @test d isa SparseMatrixCSC
     end
 end
 

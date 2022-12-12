@@ -38,5 +38,6 @@ function GPUArraysCore.backend(::Type{T}) where {T<:StructArray}
     isconsistent || throw(ArgumentError("all component arrays must have the same GPU backend"))
     return backend
 end
+_use_default_bc(::GPUArraysCore.AbstractGPUArrayStyle) = true
 
 end # module
