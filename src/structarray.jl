@@ -525,18 +525,39 @@ Base.@pure cst(::Type{SA}) where {SA} = combine_style_types(array_types(SA).para
 
 BroadcastStyle(::Type{SA}) where {SA<:StructArray} = StructArrayStyle{typeof(cst(SA)), ndims(SA)}()
 
-_use_default_bc(::Any) = false
-_use_default_bc(::DefaultArrayStyle) = true
-_use_default_bc(::ArrayConflict) = true
+"""
+    always_struct_broadcast(style::BroadcastStyle)
+
+Check if `style` supports struct-broadcast natively, which means:
+1) `Base.copy` is not overloaded.
+2) `Base.similar` is defined.
+3) `Base.copyto!` support `StructArray` as broadcasted arguments.
+
+If any of the above conditions are not met, then this function should
+not be overloaded.
+In this case, try to overload [`try_struct_copy`](@ref) to support out-place
+struct-broadcast.
+"""
+always_struct_broadcast(::Any) = false
+always_struct_broadcast(::DefaultArrayStyle) = true
+always_struct_broadcast(::ArrayConflict) = true
+
+"""
+    try_struct_copy(bc::Broadcasted)
+
+Entry for non-native outplace struct-broadcast.
+
+See also [`always_struct_broadcast`](@ref).
+"""
+try_struct_copy(bc::Broadcasted) = copy(bc)
 
 function Base.copy(bc::Broadcasted{StructArrayStyle{S, N}}) where {S, N}
-    if _use_default_bc(S())
+    if always_struct_broadcast(S())
         return invoke(copy, Tuple{Broadcasted}, bc)
     else
         return try_struct_copy(replace_structarray(bc))
     end
 end
-try_struct_copy(bc::Broadcasted) = copy(bc) 
 
 """
     replace_structarray(bc::Broadcasted)
@@ -576,12 +597,12 @@ end
 
 # Unwrapper to recover the behaviour defined by parent style.
 @inline function Base.copyto!(dest::AbstractArray, bc::Broadcasted{StructArrayStyle{S, N}}) where {S, N}
-    bc′ = _use_default_bc(S()) ? convert(Broadcasted{S}, bc) : replace_structarray(bc)
+    bc′ = always_struct_broadcast(S()) ? convert(Broadcasted{S}, bc) : replace_structarray(bc)
     return copyto!(dest, bc′)
 end
 
 @inline function Broadcast.materialize!(::StructArrayStyle{S}, dest, bc::Broadcasted) where {S}
-    bc′ = _use_default_bc(S()) ? bc : replace_structarray(bc)
+    bc′ = always_struct_broadcast(S()) ? bc : replace_structarray(bc)
     return Broadcast.materialize!(S(), dest, bc′)
 end
 

@@ -1183,7 +1183,7 @@ for S in (1, 2, 3)
         Base.setindex!(A::$MyArray, val, i::Int) = A.A[i] = val
         Base.size(A::$MyArray) = Base.size(A.A)
         Base.BroadcastStyle(::Type{<:$MyArray}) = Broadcast.ArrayStyle{$MyArray}()
-        StructArrays._use_default_bc(::Broadcast.ArrayStyle{$MyArray}) = true
+        StructArrays.always_struct_broadcast(::Broadcast.ArrayStyle{$MyArray}) = true
     end
 end
 Base.similar(bc::Broadcast.Broadcasted{Broadcast.ArrayStyle{MyArray1}}, ::Type{ElType}) where ElType =
@@ -1253,7 +1253,7 @@ Base.BroadcastStyle(::Broadcast.ArrayStyle{MyArray2}, S::Broadcast.DefaultArrayS
     @test StructArrays.parent_style(StructArrayStyle{Broadcast.Style{Tuple},2}()) == Broadcast.Style{Tuple}
 
     # allocation test for overloaded `broadcast_unalias`
-    StructArrays._use_default_bc(::Broadcast.ArrayStyle{MyArray1}) = false
+    StructArrays.always_struct_broadcast(::Broadcast.ArrayStyle{MyArray1}) = false
     f(s) = s .+= 1
     f(s)
     @test (@allocated f(s)) == 0
