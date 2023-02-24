@@ -1299,6 +1299,8 @@ Base.BroadcastStyle(::Broadcast.ArrayStyle{MyArray2}, S::Broadcast.DefaultArrayS
         a = StructArray{ComplexF64}(undef, 1)
         allocated(a) = @allocated  a .+ 1
         @test allocated(a) == 2allocated(a.re)
+        allocated2(a) = @allocated a .= complex.(a.im, a.re)
+        @test allocated2(a) == 0
     end
 
     @testset "StructStaticArray" begin
