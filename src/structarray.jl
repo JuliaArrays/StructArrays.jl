@@ -570,13 +570,13 @@ e.g. `StaticArrayStyle`, thus we have to omit all `StructArray`.
 function replace_structarray(bc::Broadcasted{Style}) where {Style}
     args = replace_structarray_args(bc.args)
     Style′ = parent_style(Style())
-    return Broadcasted{Style′}(bc.f, args, nothing)
+    return Broadcasted{Style′}(bc.f, args, bc.axes)
 end
 function replace_structarray(A::StructArray)
     f = Instantiator(eltype(A))
     args = Tuple(components(A))
     Style = typeof(combine_styles(args...))
-    return Broadcasted{Style}(f, args, nothing)
+    return Broadcasted{Style}(f, args, axes(A))
 end
 replace_structarray(@nospecialize(A)) = A
 
@@ -588,6 +588,18 @@ parent_style(::StructArrayStyle{S, N}) where {S, N} = S
 parent_style(::StructArrayStyle{S, N}) where {N, S<:AbstractArrayStyle{N}} = S
 parent_style(::StructArrayStyle{S, N}) where {S<:AbstractArrayStyle{Any}, N} = S
 parent_style(::StructArrayStyle{S, N}) where {S<:AbstractArrayStyle, N} = typeof(S(Val(N)))
+
+# `instantiate` and `_axes` might be overloaded for static axes.
+function Broadcast.instantiate(bc::Broadcasted{Style}) where {Style <: StructArrayStyle}
+    Style′ = parent_style(Style())
+    bc′ = Broadcast.instantiate(convert(Broadcasted{Style′}, bc))
+    return convert(Broadcasted{Style}, bc′)
+end
+
+function Broadcast._axes(bc::Broadcasted{Style}, ::Nothing) where {Style <: StructArrayStyle}
+    Style′ = parent_style(Style())
+    return Broadcast._axes(convert(Broadcasted{Style′}, bc), nothing)
+end
 
 # Here we use `similar` defined for `S` to build the dest Array.
 function Base.similar(bc::Broadcasted{StructArrayStyle{S, N}}, ::Type{ElType}) where {S, N, ElType}

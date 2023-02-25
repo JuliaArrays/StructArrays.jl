@@ -1312,7 +1312,7 @@ Base.BroadcastStyle(::Broadcast.ArrayStyle{MyArray2}, S::Broadcast.DefaultArrayS
         @test (@inferred bclog(s)) isa typeof(s)
         test_allocated(bclog, s)
         @test abs.(s) .+ ((1,) .+ (1,2,3,4,5,6,7,8,9,10)) isa SMatrix
-        bc = Base.broadcasted(+, s, s);
+        bc = Base.broadcasted(+, s, s, ntuple(identity, 10));
         bc = Base.broadcasted(+, bc, bc, s);
         @test @inferred(Broadcast.axes(bc)) === axes(s)
     end
