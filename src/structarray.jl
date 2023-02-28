@@ -494,7 +494,8 @@ function Base.showarg(io::IO, s::StructArray{T}, toplevel) where T
 end
 
 # broadcast
-import Base.Broadcast: BroadcastStyle, AbstractArrayStyle, Broadcasted, DefaultArrayStyle, Unknown
+import Base.Broadcast: BroadcastStyle, AbstractArrayStyle, Broadcasted, DefaultArrayStyle, Unknown, ArrayConflict
+using Base.Broadcast: combine_styles
 
 struct StructArrayStyle{S, N} <: AbstractArrayStyle{N} end
 
@@ -524,6 +525,82 @@ Base.@pure cst(::Type{SA}) where {SA} = combine_style_types(array_types(SA).para
 
 BroadcastStyle(::Type{SA}) where {SA<:StructArray} = StructArrayStyle{typeof(cst(SA)), ndims(SA)}()
 
+"""
+    always_struct_broadcast(style::BroadcastStyle)
+
+Check if `style` supports struct-broadcast natively, which means:
+1) `Base.copy` is not overloaded.
+2) `Base.similar` is defined.
+3) `Base.copyto!` supports `StructArray`s as broadcasted arguments.
+
+If any of the above conditions are not met, then this function should
+not be overloaded.
+In that case, try to overload [`try_struct_copy`](@ref) to support out-of-place
+struct-broadcast.
+"""
+always_struct_broadcast(::Any) = false
+always_struct_broadcast(::DefaultArrayStyle) = true
+always_struct_broadcast(::ArrayConflict) = true
+
+"""
+    try_struct_copy(bc::Broadcasted)
+
+Entry for non-native outplace struct-broadcast.
+
+See also [`always_struct_broadcast`](@ref).
+"""
+try_struct_copy(bc::Broadcasted) = copy(bc)
+
+function Base.copy(bc::Broadcasted{StructArrayStyle{S, N}}) where {S, N}
+    if always_struct_broadcast(S())
+        return invoke(copy, Tuple{Broadcasted}, bc)
+    else
+        return try_struct_copy(replace_structarray(bc))
+    end
+end
+
+"""
+    replace_structarray(bc::Broadcasted)
+
+An internal function transforms the `Broadcasted` with `StructArray` into
+an equivalent one without it. This is not a must if the root `BroadcastStyle`
+supports `AbstractArray`. But some `BroadcastStyle` limits the input array types, 
+e.g. `StaticArrayStyle`, thus we have to omit all `StructArray`.
+"""
+function replace_structarray(bc::Broadcasted{Style}) where {Style}
+    args = replace_structarray_args(bc.args)
+    Style′ = parent_style(Style())
+    return Broadcasted{Style′}(bc.f, args, bc.axes)
+end
+function replace_structarray(A::StructArray)
+    f = Instantiator(eltype(A))
+    args = Tuple(components(A))
+    Style = typeof(combine_styles(args...))
+    return Broadcasted{Style}(f, args, axes(A))
+end
+replace_structarray(@nospecialize(A)) = A
+
+replace_structarray_args(args::Tuple) = (replace_structarray(args[1]), replace_structarray_args(tail(args))...)
+replace_structarray_args(::Tuple{}) = ()
+
+parent_style(@nospecialize(x)) = typeof(x)
+parent_style(::StructArrayStyle{S, N}) where {S, N} = S
+parent_style(::StructArrayStyle{S, N}) where {N, S<:AbstractArrayStyle{N}} = S
+parent_style(::StructArrayStyle{S, N}) where {S<:AbstractArrayStyle{Any}, N} = S
+parent_style(::StructArrayStyle{S, N}) where {S<:AbstractArrayStyle, N} = typeof(S(Val(N)))
+
+# `instantiate` and `_axes` might be overloaded for static axes.
+function Broadcast.instantiate(bc::Broadcasted{Style}) where {Style <: StructArrayStyle}
+    Style′ = parent_style(Style())
+    bc′ = Broadcast.instantiate(convert(Broadcasted{Style′}, bc))
+    return convert(Broadcasted{Style}, bc′)
+end
+
+function Broadcast._axes(bc::Broadcasted{Style}, ::Nothing) where {Style <: StructArrayStyle}
+    Style′ = parent_style(Style())
+    return Broadcast._axes(convert(Broadcasted{Style′}, bc), nothing)
+end
+
 # Here we use `similar` defined for `S` to build the dest Array.
 function Base.similar(bc::Broadcasted{StructArrayStyle{S, N}}, ::Type{ElType}) where {S, N, ElType}
     bc′ = convert(Broadcasted{S}, bc)
@@ -532,12 +609,22 @@ end
 
 # Unwrapper to recover the behaviour defined by parent style.
 @inline function Base.copyto!(dest::AbstractArray, bc::Broadcasted{StructArrayStyle{S, N}}) where {S, N}
-    return copyto!(dest, convert(Broadcasted{S}, bc))
+    bc′ = always_struct_broadcast(S()) ? convert(Broadcasted{S}, bc) : replace_structarray(bc)
+    return copyto!(dest, bc′)
 end
 
 @inline function Broadcast.materialize!(::StructArrayStyle{S}, dest, bc::Broadcasted) where {S}
-    return Broadcast.materialize!(S(), dest, bc)
+    bc′ = always_struct_broadcast(S()) ? bc : replace_structarray(bc)
+    return Broadcast.materialize!(S(), dest, bc′)
 end
 
 # for aliasing analysis during broadcast
+function Broadcast.broadcast_unalias(dest::StructArray, src::AbstractArray)
+    if dest === src || any(Base.Fix2(===, src), components(dest))
+        return src
+    else
+        return Base.unalias(dest, src)
+    end
+end
+
 Base.dataids(u::StructArray) = mapreduce(Base.dataids, (a, b) -> (a..., b...), values(components(u)), init=())

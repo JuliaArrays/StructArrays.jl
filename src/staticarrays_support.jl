@@ -38,35 +38,10 @@ end
 # This looks costly, but the compiler should be able to optimize them away
 Broadcast._axes(bc::Broadcasted{<:StructStaticArrayStyle}, ::Nothing) = axes(replace_structarray(bc))
 
-to_staticstyle(@nospecialize(x::Type)) = x
-to_staticstyle(::Type{StructStaticArrayStyle{N}}) where {N} = StaticArrayStyle{N}
-
-"""
-    replace_structarray(bc::Broadcasted)
-
-An internal function transforms the `Broadcasted` with `StructArray` into
-an equivalent one without it. This is not a must if the root `BroadcastStyle`
-supports `AbstractArray`. But some `BroadcastStyle` limits the input array types, 
-e.g. `StaticArrayStyle`, thus we have to omit all `StructArray`.
-"""
-function replace_structarray(bc::Broadcasted{Style}) where {Style}
-    args = replace_structarray_args(bc.args)
-    return Broadcasted{to_staticstyle(Style)}(bc.f, args, nothing)
-end
-function replace_structarray(A::StructArray)
-    f = Instantiator(eltype(A))
-    args = Tuple(components(A))
-    return Broadcasted{StaticArrayStyle{ndims(A)}}(f, args, nothing)
-end
-replace_structarray(@nospecialize(A)) = A
-
-replace_structarray_args(args::Tuple) = (replace_structarray(args[1]), replace_structarray_args(tail(args))...)
-replace_structarray_args(::Tuple{}) = ()
-
 # StaticArrayStyle has no similar defined.
 # Overload `Base.copy` instead.
-@inline function Base.copy(bc::Broadcasted{StructStaticArrayStyle{M}}) where {M}
-    sa = copy(convert(Broadcasted{StaticArrayStyle{M}}, bc))
+@inline function try_struct_copy(bc::Broadcasted{StaticArrayStyle{M}}) where {M}
+    sa = copy(bc)
     ET = eltype(sa)
     isnonemptystructtype(ET) || return sa
     elements = Tuple(sa)
