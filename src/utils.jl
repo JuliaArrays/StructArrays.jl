@@ -203,8 +203,8 @@ maybe_convert_elt(::Type{T}, vals::NamedTuple) where T = T<:NamedTuple ? convert
 Compute the unique value that `f` takes on each `component ∈ componenents`.
 If not all values are equal, return `nothing`. Otherwise, return the unique value.
 """
-function findconsistentvalue(f::F, (col, cols...)::Tup) where F
-    val = f(col)
-    isconsistent = mapfoldl(isequal(val)∘f, &, cols; init=true)
+function findconsistentvalue(f::F, cols::Tup) where F
+    val = f(first(cols))
+    isconsistent = all(map(isequal(val) ∘ f, values(cols)))
     return ifelse(isconsistent, val, nothing)
 end
