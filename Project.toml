@@ -6,6 +6,7 @@ version = "0.6.15"
 Adapt = "79e6a3ab-5dfb-504d-930d-738a2a938a0e"
 DataAPI = "9a962f9c-6df0-11e9-0e5d-c546b8b5ee8a"
 GPUArraysCore = "46192b85-c4d5-4398-a991-12ede77f4527"
+Random = "9a3f8284-a2c9-5f02-9a11-845980a1fd5c"
 StaticArraysCore = "1e83bf80-4336-4d27-bf5d-d5a4f845583c"
 Tables = "bd369af6-aec1-5ad0-b16a-f7cc5008161c"
 

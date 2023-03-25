@@ -478,6 +478,9 @@ for type in (
     end
 end
 
+Random.rand(r::Random.AbstractRNG, X::StructArray, dims::Random.Dims) =
+    Random.rand!(r, similar(X, Random.gentype(X), dims), X)
+
 function showfields(io::IO, fields::NTuple{N, Any}) where N
     print(io, "(")
     for (i, field) in enumerate(fields)

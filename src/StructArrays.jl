@@ -1,6 +1,7 @@
 module StructArrays
 
 using Base: tail
+import Random
 
 export StructArray, StructVector, LazyRow, LazyRows
 export collect_structarray

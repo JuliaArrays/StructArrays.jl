@@ -428,6 +428,12 @@ end
     @test isempty(s.b)
 end
 
+@testset "rand" begin
+    s = StructVector(a = [1, 2, 3], b = ["a", "b", "c"])
+    @test rand(s)::NamedTuple ∈ s
+    @test rand(s, 2)::StructVector ⊆ s
+end
+
 @testset "constructor from existing array" begin
     v = rand(ComplexF64, 5, 3)
     t = @inferred StructArray(v)
