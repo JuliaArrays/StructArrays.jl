@@ -1,3 +1,8 @@
+module StructArraysTablesExt
+
+using StructArrays
+using StructArrays: components, hasfields, foreachfield, staticschema
+
 import Tables
 
 Tables.isrowtable(::Type{<:StructArray}) = true
@@ -38,3 +43,5 @@ for (f, g) in zip((:append!, :prepend!), (:push!, :pushfirst!))
         end
     end
 end
+
+end # module

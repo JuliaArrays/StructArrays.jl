@@ -1,3 +1,10 @@
+module StructArraysStaticArraysCoreExt
+
+using StructArrays
+using StructArrays: StructArrayStyle, createinstance, replace_structarray, isnonemptystructtype
+
+using Base.Broadcast: Broadcasted
+
 using StaticArraysCore: StaticArray, FieldArray, tuple_prod
 
 """
@@ -40,7 +47,7 @@ Broadcast._axes(bc::Broadcasted{<:StructStaticArrayStyle}, ::Nothing) = axes(rep
 
 # StaticArrayStyle has no similar defined.
 # Overload `Base.copy` instead.
-@inline function try_struct_copy(bc::Broadcasted{StaticArrayStyle{M}}) where {M}
+@inline function StructArrays.try_struct_copy(bc::Broadcasted{StaticArrayStyle{M}}) where {M}
     sa = copy(bc)
     ET = eltype(sa)
     isnonemptystructtype(ET) || return sa
@@ -66,3 +73,5 @@ end
         return map(Base.Fix2(getfield, i), x)
     end
 end
+
+end # module
