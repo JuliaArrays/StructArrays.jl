@@ -6,9 +6,15 @@ version = "0.6.16"
 Adapt = "79e6a3ab-5dfb-504d-930d-738a2a938a0e"
 ConstructionBase = "187b0558-2788-49d3-abe0-74a17ed4e7c9"
 DataAPI = "9a962f9c-6df0-11e9-0e5d-c546b8b5ee8a"
+Tables = "bd369af6-aec1-5ad0-b16a-f7cc5008161c"
+
+[weakdeps]
 GPUArraysCore = "46192b85-c4d5-4398-a991-12ede77f4527"
 StaticArraysCore = "1e83bf80-4336-4d27-bf5d-d5a4f845583c"
-Tables = "bd369af6-aec1-5ad0-b16a-f7cc5008161c"
+
+[extensions]
+StructArraysGPUArraysCoreExt = "GPUArraysCore"
+StructArraysStaticArraysCoreExt = "StaticArraysCore"
 
 [compat]
 Adapt = "1, 2, 3"
@@ -22,14 +28,16 @@ julia = "1.6"
 
 [extras]
 Documenter = "e30172f5-a6a5-5a46-863b-614d45cd2de4"
+GPUArraysCore = "46192b85-c4d5-4398-a991-12ede77f4527"
 JLArrays = "27aeb0d3-9eb9-45fb-866b-73c2ecf80fcb"
 OffsetArrays = "6fe1bfb0-de20-5000-8ca7-80f57d26f881"
 PooledArrays = "2dfb63ee-cc39-5dd5-95bd-886bf059d720"
 SparseArrays = "2f01184e-e22b-5df5-ae63-d93ebab69eaf"
 StaticArrays = "90137ffa-7385-5640-81b9-e52037218182"
+StaticArraysCore = "1e83bf80-4336-4d27-bf5d-d5a4f845583c"
 Test = "8dfed614-e22c-5e08-85e1-65c5234f0b40"
 TypedTables = "9d95f2ec-7b3d-5a63-8d20-e2491e220bb9"
 WeakRefStrings = "ea10d353-3f73-51f8-a26c-33c1cb351aa5"
 
 [targets]
-test = ["Test", "JLArrays", "StaticArrays", "OffsetArrays", "PooledArrays", "TypedTables", "WeakRefStrings", "Documenter", "SparseArrays"]
+test = ["Test", "JLArrays", "StaticArrays", "OffsetArrays", "PooledArrays", "TypedTables", "WeakRefStrings", "Documenter", "SparseArrays", "GPUArraysCore", "StaticArraysCore"]
