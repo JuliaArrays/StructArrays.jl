@@ -65,7 +65,7 @@ function Base.sortperm(c::StructVector{T}) where {T<:Union{Tuple, NamedTuple}}
     return p
 end
 
-Base.sort!(c::StructArray{<:Union{Tuple, NamedTuple}}) = (Base.permute!!(c, sortperm(c)); c)
+Base.sort!(c::StructArray{<:Union{Tuple, NamedTuple}}) = (permute!(c, sortperm(c)); c)
 Base.sort(c::StructArray{<:Union{Tuple, NamedTuple}}) = c[sortperm(c)]
 
 # Given an ordering `p`, return a vector `v` such that `Perm(Forward, v)` is
