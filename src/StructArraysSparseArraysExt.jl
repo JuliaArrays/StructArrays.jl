@@ -1,11 +1,11 @@
 module StructArraysSparseArraysExt
 
-using StructArrays
+using StructArrays: StructArray, components
 import SparseArrays: sparse
 
 function sparse(S::StructArray{T}) where {T}
-	sp = StructArrays.replace_storage(sparse, S)
-	T.(sp)
+	sparse_components = map(sparse, components(S))
+	T.(sparse_components...)
 end
 
 end

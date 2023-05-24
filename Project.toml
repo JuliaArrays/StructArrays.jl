@@ -1,6 +1,6 @@
 name = "StructArrays"
 uuid = "09ab397b-f2b6-538f-b94a-2f83cf4a842a"
-version = "0.6.15"
+version = "0.6.16"
 
 [deps]
 Adapt = "79e6a3ab-5dfb-504d-930d-738a2a938a0e"
@@ -22,6 +22,7 @@ julia = "1.6"
 [extras]
 Documenter = "e30172f5-a6a5-5a46-863b-614d45cd2de4"
 JLArrays = "27aeb0d3-9eb9-45fb-866b-73c2ecf80fcb"
+LinearAlgebra = "37e2e46d-f89d-539d-b4ee-838fcccc9c8e"
 OffsetArrays = "6fe1bfb0-de20-5000-8ca7-80f57d26f881"
 PooledArrays = "2dfb63ee-cc39-5dd5-95bd-886bf059d720"
 SparseArrays = "2f01184e-e22b-5df5-ae63-d93ebab69eaf"
@@ -31,4 +32,4 @@ TypedTables = "9d95f2ec-7b3d-5a63-8d20-e2491e220bb9"
 WeakRefStrings = "ea10d353-3f73-51f8-a26c-33c1cb351aa5"
 
 [targets]
-test = ["Test", "JLArrays", "StaticArrays", "OffsetArrays", "PooledArrays", "TypedTables", "WeakRefStrings", "Documenter"]
+test = ["Test", "JLArrays", "LinearAlgebra", "StaticArrays", "OffsetArrays", "PooledArrays", "TypedTables", "WeakRefStrings", "Documenter"]
