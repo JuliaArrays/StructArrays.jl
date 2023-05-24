@@ -1145,6 +1145,23 @@ end
     end
 end
 
+@testset "sparse" begin
+    @testset "Vector" begin
+        v = [1,0,2]
+        sv = StructArray{Complex{Int}}((v, v))
+        spv = @inferred sparse(sv)
+        @test spv isa SparseVector{eltype(sv)}
+        @test spv == sv
+    end
+    @testset "Matrix" begin
+        d = Diagonal(Float64[1:4;])
+        sa = StructArray{ComplexF64}((d, d))
+        sp = @inferred sparse(sa)
+        @test sp isa SparseMatrixCSC{eltype(sa)}
+        @test sp == sa
+    end
+end
+
 struct ArrayConverter end
 
 Adapt.adapt_storage(::ArrayConverter, xs::AbstractArray) = convert(Array, xs)
@@ -1466,21 +1483,4 @@ end
     u = StructArray([SVector(1.0)])
     @test zero(u) == StructArray([SVector(0.0)])
     @test typeof(zero(u)) == typeof(StructArray([SVector(0.0)]))
-end
-
-@testset "sparse array conversion" begin
-    @testset "Vector" begin
-        v = [1,0,2]
-        sv = StructArray{Complex{Int}}((v, v))
-        spv = @inferred sparse(sv)
-        @test spv isa SparseVector{eltype(sv)}
-        @test spv == sv
-    end
-    @testset "Matrix" begin
-        d = Diagonal(Float64[1:4;])
-        sa = StructArray{ComplexF64}((d, d))
-        sp = @inferred sparse(sa)
-        @test sp isa SparseMatrixCSC{eltype(sa)}
-        @test sp == sa
-    end
 end
