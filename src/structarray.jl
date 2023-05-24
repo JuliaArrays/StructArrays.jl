@@ -628,3 +628,6 @@ function Broadcast.broadcast_unalias(dest::StructArray, src::AbstractArray)
 end
 
 Base.dataids(u::StructArray) = mapreduce(Base.dataids, (a, b) -> (a..., b...), values(components(u)), init=())
+
+# sparse arrays
+include("StructArraysSparseArraysExt.jl")
