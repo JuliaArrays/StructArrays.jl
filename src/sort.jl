@@ -1,5 +1,7 @@
 using Base.Sort, Base.Order
 
+Base.permute!(sa::StructArray, p::AbstractVector) = foreachfield(v -> permute!(v, p), sa)
+
 struct GroupPerm{V<:AbstractVector, P<:AbstractVector{<:Integer}, U<:AbstractUnitRange}
     vec::V
     perm::P
@@ -60,7 +62,7 @@ function Base.sortperm(c::StructVector{T}) where {T<:Union{Tuple, NamedTuple}}
     return p
 end
 
-Base.sort!(c::StructArray{<:Union{Tuple, NamedTuple}}) = (permute!(refarray(c), sortperm(c)); c)
+Base.sort!(c::StructArray{<:Union{Tuple, NamedTuple}}) = (permute!(c, sortperm(refarray(c))); c)
 Base.sort(c::StructArray{<:Union{Tuple, NamedTuple}}) = c[sortperm(c)]
 
 # Given an ordering `p`, return a vector `v` such that `Perm(Forward, v)` is
