@@ -12,6 +12,9 @@ function _schema(::Type{T}) where {T<:NTuple{N, Any}} where N
     return Tables.Schema{ntuple(identity, N), T}
 end
 
+StructArray(cols::Tables.AbstractColumns) = StructArray(Tables.columntable(cols))
+StructArray{T}(cols::Tables.AbstractColumns) where {T} = StructArray{T}(Tables.columntable(cols))
+
 function try_compatible_columns(rows::R, s::StructArray) where {R}
     Tables.isrowtable(rows) && Tables.columnaccess(rows) || return nothing
     T = eltype(rows)

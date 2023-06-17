@@ -714,6 +714,11 @@ end
     # Testing integer column "names":
     @test invoke(append!, Tuple{StructVector,Any}, StructArray(([0],)), StructArray(([1],))) ==
         StructArray(([0, 1],))
+
+    dtab = (a=[1,2],) |> Tables.dictcolumntable
+    @test StructArray(dtab) == [(a=1,), (a=2,)]
+    @test StructArray{NamedTuple{(:a,), Tuple{Float64}}}(dtab) == [(a=1.,), (a=2.,)]
+    @test StructVector{NamedTuple{(:a,), Tuple{Float64}}}(dtab) == [(a=1,), (a=2,)]
 end
 
 struct S
