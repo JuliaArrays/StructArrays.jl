@@ -40,4 +40,8 @@ function GPUArraysCore.backend(::Type{T}) where {T<:StructArray}
 end
 always_struct_broadcast(::GPUArraysCore.AbstractGPUArrayStyle) = true
 
+if !isdefined(Base, :get_extension)
+    include("../ext/StructArraysSparseArraysExt.jl")
+end
+
 end # module

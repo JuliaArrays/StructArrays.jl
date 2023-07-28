@@ -614,9 +614,10 @@ end
         A = spzeros(3)
         B = spzeros(3)
         S = StructArray{Complex{eltype(A)}}((A,B))
-        fill!(S, 0)
-        @test all(iszero, A)
-        @test all(iszero, B)
+        fill!(S, 2+3im)
+        @test all(==(2), A)
+        @test all(==(3), B)
+        @test issparse(S)
     end
 end
 
