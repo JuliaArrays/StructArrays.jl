@@ -45,8 +45,8 @@ julia> StructArrays.createinstance(Complex{Float64}, (re=1.0, im=2.0)...)
 1.0 + 2.0im
 ```
 """
-function createinstance(::Type{T}, args...) where {T}
-    isconcretetype(T) ? bypass_constructor(T, args) : T(args...)
+function createinstance(::Type{T}, args...)::T where {T}
+    isconcretetype(T) ? bypass_constructor(T, args) : constructorof(T)(args...)
 end
 
 createinstance(::Type{T}, args...) where {T<:Tup} = T(args)
