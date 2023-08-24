@@ -1,9 +1,6 @@
 using Base.Sort, Base.Order
 
-function Base.permute!!(c::StructArray, p::AbstractVector{<:Integer})
-    Base.invoke(Base.permute!!, Tuple{AbstractArray, AbstractVector{<:Integer}}, refarray(c), p)
-    return c
-end
+Base.permute!(sa::StructArray, p::AbstractVector) = foreachfield(v -> permute!(v, p), sa)
 
 struct GroupPerm{V<:AbstractVector, P<:AbstractVector{<:Integer}, U<:AbstractUnitRange}
     vec::V
@@ -65,7 +62,7 @@ function Base.sortperm(c::StructVector{T}) where {T<:Union{Tuple, NamedTuple}}
     return p
 end
 
-Base.sort!(c::StructArray{<:Union{Tuple, NamedTuple}}) = (Base.permute!!(c, sortperm(c)); c)
+Base.sort!(c::StructArray{<:Union{Tuple, NamedTuple}}) = (permute!(c, sortperm(c)); c)
 Base.sort(c::StructArray{<:Union{Tuple, NamedTuple}}) = c[sortperm(c)]
 
 # Given an ordering `p`, return a vector `v` such that `Perm(Forward, v)` is
