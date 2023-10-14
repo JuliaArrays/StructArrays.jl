@@ -31,7 +31,7 @@ Adapt.adapt_structure(to, s::StructArray) = replace_storage(x->Adapt.adapt(to, x
 
 @static if !isdefined(Base, :get_extension)
     include("../ext/StructArraysGPUArraysCoreExt.jl")
-    include("../ext/StructArraysStaticArraysCoreExt.jl")
+    include("../ext/StructArraysStaticArraysExt.jl")
 end
 
 end # module

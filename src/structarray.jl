@@ -551,7 +551,7 @@ See also [`always_struct_broadcast`](@ref).
 """
 try_struct_copy(bc::Broadcasted) = copy(bc)
 
-function Base.copy(bc::Broadcasted{StructArrayStyle{S, N}}) where {S, N}
+@inline function Base.copy(bc::Broadcasted{StructArrayStyle{S, N}}) where {S, N}
     if always_struct_broadcast(S())
         return invoke(copy, Tuple{Broadcasted}, bc)
     else

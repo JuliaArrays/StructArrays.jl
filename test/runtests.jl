@@ -1297,8 +1297,10 @@ Base.BroadcastStyle(::Broadcast.ArrayStyle{MyArray2}, S::Broadcast.DefaultArrayS
 
     @testset "allocation test" begin
         a = StructArray{ComplexF64}(undef, 1)
+        sa = StructArray{ComplexF64}((SizedVector{1}(a.re), SizedVector{1}(a.re)))
         allocated(a) = @allocated  a .+ 1
         @test allocated(a) == 2allocated(a.re)
+        @test allocated(sa) == 2allocated(sa.re)
         allocated2(a) = @allocated a .= complex.(a.im, a.re)
         @test allocated2(a) == 0
     end
