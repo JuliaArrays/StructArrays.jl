@@ -289,12 +289,13 @@ for type in (
         :(Tuple{Union{Integer, AbstractUnitRange}, Vararg{Union{Integer, AbstractUnitRange}}}),
         # disambiguation with Base
         :(Tuple{Union{Integer, Base.OneTo}, Vararg{Union{Integer, Base.OneTo}}}),
+        :(Tuple{Integer, Vararg{Integer}}),
     )
     @eval function Base.similar(::Type{<:StructArray{T, N, C}}, sz::$(type)) where {T, N, C}
         return buildfromschema(typ -> similar(typ, sz), T, C)
     end
 
-    @eval function Base.similar(s::StructArray, S::Type, sz::$(type))
+    @eval function Base.similar(s::StructArray, S::Type{T}, sz::$(type)) where T
         return _similar(s, S, sz)
     end
 end
@@ -469,8 +470,10 @@ for type in (
         :(Tuple{Union{Integer, AbstractUnitRange, Colon}, Vararg{Union{Integer, AbstractUnitRange, Colon}}}),
         # disambiguation with Base
         :(Tuple{Union{Integer, Base.OneTo}, Vararg{Union{Integer, Base.OneTo}}}),
+        :(Tuple{Union{Colon, Integer}, Vararg{Union{Colon, Integer}}}),
         :(Tuple{Vararg{Union{Colon, Integer}}}),
         :(Tuple{Vararg{Union{Colon, Int}}}),
+        :(Tuple{Integer, Vararg{Integer}}),
         :(Tuple{Colon}),
     )
     @eval function Base.reshape(s::StructArray{T}, d::$(type)) where {T}

@@ -16,6 +16,8 @@ if Base.VERSION >= v"1.6" && Int === Int64
     doctest(StructArrays)
 end
 
+include("Aqua.jl")
+
 # Most types should not be viewed as equivalent merely
 # because they have the same field names. (Exception:
 # NamedTuples are distinguished only by field names, so they
