@@ -515,6 +515,12 @@ function BroadcastStyle(b::AbstractArrayStyle{M}, a::StructArrayStyle{S, N}) whe
     S′ = Broadcast.result_style(S(), b)
     return S′ isa StructArrayStyle ? typeof(S′)(Val{N′}()) : StructArrayStyle{typeof(S′), N′}()
 end
+function BroadcastStyle(
+    ::Union{SparseArrays.HigherOrderFns.SparseMatStyle, SparseArrays.HigherOrderFns.SparseVecStyle},
+    ::StructArrays.StructArrayStyle{S, 0}
+    )
+    return Unknown()
+end
 BroadcastStyle(::StructArrayStyle, ::DefaultArrayStyle) = Unknown()
 
 @inline combine_style_types(::Type{A}, args...) where {A<:AbstractArray} =
