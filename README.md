@@ -1,6 +1,7 @@
 # StructArrays
 
 [![CI](https://github.com/JuliaArrays/StructArrays.jl/workflows/CI/badge.svg?branch=master)](https://github.com/JuliaArrays/StructArrays.jl/actions?query=workflow%3ACI+branch%3Amaster)
+[![Aqua QA](https://raw.githubusercontent.com/JuliaTesting/Aqua.jl/master/badge.svg)](https://github.com/JuliaTesting/Aqua.jl)
 [![codecov.io](http://codecov.io/github/JuliaArrays/StructArrays.jl/coverage.svg?branch=master)](http://codecov.io/github/JuliaArrays/StructArrays.jl?branch=master)
 [![](https://img.shields.io/badge/docs-stable-blue.svg)](https://JuliaArrays.github.io/StructArrays.jl/stable)
 
