@@ -25,11 +25,8 @@ function refvalue(s::StructArray{T}, v::Tup) where {T}
     createinstance(T, map(refvalue, components(s), v)...)
 end
 
-# Use Adapt allows for automatic conversion of CPU to GPU StructArrays
-import Adapt
-Adapt.adapt_structure(to, s::StructArray) = replace_storage(x->Adapt.adapt(to, x), s)
-
 @static if !isdefined(Base, :get_extension)
+    include("../ext/StructArraysAdaptExt.jl")
     include("../ext/StructArraysGPUArraysCoreExt.jl")
     include("../ext/StructArraysStaticArraysExt.jl")
 end
