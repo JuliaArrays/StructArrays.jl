@@ -1227,7 +1227,7 @@ Base.BroadcastStyle(::Broadcast.ArrayStyle{MyArray2}, S::Broadcast.DefaultArrayS
             ares = map(a->a.re, as)
             aims = map(a->a.im, as)
             style = Broadcast.combine_styles(ares...)
-            @test Broadcast.combine_styles(as...) === StructArrayStyle{typeof(style),1}()
+            @test Broadcast.combine_styles(as...) === StructArrayStyle{1,typeof(style)}()
             if !(style in tested_style)
                 push!(tested_style, style)
                 if style isa Broadcast.ArrayStyle{MyArray3}
@@ -1249,8 +1249,8 @@ Base.BroadcastStyle(::Broadcast.ArrayStyle{MyArray2}, S::Broadcast.DefaultArrayS
     @test Base.broadcasted(+, s, MyArray1(rand(2))) isa Broadcast.Broadcasted{<:Broadcast.AbstractArrayStyle{Any}}
 
     #parent_style
-    @test StructArrays.parent_style(StructArrayStyle{Broadcast.DefaultArrayStyle{0},2}()) == Broadcast.DefaultArrayStyle{2}
-    @test StructArrays.parent_style(StructArrayStyle{Broadcast.Style{Tuple},2}()) == Broadcast.Style{Tuple}
+    @test StructArrays.parent_style(StructArrayStyle{2,Broadcast.DefaultArrayStyle{0}}()) == Broadcast.DefaultArrayStyle{0}()
+    @test StructArrays.parent_style(StructArrayStyle{2,Broadcast.Style{Tuple}}()) == Broadcast.Style{Tuple}()
 
     # allocation test for overloaded `broadcast_unalias`
     StructArrays.always_struct_broadcast(::Broadcast.ArrayStyle{MyArray1}) = false
