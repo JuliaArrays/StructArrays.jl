@@ -2,7 +2,7 @@ module StructArraysAdaptExt
 # Use Adapt allows for automatic conversion of CPU to GPU StructArrays
 using Adapt, StructArrays
 @static if !applicable(Adapt.adapt, Int)
-    # Adapt.jl has curried support, implement it ourself
+    # Adapt.jl has no curried support, implement it ourself
     adpat(to) = Base.Fix1(Adapt.adapt, to)
     if VERSION < v"1.9.0-DEV.857"
         @eval function adapt(to::Type{T}) where {T}
