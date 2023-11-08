@@ -21,7 +21,7 @@ StructArraysGPUArraysCoreExt = "GPUArraysCore"
 StructArraysStaticArraysExt = "StaticArrays"
 
 [compat]
-Adapt = "2, 3"
+Adapt = "3.4"
 ConstructionBase = "1"
 DataAPI = "1"
 GPUArraysCore = "0.1.2"
