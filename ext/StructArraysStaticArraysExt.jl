@@ -47,10 +47,23 @@ using Base.Broadcast: Broadcasted
     return _broadcast(f, Size(map(length, ax)), argsizes, as...)
 end
 
+# A functor generates the ith component of StructStaticBroadcast.
+struct Similar_ith{SA, E<:Tuple}
+    elements::E
+    Similar_ith{SA}(elements::Tuple) where {SA} = new{SA, typeof(elements)}(elements)
+end
+function (s::Similar_ith{SA})(i::Int) where {SA}
+    ith_elements = ntuple(Val(length(s.elements))) do j
+        getfield(s.elements[j], i)
+    end
+    ith_SA = similar_type(SA, fieldtype(eltype(SA), i))
+    return @inbounds ith_SA(ith_elements)
+end
+
 @inline function _broadcast(f, sz::Size{newsize}, s::Tuple{Vararg{Size}}, a...) where {newsize}
     first_staticarray = first_statictype(a...)
     elements, ET = if prod(newsize) == 0
-        # Use inference to get eltype in empty case (see also comments in _map)
+        # Use inference to get eltype in empty case (following StaticBroadcast defined in StaticArrays.jl)
         eltys = Tuple{map(eltype, a)...}
         (), Core.Compiler.return_type(f, eltys)
     else
@@ -58,24 +71,11 @@ end
         temp, eltype(temp)
     end
     if isnonemptystructtype(ET)
-        @static if VERSION >= v"1.7"
-            arrs = ntuple(Val(fieldcount(ET))) do i
-                @inbounds similar_type(first_staticarray, fieldtype(ET, i), sz)(_getfields(elements, i))
-            end
-        else
-            similarET(::Type{SA}, ::Type{T}) where {SA, T} = i -> @inbounds similar_type(SA, fieldtype(T, i), sz)(_getfields(elements, i))
-            arrs = ntuple(similarET(first_staticarray, ET), Val(fieldcount(ET)))
-        end
+        SA = similar_type(first_staticarray, ET, sz)
+        arrs = ntuple(Similar_ith{SA}(elements), Val(fieldcount(ET)))
         return StructArray{ET}(arrs)
-    end
-    @inbounds return similar_type(first_staticarray, ET, sz)(elements)
-end
-
-@inline function _getfields(x::Tuple, i::Int)
-    if @generated
-        return Expr(:tuple, (:(getfield(x[$j], i)) for j in 1:fieldcount(x))...)
     else
-        return map(Base.Fix2(getfield, i), x)
+        @inbounds return similar_type(first_staticarray, ET, sz)(elements)
     end
 end
 
