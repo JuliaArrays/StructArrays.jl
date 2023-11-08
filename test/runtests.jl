@@ -1312,6 +1312,8 @@ Base.BroadcastStyle(::Broadcast.ArrayStyle{MyArray2}, S::Broadcast.DefaultArrayS
         b = @SMatrix [0. for i in 1:10, j in 1:10]
         s = StructArray{ComplexF64}((a , b))
         @test (@inferred bclog(s)) isa typeof(s)
+        s0 = StructArray{ComplexF64}((similar(a, Size(0,0)), similar(a, Size(0,0))))
+        @test (@inferred bclog(s0)) isa typeof(s0)
         test_allocated(bclog, s)
         @test abs.(s) .+ ((1,) .+ (1,2,3,4,5,6,7,8,9,10)) isa SMatrix
         bc = Base.broadcasted(+, s, s, ntuple(identity, 10));
