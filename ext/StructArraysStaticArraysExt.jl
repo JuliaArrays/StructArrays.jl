@@ -33,9 +33,9 @@ StructArrays.createinstance(T::Type{<:FieldArray}, args...) = invoke(StructArray
 
 # Broadcast overload
 using StaticArrays: StaticArrayStyle, similar_type, Size, SOneTo
-using StaticArrays: broadcast_flatten, broadcast_sizes, first_statictype, __broadcast
+using StaticArrays: broadcast_flatten, broadcast_sizes, first_statictype
 using StructArrays: isnonemptystructtype
-using Base.Broadcast: Broadcasted
+using Base.Broadcast: Broadcasted, _broadcast_getindex
 
 # StaticArrayStyle has no similar defined.
 # Overload `try_struct_copy` instead.
@@ -77,6 +77,31 @@ end
     else
         @inbounds return similar_type(first_staticarray, ET, sz)(elements)
     end
+end
+
+# The `__broadcast` kernal is copied from `StaticArrays.jl`.
+# see https://github.com/JuliaArrays/StaticArrays.jl/blob/master/src/broadcast.jl
+@generated function __broadcast(f, ::Size{newsize}, s::Tuple{Vararg{Size}}, a...) where newsize
+    sizes = [sz.parameters[1] for sz ∈ s.parameters]
+
+    indices = CartesianIndices(newsize)
+    exprs = similar(indices, Expr)
+    for (j, current_ind) ∈ enumerate(indices)
+        exprs_vals = (broadcast_getindex(sz, i, current_ind) for (i, sz) in enumerate(sizes))
+        exprs[j] = :(f($(exprs_vals...)))
+    end
+
+    return quote
+        Base.@_inline_meta
+        return tuple($(exprs...))
+    end
+end
+
+broadcast_getindex(::Tuple{}, i::Int, I::CartesianIndex) = return :(_broadcast_getindex(a[$i], $I))
+function broadcast_getindex(oldsize::Tuple, i::Int, newindex::CartesianIndex)
+    li = LinearIndices(oldsize)
+    ind = _broadcast_getindex(li, newindex)
+    return :(a[$i][$ind])
 end
 
 end
