@@ -122,7 +122,7 @@ end
     s = StructArray(a=rand(10,10), b=view(rand(100,100), 1:10, 1:10))
     T = typeof(s)
     @test IndexStyle(T) === IndexCartesian()
-    @test StructArrays.index_type(s) == CartesianIndex{2}
+    @test StructArrays.index_type(T) == CartesianIndex{2}
     @test s[100] == s[10, 10] == (a=s.a[10,10], b=s.b[10,10])
     s[100] = (a=1, b=1)
     @test s[100] == s[10, 10] == (a=1, b=1)
@@ -131,7 +131,7 @@ end
     @inferred IndexStyle(StructArray(a=rand(10,10), b=rand(10,10)))
     s = StructArray(a=rand(10,10), b=rand(10,10))
     T = typeof(s)
-    @test StructArrays.index_type(s) == Int
+    @test StructArrays.index_type(T) == Int
     @inferred IndexStyle(s)
     @test s[100] == s[10, 10] == (a=s.a[10,10], b=s.b[10,10])
     s[100] = (a=1, b=1)
@@ -139,16 +139,24 @@ end
     s[10, 10] = (a=0, b=0)
     @test s[100] == s[10, 10] == (a=0, b=0)
 
-    # inference for "many" types, both for linear ad Cartesian indexing
-    @inferred StructArrays.index_type(ntuple(_ -> rand(5), 2))
-    @inferred StructArrays.index_type(ntuple(_ -> rand(5, 5), 3))
-    @inferred StructArrays.index_type(ntuple(_ -> rand(5, 5, 5), 4))
+    # inference for "many" types, both for linear and Cartesian indexing
+    s = @inferred StructArray(ntuple(_ -> rand(5), 2))
+    @test StructArrays.index_type(typeof(s)) === Int
+    s = @inferred StructArray(ntuple(_ -> rand(5, 5), 3))
+    @test StructArrays.index_type(typeof(s)) === Int
+    s = @inferred StructArray(ntuple(_ -> rand(5, 5, 5), 4))
+    @test StructArrays.index_type(typeof(s)) === Int
 
-    @inferred StructArrays.index_type(ntuple(_ -> view(rand(5), 1:3), 2))
-    @inferred StructArrays.index_type(ntuple(_ -> view(rand(5, 5), 1:3, 1:2), 3))
-    @inferred StructArrays.index_type(ntuple(_ -> view(rand(5, 5, 5), 1:3, 1:2, 1:4), 4))
+    s = @inferred StructArray(ntuple(_ -> view(rand(5), 1:3), 2))
+    @test StructArrays.index_type(typeof(s)) === Int
+    s = @inferred StructArray(ntuple(_ -> view(rand(5, 5), 1:3, 1:2), 3))
+    @test StructArrays.index_type(typeof(s)) === CartesianIndex{2}
+    s = @inferred StructArray(ntuple(_ -> view(rand(5, 5, 5), 1:3, 1:2, 1:4), 4))
+    @test StructArrays.index_type(typeof(s)) === CartesianIndex{3}
 
-    @inferred StructArrays.index_type(ntuple(n -> n == 1 ? rand(5, 5) : view(rand(5, 5), 1:2, 1:3), 5))
+    s = @inferred StructArray(ntuple(n -> n == 1 ? rand(2, 3) : view(rand(5, 5), 1:2, 1:3), 5))
+    @test StructArrays.index_type(typeof(s)) === CartesianIndex{2}
+
     @inferred IndexStyle(StructArray(a=rand(10,10), b=view(rand(100,100), 1:10, 1:10)))
 end
 
