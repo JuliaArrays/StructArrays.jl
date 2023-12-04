@@ -41,7 +41,7 @@ function collect_structarray(itr; initializer = default_initializer)
 end
 
 function _collect_structarray(itr::T, ::Nothing, ax; initializer = default_initializer) where {T}
-    S = @default_eltype itr
+    S = Base.@default_eltype itr
     return initializer(S, something(ax, (Base.OneTo(0),)))
 end
 
