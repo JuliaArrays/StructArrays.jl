@@ -31,4 +31,8 @@ end
     include("../ext/StructArraysStaticArraysExt.jl")
 end
 
+if !isdefined(Base, :get_extension)
+    include("../ext/StructArraysSparseArraysExt.jl")
+end
+
 end # module
