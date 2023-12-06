@@ -9,73 +9,39 @@ The package was largely inspired by the `Columns` type in [IndexedTables](https:
 ## Collection and initialization
 
 One can create a `StructArray` by providing the struct type and a tuple or NamedTuple of field arrays:
-```jldoctest intro
-julia> using StructArrays
-
-julia> struct Foo{T}
-           a::T
-           b::T
-       end
-
-julia> adata = [1 2; 3 4]; bdata = [10 20; 30 40];
-
-julia> x = StructArray{Foo}((adata, bdata))
-2×2 StructArray(::Matrix{Int64}, ::Matrix{Int64}) with eltype Foo:
- Foo{Int64}(1, 10)  Foo{Int64}(2, 20)
- Foo{Int64}(3, 30)  Foo{Int64}(4, 40)
+```@repl intro
+using StructArrays
+struct Foo{T}
+    a::T
+    b::T
+end
+adata = [1 2; 3 4]; bdata = [10 20; 30 40];
+x = StructArray{Foo}((adata, bdata))
 ```
 
 You can also initialze a StructArray by passing in a NamedTuple, in which case the name (rather than the order) specifies how the input arrays are assigned to fields:
 
-```jldoctest intro
-julia> x = StructArray{Foo}((b = adata, a = bdata))    # initialize a with bdata and vice versa
-2×2 StructArray(::Matrix{Int64}, ::Matrix{Int64}) with eltype Foo:
- Foo{Int64}(10, 1)  Foo{Int64}(20, 2)
- Foo{Int64}(30, 3)  Foo{Int64}(40, 4)
+```@repl intro
+x = StructArray{Foo}((b = adata, a = bdata))    # initialize a with bdata and vice versa
 ```
 
 If a struct is not specified, a StructArray with Tuple or NamedTuple elements will be created:
-```jldoctest intro
-julia> x = StructArray((adata, bdata))
-2×2 StructArray(::Matrix{Int64}, ::Matrix{Int64}) with eltype Tuple{Int64, Int64}:
- (1, 10)  (2, 20)
- (3, 30)  (4, 40)
-
-julia> x = StructArray((a = adata, b = bdata))
-2×2 StructArray(::Matrix{Int64}, ::Matrix{Int64}) with eltype NamedTuple{(:a, :b), Tuple{Int64, Int64}}:
- (a = 1, b = 10)  (a = 2, b = 20)
- (a = 3, b = 30)  (a = 4, b = 40)
+```@repl intro
+x = StructArray((adata, bdata))
+x = StructArray((a = adata, b = bdata))
 ```
 
 It's also possible to create a `StructArray` by choosing a particular dimension to interpret as the components of a struct:
 
-```jldoctest intro
-julia> x = StructArray{Complex{Int}}(adata; dims=1)  # along dimension 1, the first item `re` and the second is `im`
-2-element StructArray(view(::Matrix{Int64}, 1, :), view(::Matrix{Int64}, 2, :)) with eltype Complex{Int64}:
- 1 + 3im
- 2 + 4im
-
-julia> x = StructArray{Complex{Int}}(adata; dims=2)  # along dimension 2, the first item `re` and the second is `im`
-2-element StructArray(view(::Matrix{Int64}, :, 1), view(::Matrix{Int64}, :, 2)) with eltype Complex{Int64}:
- 1 + 2im
- 3 + 4im
+```@repl intro
+x = StructArray{Complex{Int}}(adata; dims=1)  # along dimension 1, the first item `re` and the second is `im`
+x = StructArray{Complex{Int}}(adata; dims=2)  # along dimension 2, the first item `re` and the second is `im`
 ```
 
 One can also create a `StructArray` from an iterable of structs without creating an intermediate `Array`:
 
-```jldoctest intro
-julia> StructArray(log(j+2.0*im) for j in 1:10)
-10-element StructArray(::Vector{Float64}, ::Vector{Float64}) with eltype ComplexF64:
- 0.8047189562170501 + 1.1071487177940904im
- 1.0397207708399179 + 0.7853981633974483im
- 1.2824746787307684 + 0.5880026035475675im
- 1.4978661367769954 + 0.4636476090008061im
-  1.683647914993237 + 0.3805063771123649im
- 1.8444397270569681 + 0.3217505543966422im
-  1.985145956776061 + 0.27829965900511133im
- 2.1097538525880535 + 0.24497866312686414im
- 2.2213256282451583 + 0.21866894587394195im
- 2.3221954495706862 + 0.19739555984988078im
+```@repl intro
+StructArray(log(j+2.0*im) for j in 1:10)
 ```
 
 Another option is to create an uninitialized `StructArray` and then fill it with data. Just like in normal arrays, this is done with the `undef` syntax:
