@@ -341,7 +341,7 @@ map(c -> c[I...], Tuple(cols))
 @inline @generated get_ith(cols::Union{
         NTuple{N, Any},
         NamedTuple{<:Any,<:NTuple{N, Any}}
-    }, I...) where {N} = :(Base.Cartesian.@ntuple $N i->cols[i][I...])
+    }, I...) where {N} = :(Base.Cartesian.@ntuple $N i->@inbounds cols[i][I...])
 
 Base.@propagate_inbounds Base.getindex(x::StructArray, I...) = _getindex(x, to_indices(x, I)...)
 
