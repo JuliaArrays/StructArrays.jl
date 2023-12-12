@@ -28,6 +28,7 @@ Adapt = "3.4"
 ConstructionBase = "1"
 DataAPI = "1"
 GPUArraysCore = "0.1.2"
+InfiniteArrays = "0.13"
 StaticArrays = "1.5.6"
 Tables = "1"
 julia = "1.6"
@@ -36,6 +37,7 @@ julia = "1.6"
 Adapt = "79e6a3ab-5dfb-504d-930d-738a2a938a0e"
 Documenter = "e30172f5-a6a5-5a46-863b-614d45cd2de4"
 GPUArraysCore = "46192b85-c4d5-4398-a991-12ede77f4527"
+InfiniteArrays = "4858937d-0d70-526a-a4dd-2d5cb5dd786c"
 JLArrays = "27aeb0d3-9eb9-45fb-866b-73c2ecf80fcb"
 LinearAlgebra = "37e2e46d-f89d-539d-b4ee-838fcccc9c8e"
 OffsetArrays = "6fe1bfb0-de20-5000-8ca7-80f57d26f881"
@@ -47,4 +49,4 @@ TypedTables = "9d95f2ec-7b3d-5a63-8d20-e2491e220bb9"
 WeakRefStrings = "ea10d353-3f73-51f8-a26c-33c1cb351aa5"
 
 [targets]
-test = ["Adapt", "Documenter", "GPUArraysCore", "JLArrays", "LinearAlgebra", "OffsetArrays", "PooledArrays", "SparseArrays", "StaticArrays", "Test", "TypedTables", "WeakRefStrings"]
+test = ["Adapt", "Documenter", "GPUArraysCore", "JLArrays", "LinearAlgebra", "OffsetArrays", "PooledArrays", "SparseArrays", "StaticArrays", "Test", "TypedTables", "WeakRefStrings", "InfiniteArrays"]
