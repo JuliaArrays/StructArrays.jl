@@ -8,6 +8,7 @@ using DataAPI: refarray, refvalue
 using Adapt: adapt, Adapt
 using JLArrays
 using GPUArraysCore: backend
+using LinearAlgebra
 using Test
 using SparseArrays
 
@@ -613,9 +614,10 @@ end
         A = spzeros(3)
         B = spzeros(3)
         S = StructArray{Complex{eltype(A)}}((A,B))
-        fill!(S, 0)
-        @test all(iszero, A)
-        @test all(iszero, B)
+        fill!(S, 2+3im)
+        @test all(==(2), A)
+        @test all(==(3), B)
+        @test issparse(S)
     end
 end
 
@@ -1141,6 +1143,23 @@ end
                                         (itrlabel, makeitr) in itr_examples
 
         @test vcat(dest, StructVector(makeitr())) == append!!(copy(dest), makeitr())
+    end
+end
+
+@testset "sparse" begin
+    @testset "Vector" begin
+        v = [1,0,2]
+        sv = StructArray{Complex{Int}}((v, v))
+        spv = @inferred sparse(sv)
+        @test spv isa SparseVector{eltype(sv)}
+        @test spv == sv
+    end
+    @testset "Matrix" begin
+        d = Diagonal(Float64[1:4;])
+        sa = StructArray{ComplexF64}((d, d))
+        sp = @inferred sparse(sa)
+        @test sp isa SparseMatrixCSC{eltype(sa)}
+        @test sp == sa
     end
 end
 

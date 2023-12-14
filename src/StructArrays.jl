@@ -28,6 +28,7 @@ end
 @static if !isdefined(Base, :get_extension)
     include("../ext/StructArraysAdaptExt.jl")
     include("../ext/StructArraysGPUArraysCoreExt.jl")
+    include("../ext/StructArraysSparseArraysExt.jl")
     include("../ext/StructArraysStaticArraysExt.jl")
 end
 
