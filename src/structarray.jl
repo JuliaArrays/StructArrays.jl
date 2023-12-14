@@ -631,4 +631,4 @@ Base.dataids(u::StructArray) = mapreduce(Base.dataids, (a, b) -> (a..., b...), v
 
 # Since all the components have the same axes, we choose the type of the first one to
 # define IteratorSize for a StructArray
-Base.IteratorSize(::Type{<:StructArray{<:Any,<:Any,C}}) where {C} = Base.IteratorSize(fieldtype(C,1))
+Base.IteratorSize(::Type{<:StructArray{<:Any,<:Any,C}}) where {C} = Base.IteratorSize(fieldtype(C, 1))
