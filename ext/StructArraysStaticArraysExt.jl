@@ -1,7 +1,7 @@
 module StructArraysStaticArraysExt
 
 using StructArrays
-using StaticArrays: StaticArray, FieldArray, tuple_prod
+using StaticArrays: StaticArray, FieldArray, tuple_prod, SVector, MVector
 
 """
     StructArrays.staticschema(::Type{<:StaticArray{S, T}}) where {S, T}
@@ -22,7 +22,16 @@ which subtypes `FieldArray`.
     end
 end
 StructArrays.createinstance(::Type{T}, args...) where {T<:StaticArray} = T(args)
-StructArrays.component(s::StaticArray, i) = getindex(s, i)
+StructArrays.component(s::StaticArray, i::Integer) = getindex(s, i)
+
+function StructArrays.component(s::StructArray{<:Union{SVector,MVector}}, key::Symbol)
+    i = key == :x ? 1 : 
+        key == :y ? 2 : 
+        key == :z ? 3 : 
+        key == :w ? 4 : 
+        throw(ArgumentError("invalid key $key"))
+    StructArrays.component(s, i)
+end
 
 # invoke general fallbacks for a `FieldArray` type.
 @inline function StructArrays.staticschema(T::Type{<:FieldArray})

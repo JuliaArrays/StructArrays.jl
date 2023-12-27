@@ -1405,6 +1405,12 @@ end
         @test StructArrays.components(x) == ([1.0,2.0], [2.0,3.0])
         @test x .+ y == StructArray([StaticVectorType{2}(Float64[2*i+1;2*i+3]) for i = 1:2])
     end
+    for StaticVectorType = [SVector, MVector]
+        x = @inferred StructArray([StaticVectorType{2}(Float64[i;i+1]) for i = 1:2])
+        # numbered and named property access:
+        @test x.:1 == [1.0,2.0]
+        @test x.y == [2.0,3.0]
+    end
     # test broadcast + components for general arrays
     for StaticArrayType = [SArray, MArray, SizedArray]
         x = @inferred StructArray([StaticArrayType{Tuple{1,2}}(ones(1,2) .+ i) for i = 0:1])
