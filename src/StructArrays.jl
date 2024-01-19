@@ -30,6 +30,7 @@ end
     include("../ext/StructArraysGPUArraysCoreExt.jl")
     include("../ext/StructArraysSparseArraysExt.jl")
     include("../ext/StructArraysStaticArraysExt.jl")
+    include("../ext/StructArraysLinearAlgebraExt.jl")
 end
 
 end # module

@@ -1510,3 +1510,13 @@ end
     S = StructArray{Complex{Int}}((1:∞, 1:∞))
     @test Base.IteratorSize(S) == Base.IsInfinite()
 end
+
+@testset "LinearAlgebra" begin
+    @testset "matrix * matrix" begin
+        A = StructArray{ComplexF64}((rand(10,10), rand(10,10)))
+        B = StructArray{ComplexF64}((rand(10,10), rand(10,10)))
+        MA, MB = Matrix(A), Matrix(B)
+        @test A * B ≈ MA * MB
+        @test A * A ≈ MA * MA
+    end
+end
