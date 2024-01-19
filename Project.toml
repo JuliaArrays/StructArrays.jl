@@ -1,6 +1,6 @@
 name = "StructArrays"
 uuid = "09ab397b-f2b6-538f-b94a-2f83cf4a842a"
-version = "0.6.16"
+version = "0.6.17"
 
 [deps]
 Adapt = "79e6a3ab-5dfb-504d-930d-738a2a938a0e"
@@ -11,7 +11,7 @@ StaticArraysCore = "1e83bf80-4336-4d27-bf5d-d5a4f845583c"
 Tables = "bd369af6-aec1-5ad0-b16a-f7cc5008161c"
 
 [compat]
-Adapt = "1, 2, 3"
+Adapt = "1, 2, 3, 4"
 ConstructionBase = "1"
 DataAPI = "1"
 GPUArraysCore = "0.1.2"
