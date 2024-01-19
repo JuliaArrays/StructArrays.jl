@@ -11,6 +11,7 @@ using GPUArraysCore: backend
 using LinearAlgebra
 using Test
 using SparseArrays
+using InfiniteArrays
 
 using Documenter: doctest
 if Base.VERSION >= v"1.6" && Int === Int64
@@ -1499,4 +1500,13 @@ end
     xs = StructArray([(a=1, b=2), (a=3, b=nothing)])
     ss = map(x -> PS(x.a, x.b), xs)
     @test ss == [PS(1, 2), PS(3, nothing)]
+end
+
+@testset "IteratorSize" begin
+    S = StructArray{ComplexF64}((zeros(1), zeros(1)))
+    @test Base.IteratorSize(S) == Base.HasShape{1}()
+    S = StructArray{ComplexF64}((zeros(1,2), zeros(1,2)))
+    @test Base.IteratorSize(S) == Base.HasShape{2}()
+    S = StructArray{Complex{Int}}((1:∞, 1:∞))
+    @test Base.IteratorSize(S) == Base.IsInfinite()
 end
