@@ -1514,9 +1514,16 @@ end
 @testset "LinearAlgebra" begin
     @testset "matrix * matrix" begin
         A = StructArray{ComplexF64}((rand(10,10), rand(10,10)))
-        B = StructArray{ComplexF64}((rand(10,10), rand(10,10)))
+        B = StructArray{ComplexF64}((rand(size(A)...), rand(size(A)...)))
         MA, MB = Matrix(A), Matrix(B)
         @test A * B ≈ MA * MB
-        @test A * A ≈ MA * MA
+        @test mul!(ones(ComplexF64,size(A)), A, B, 2.0, 3.0) ≈ 2 * A * B .+ 3
+    end
+    @testset "matrix * vector" begin
+        A = StructArray{ComplexF64}((rand(10,10), rand(10,10)))
+        v = StructArray{ComplexF64}((rand(size(A,2)), rand(size(A,2))))
+        MA, Mv = Matrix(A), Vector(v)
+        @test A * v ≈ MA * Mv
+        @test mul!(ones(ComplexF64,size(v)), A, v, 2.0, 3.0) ≈ 2 * A * v .+ 3
     end
 end
