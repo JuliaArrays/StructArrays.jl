@@ -145,8 +145,10 @@ julia> s_pooled = StructArrays.replace_storage(s) do v
        end
 $(if VERSION < v"1.6-"
     "3-element StructArray(::UnitRange{Int64}, ::PooledArray{String,UInt32,1,Array{UInt32,1}}) with eltype NamedTuple{(:a, :b),Tuple{Int64,String}}:"
+elseif VERSION < v"1.10-"
+    "3-element StructArray(::UnitRange{Int64}, ::PooledVector{String, UInt32, Vector{UInt32}}) with eltype NamedTuple{(:a, :b), Tuple{Int64, String}}:"
 else
-        "3-element StructArray(::UnitRange{Int64}, ::PooledVector{String, UInt32, Vector{UInt32}}) with eltype NamedTuple{(:a, :b), Tuple{Int64, String}}:"
+    "3-element StructArray(::UnitRange{Int64}, ::PooledVector{String, UInt32, Vector{UInt32}}) with eltype @NamedTuple{a::Int64, b::String}:"
 end)
  (a = 1, b = "string")
  (a = 2, b = "string")
