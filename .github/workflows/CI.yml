@@ -6,6 +6,7 @@ on:
   push:
     branches:
       - master
+      - release-0.6
     tags: '*'
 jobs:
   test:
