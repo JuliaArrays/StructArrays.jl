@@ -9,6 +9,9 @@ on:
     tags: '*'
 jobs:
   docs:
+    permissions:
+      contents: write
+      statuses: write
     name: Documentation
     runs-on: ubuntu-latest
     steps:
@@ -16,14 +19,10 @@ jobs:
       - uses: julia-actions/setup-julia@v1
         with:
           version: '1'
-      - run: |
-          julia --project -e '
-            using Pkg
-            Pkg.instantiate()'
-          julia --project=docs -e '
-            using Pkg
-            Pkg.instantiate()'
-      - run: julia --project=docs docs/make.jl
+      - name: Install dependencies
+        run: julia --project=docs/ -e 'using Pkg; Pkg.develop(PackageSpec(path=pwd())); Pkg.instantiate()'
+      - name: Build and deploy
         env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-          DOCUMENTER_KEY: ${{ secrets.DOCUMENTER_KEY }}
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }} # If authenticating with GitHub Actions token
+          DOCUMENTER_KEY: ${{ secrets.DOCUMENTER_KEY }} # If authenticating with SSH deploy key
+        run: julia --project=docs/ docs/make.jl
