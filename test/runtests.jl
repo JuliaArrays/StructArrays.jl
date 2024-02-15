@@ -259,6 +259,8 @@ end
     @test d == c == StructArray(a=[1,10,2,3], b=[2,20,3,4], c=["a","A","b","c"])
     d = deleteat!(c, 2)
     @test d == c == StructArray(a=[1,2,3], b=[2,3,4], c=["a","b","c"])
+    d = keepat!(c, 2)
+    @test d == c == StructArray(a=[2], b=[3], c=["b"])
 
     c = StructArray(a=[1], b=[2], c=["a"])
     d = [(a=10, b=20, c="A")]
@@ -295,6 +297,8 @@ end
     @test d == c == StructArray{C}(a=[1,10,2,3], b=[2,20,3,4], c=["a","A","b","c"])
     d = deleteat!(c, 2)
     @test d == c == StructArray{C}(a=[1,2,3], b=[2,3,4], c=["a","b","c"])
+    d = keepat!(c, 2)
+    @test d == c == StructArray{C}(a=[2], b=[3], c=["b"])
 
     c = StructArray{C}(a=[1], b=[2], c=["a"])
     d = [C(10, 20, "A")]
