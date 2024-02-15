@@ -418,9 +418,11 @@ function Base.deleteat!(s::StructVector{T}, idxs) where T
     return StructVector{T}(t)
 end
 
-function Base.keepat!(s::StructVector{T}, idxs) where T
-    t = map(Base.Fix2(keepat!, idxs), components(s))
-    return StructVector{T}(t)
+@static if VERSION >= v"1.7.0"
+    function Base.keepat!(s::StructVector{T}, idxs) where T
+        t = map(Base.Fix2(keepat!, idxs), components(s))
+        return StructVector{T}(t)
+    end
 end
 
 Base.copyto!(I::StructArray, J::StructArray) = (foreachfield(copyto!, I, J); I)
