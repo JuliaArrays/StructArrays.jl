@@ -77,8 +77,7 @@ end
     first_staticarray = first_statictype(a...)
     elements, ET = if prod(newsize) == 0
         # Use inference to get eltype in empty case (following StaticBroadcast defined in StaticArrays.jl)
-        eltys = Tuple{map(eltype, a)...}
-        (), Core.Compiler.return_type(f, eltys)
+        (), Base.promote_op(f, map(eltype, a)...)
     else
         temp = __broadcast(f, sz, s, a...)
         temp, eltype(temp)
