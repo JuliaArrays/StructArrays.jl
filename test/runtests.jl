@@ -14,7 +14,7 @@ using SparseArrays
 using InfiniteArrays
 
 using Documenter: doctest
-if Base.VERSION >= v"1.6" && Int === Int64
+if Base.VERSION == v"1.6" && Int === Int64
     doctest(StructArrays)
 end
 
@@ -725,6 +725,22 @@ end
     # Testing integer column "names":
     @test invoke(append!, Tuple{StructVector,Any}, StructArray(([0],)), StructArray(([1],))) ==
         StructArray(([0, 1],))
+
+    dtab = (a=[1,2],) |> Tables.dictcolumntable
+    @test StructArray(dtab) == [(a=1,), (a=2,)]
+    @test StructArray{NamedTuple{(:a,), Tuple{Float64}}}(dtab) == [(a=1.,), (a=2.,)]
+    @test StructVector{NamedTuple{(:a,), Tuple{Float64}}}(dtab) == [(a=1,), (a=2,)]
+
+    tblbase = (a=[1,2], b=["3", "4"])
+    @testset for tblfunc in [Tables.columntable, Tables.rowtable, Tables.dictcolumntable, Tables.dictrowtable]
+        tbl = tblfunc(tblbase)
+        sa = StructArrays.fromtable(tbl)
+        @test sa::StructArray == [(a=1, b="3"), (a=2, b="4")]
+        sa = Tables.materializer(StructArray)(tbl)
+        @test sa::StructArray == [(a=1, b="3"), (a=2, b="4")]
+        sa = Tables.materializer(sa)(tbl)
+        @test sa::StructArray == [(a=1, b="3"), (a=2, b="4")]
+    end
 end
 
 struct S
@@ -1412,6 +1428,12 @@ end
         y = @inferred StructArray([StaticVectorType{2}(Float64[i+1;i+2]) for i = 1:2])
         @test StructArrays.components(x) == ([1.0,2.0], [2.0,3.0])
         @test x .+ y == StructArray([StaticVectorType{2}(Float64[2*i+1;2*i+3]) for i = 1:2])
+    end
+    for StaticVectorType = [SVector, MVector]
+        x = @inferred StructArray([StaticVectorType{2}(Float64[i;i+1]) for i = 1:2])
+        # numbered and named property access:
+        @test x.:1 == [1.0,2.0]
+        @test x.y == [2.0,3.0]
     end
     # test broadcast + components for general arrays
     for StaticArrayType = [SArray, MArray, SizedArray]

@@ -12,6 +12,14 @@ function _schema(::Type{T}) where {T<:NTuple{N, Any}} where N
     return Tables.Schema{ntuple(identity, N), T}
 end
 
+StructArray(cols::Tables.AbstractColumns) = StructArray(Tables.columntable(cols))
+StructArray{T}(cols::Tables.AbstractColumns) where {T} = StructArray{T}(Tables.columntable(cols))
+
+# convert from any Tables-compliant object
+fromtable(cols) = StructArray(Tables.columntable(cols))
+Tables.materializer(::Type{<:StructArray}) = fromtable
+Tables.materializer(::StructArray) = fromtable  # Tables documentation says it's not needed, but actually it is
+
 function try_compatible_columns(rows::R, s::StructArray) where {R}
     Tables.isrowtable(rows) && Tables.columnaccess(rows) || return nothing
     T = eltype(rows)
