@@ -495,6 +495,8 @@ function Base.showarg(io::IO, s::StructArray{T}, toplevel) where T
     toplevel && print(io, " with eltype ", T)
 end
 
+Base.map(f, s::StructArray) = f.(s)
+
 # broadcast
 import Base.Broadcast: BroadcastStyle, AbstractArrayStyle, Broadcasted, DefaultArrayStyle, Unknown, ArrayConflict
 using Base.Broadcast: combine_styles

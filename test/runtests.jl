@@ -1377,6 +1377,15 @@ Base.BroadcastStyle(::Broadcast.ArrayStyle{MyArray2}, S::Broadcast.DefaultArrayS
         @test @inferred(bcmul2(sa)) isa StructArray
         @test backend(bcmul2(sa)) === backend(sa)
         @test (sa .+= 1) === sa
+
+        @test_broken collect(sa)
+
+        a2 = map(x -> real(x) + 1, sa)
+        @test a2::JLArray == sa.re .+ 1
+        sa2 = map(x -> x + 1, sa)
+        @test sa2.re::JLArray == sa.re .+ 1
+        sa3 = map(x -> (a=x + 1, b=x.re + x.im), sa)
+        @test sa3.b::JLArray == sa.re .+ sa.im
     end
 
     @testset "StructSparseArray" begin
