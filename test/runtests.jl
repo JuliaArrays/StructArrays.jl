@@ -1443,6 +1443,14 @@ end
         @test x .+ y == StructArray([StaticArrayType{Tuple{1,2}}(3*ones(1,2) .+ 2*i) for i = 0:1])
     end
 
+    let
+        # potential ambiguities
+        x = StructArray((SA[1,2], SA[1,2]))
+        @test eltype(similar(x)::StructArray) == eltype(x)
+        @test map(x->x, x)::StructArray == x
+        @test size(reshape(x, (SOneTo(2), SOneTo(1)))::StructArray) == (2, 1)
+    end
+
     # test FieldVector constructor (see https://github.com/JuliaArrays/StructArrays.jl/issues/205)
     struct FlippedVec2D <: FieldVector{2,Float64}
         x::Float64
