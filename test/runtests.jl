@@ -13,7 +13,9 @@ using Test
 using SparseArrays
 using InfiniteArrays
 
-include("aqua.jl")
+@testset "project quality" begin
+    Aqua.test_all(StructArrays, ambiguities=(; broken=true))
+end
 
 using Documenter: doctest
 if Base.VERSION == v"1.6" && Int === Int64
