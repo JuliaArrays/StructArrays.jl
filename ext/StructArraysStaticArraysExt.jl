@@ -1,7 +1,7 @@
 module StructArraysStaticArraysExt
 
 using StructArrays
-using StaticArrays: StaticArray, FieldArray, tuple_prod, SVector, MVector
+using StaticArrays: StaticArray, FieldArray, tuple_prod, SVector, MVector, SOneTo
 
 """
     StructArrays.staticschema(::Type{<:StaticArray{S, T}}) where {S, T}
@@ -39,6 +39,10 @@ end
 end
 StructArrays.component(s::FieldArray, i) = invoke(StructArrays.component, Tuple{Any, Any}, s, i)
 StructArrays.createinstance(T::Type{<:FieldArray}, args...) = invoke(StructArrays.createinstance, Tuple{Type{<:Any}, Vararg}, T, args...)
+
+# disambiguation
+Base.similar(s::StructArray, S::Type, sz::Tuple{Union{Integer, Base.OneTo, SOneTo}, Vararg{Union{Union{Integer, Base.OneTo, SOneTo}}}}) = StructArrays._similar(s, S, sz)
+Base.reshape(s::StructArray{T}, d::Tuple{SOneTo, Vararg{SOneTo}}) where {T} = StructArray{T}(map(x -> reshape(x, d), StructArrays.components(s)))
 
 # Broadcast overload
 using StaticArrays: StaticArrayStyle, similar_type, Size, SOneTo
