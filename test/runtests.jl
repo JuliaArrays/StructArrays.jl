@@ -394,6 +394,10 @@ end
     @test s isa Matrix{Float32}
     @test size(s) == (2, 2)
 
+    s = similar(t, Float32, Int8(2), 2)
+    @test s isa Matrix{Float32}
+    @test size(s) == (2, 2)
+
     s = similar(t, Float32, 0:1, 2)
     @test s isa OffsetMatrix{Float32, Matrix{Float32}}
     @test axes(s) == (0:1, 1:2)
@@ -1000,6 +1004,8 @@ end
     @test rs.a == [1 3; 2 4]
     @test rs.b == ["a" "c"; "b" "d"]
 
+    @test reshape(s, (Int8(2), 2)) == reshape(s, (2, 2))
+
     rs = reshape(s, (:,))
     @test rs.a == s.a
     @test rs.b == s.b
@@ -1543,5 +1549,5 @@ end
 end
 
 @testset "project quality" begin
-    Aqua.test_all(StructArrays, ambiguities=(; broken=true))
+    Aqua.test_all(StructArrays, ambiguities = VERSION >= v"1.10")
 end
