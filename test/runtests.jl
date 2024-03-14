@@ -12,6 +12,7 @@ using LinearAlgebra
 using Test
 using SparseArrays
 using InfiniteArrays
+import Aqua
 
 using Documenter: doctest
 if Base.VERSION == v"1.6" && Int === Int64
@@ -1539,4 +1540,8 @@ end
     @test Base.IteratorSize(S) == Base.HasShape{2}()
     S = StructArray{Complex{Int}}((1:∞, 1:∞))
     @test Base.IteratorSize(S) == Base.IsInfinite()
+end
+
+@testset "project quality" begin
+    Aqua.test_all(StructArrays, ambiguities=(; broken=true))
 end

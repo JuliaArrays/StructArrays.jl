@@ -25,16 +25,27 @@ StructArraysStaticArraysExt = "StaticArrays"
 
 [compat]
 Adapt = "3.4, 4"
+Aqua = "0.8"
 ConstructionBase = "1"
 DataAPI = "1"
+Documenter = "1"
 GPUArraysCore = "0.1.2"
 InfiniteArrays = "0.13"
+JLArrays = "0.1"
+LinearAlgebra = "1"
+OffsetArrays = "1"
+PooledArrays = "1"
+SparseArrays = "1"
 StaticArrays = "1.5.6"
 Tables = "1"
+Test = "1"
+TypedTables = "1"
+WeakRefStrings = "1"
 julia = "1.6"
 
 [extras]
 Adapt = "79e6a3ab-5dfb-504d-930d-738a2a938a0e"
+Aqua = "4c88cf16-eb10-579e-8560-4a9242c79595"
 Documenter = "e30172f5-a6a5-5a46-863b-614d45cd2de4"
 GPUArraysCore = "46192b85-c4d5-4398-a991-12ede77f4527"
 InfiniteArrays = "4858937d-0d70-526a-a4dd-2d5cb5dd786c"
@@ -49,4 +60,4 @@ TypedTables = "9d95f2ec-7b3d-5a63-8d20-e2491e220bb9"
 WeakRefStrings = "ea10d353-3f73-51f8-a26c-33c1cb351aa5"
 
 [targets]
-test = ["Adapt", "Documenter", "GPUArraysCore", "InfiniteArrays", "JLArrays", "LinearAlgebra", "OffsetArrays", "PooledArrays", "SparseArrays", "StaticArrays", "Test", "TypedTables", "WeakRefStrings"]
+test = ["Adapt", "Aqua", "Documenter", "GPUArraysCore", "InfiniteArrays", "JLArrays", "LinearAlgebra", "OffsetArrays", "PooledArrays", "SparseArrays", "StaticArrays", "Test", "TypedTables", "WeakRefStrings"]
