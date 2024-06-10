@@ -1206,7 +1206,7 @@ end
 # The following code defines `MyArray1/2/3` with different `BroadcastStyle`s.
 # 1. `MyArray1` and `MyArray1` have `similar` defined.
 #     We use them to simulate `BroadcastStyle` overloading `Base.copyto!`.
-# 2. `MyArray3` has no `similar` defined. 
+# 2. `MyArray3` has no `similar` defined.
 #    We use it to simulate `BroadcastStyle` overloading `Base.copy`.
 # 3. Their resolved style could be summaryized as (`-` means conflict)
 #              |  MyArray1  |  MyArray2  |  MyArray3  |  Array
@@ -1302,7 +1302,7 @@ Base.BroadcastStyle(::Broadcast.ArrayStyle{MyArray2}, S::Broadcast.DefaultArrayS
     f(s) = s .+= 1
     f(s)
     @test (@allocated f(s)) == 0
-    
+
     # issue #185
     A = StructArray(randn(ComplexF64, 3, 3))
     B = randn(ComplexF64, 3, 3)
@@ -1321,7 +1321,7 @@ Base.BroadcastStyle(::Broadcast.ArrayStyle{MyArray2}, S::Broadcast.DefaultArrayS
 
     @testset "ambiguity check" begin
         test_set = Any[StructArray([1;2+im]),
-                    1:2, 
+                    1:2,
                     (1,2),
                     StructArray(@SArray [1;1+2im]),
                     (@SArray [1 2]),
@@ -1548,6 +1548,23 @@ end
     @test Base.IteratorSize(S) == Base.HasShape{2}()
     S = StructArray{Complex{Int}}((1:∞, 1:∞))
     @test Base.IteratorSize(S) == Base.IsInfinite()
+end
+
+@testset "LinearAlgebra" begin
+    @testset "matrix * matrix" begin
+        A = StructArray{ComplexF64}((rand(10,10), rand(10,10)))
+        B = StructArray{ComplexF64}((rand(size(A)...), rand(size(A)...)))
+        MA, MB = Matrix(A), Matrix(B)
+        @test A * B ≈ MA * MB
+        @test mul!(ones(ComplexF64,size(A)), A, B, 2.0, 3.0) ≈ 2 * A * B .+ 3
+    end
+    @testset "matrix * vector" begin
+        A = StructArray{ComplexF64}((rand(10,10), rand(10,10)))
+        v = StructArray{ComplexF64}((rand(size(A,2)), rand(size(A,2))))
+        MA, Mv = Matrix(A), Vector(v)
+        @test A * v ≈ MA * Mv
+        @test mul!(ones(ComplexF64,size(v)), A, v, 2.0, 3.0) ≈ 2 * A * v .+ 3
+    end
 end
 
 @testset "project quality" begin
