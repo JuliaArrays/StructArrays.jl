@@ -339,12 +339,7 @@ to
 map(c -> c[I...], Tuple(cols))
 ```
 """
-@inline get_ith(cols::NamedTuple, I...) = get_ith(Tuple(cols), I...)
-@inline function get_ith(cols::Tuple, I...)
-    @inbounds r = first(cols)[I...]
-    return (r, get_ith(Base.tail(cols), I...)...)
-end
-@inline get_ith(::Tuple{}, I...) = ()
+@inline @generated get_ith(cols::Tup, I...) = :(Base.Cartesian.@ntuple $(fieldcount(cols)) i -> @inbounds cols[i][I...])
 
 Base.@propagate_inbounds Base.getindex(x::StructArray, I...) = _getindex(x, to_indices(x, I)...)
 
@@ -417,6 +412,13 @@ end
 function Base.deleteat!(s::StructVector{T}, idxs) where T
     t = map(Base.Fix2(deleteat!, idxs), components(s))
     return StructVector{T}(t)
+end
+
+@static if VERSION >= v"1.7.0"
+    function Base.keepat!(s::StructVector{T}, idxs) where T
+        t = map(Base.Fix2(keepat!, idxs), components(s))
+        return StructVector{T}(t)
+    end
 end
 
 Base.copyto!(I::StructArray, J::StructArray) = (foreachfield(copyto!, I, J); I)

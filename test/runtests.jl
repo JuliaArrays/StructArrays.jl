@@ -12,9 +12,10 @@ using LinearAlgebra
 using Test
 using SparseArrays
 using InfiniteArrays
+import Aqua
 
 using Documenter: doctest
-if Base.VERSION >= v"1.6" && Int === Int64
+if Base.VERSION == v"1.6" && Int === Int64
     doctest(StructArrays)
 end
 
@@ -259,6 +260,10 @@ end
     @test d == c == StructArray(a=[1,10,2,3], b=[2,20,3,4], c=["a","A","b","c"])
     d = deleteat!(c, 2)
     @test d == c == StructArray(a=[1,2,3], b=[2,3,4], c=["a","b","c"])
+    if Base.VERSION >= v"1.7.0"
+        d = keepat!(c, 2)
+        @test d == c == StructArray(a=[2], b=[3], c=["b"])
+    end
 
     c = StructArray(a=[1], b=[2], c=["a"])
     d = [(a=10, b=20, c="A")]
@@ -295,6 +300,10 @@ end
     @test d == c == StructArray{C}(a=[1,10,2,3], b=[2,20,3,4], c=["a","A","b","c"])
     d = deleteat!(c, 2)
     @test d == c == StructArray{C}(a=[1,2,3], b=[2,3,4], c=["a","b","c"])
+    if Base.VERSION >= v"1.7.0"
+        d = keepat!(c, 2)
+        @test d == c == StructArray{C}(a=[2], b=[3], c=["b"])
+    end
 
     c = StructArray{C}(a=[1], b=[2], c=["a"])
     d = [C(10, 20, "A")]
@@ -717,6 +726,22 @@ end
     # Testing integer column "names":
     @test invoke(append!, Tuple{StructVector,Any}, StructArray(([0],)), StructArray(([1],))) ==
         StructArray(([0, 1],))
+
+    dtab = (a=[1,2],) |> Tables.dictcolumntable
+    @test StructArray(dtab) == [(a=1,), (a=2,)]
+    @test StructArray{NamedTuple{(:a,), Tuple{Float64}}}(dtab) == [(a=1.,), (a=2.,)]
+    @test StructVector{NamedTuple{(:a,), Tuple{Float64}}}(dtab) == [(a=1,), (a=2,)]
+
+    tblbase = (a=[1,2], b=["3", "4"])
+    @testset for tblfunc in [Tables.columntable, Tables.rowtable, Tables.dictcolumntable, Tables.dictrowtable]
+        tbl = tblfunc(tblbase)
+        sa = StructArrays.fromtable(tbl)
+        @test sa::StructArray == [(a=1, b="3"), (a=2, b="4")]
+        sa = Tables.materializer(StructArray)(tbl)
+        @test sa::StructArray == [(a=1, b="3"), (a=2, b="4")]
+        sa = Tables.materializer(sa)(tbl)
+        @test sa::StructArray == [(a=1, b="3"), (a=2, b="4")]
+    end
 end
 
 struct S
@@ -1405,12 +1430,26 @@ end
         @test StructArrays.components(x) == ([1.0,2.0], [2.0,3.0])
         @test x .+ y == StructArray([StaticVectorType{2}(Float64[2*i+1;2*i+3]) for i = 1:2])
     end
+    for StaticVectorType = [SVector, MVector]
+        x = @inferred StructArray([StaticVectorType{2}(Float64[i;i+1]) for i = 1:2])
+        # numbered and named property access:
+        @test x.:1 == [1.0,2.0]
+        @test x.y == [2.0,3.0]
+    end
     # test broadcast + components for general arrays
     for StaticArrayType = [SArray, MArray, SizedArray]
         x = @inferred StructArray([StaticArrayType{Tuple{1,2}}(ones(1,2) .+ i) for i = 0:1])
         y = @inferred StructArray([StaticArrayType{Tuple{1,2}}(2*ones(1,2) .+ i) for i = 0:1])
         @test StructArrays.components(x) == ([1., 2.], [1., 2.])
         @test x .+ y == StructArray([StaticArrayType{Tuple{1,2}}(3*ones(1,2) .+ 2*i) for i = 0:1])
+    end
+
+    let
+        # potential ambiguities
+        x = StructArray((SA[1,2], SA[1,2]))
+        @test eltype(similar(x)::StructArray) == eltype(x)
+        @test map(x->x, x)::StructArray == x
+        @test size(reshape(x, (SOneTo(2), SOneTo(1)))::StructArray) == (2, 1)
     end
 
     # test FieldVector constructor (see https://github.com/JuliaArrays/StructArrays.jl/issues/205)
@@ -1526,4 +1565,10 @@ end
         @test A * v ≈ MA * Mv
         @test mul!(ones(ComplexF64,size(v)), A, v, 2.0, 3.0) ≈ 2 * A * v .+ 3
     end
+end
+  
+@testset "project quality" begin
+    Aqua.test_all(StructArrays, ambiguities=(; broken=true))
+end
+    
 end
