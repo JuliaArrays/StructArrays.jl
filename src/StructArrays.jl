@@ -28,8 +28,8 @@ end
 # implement colmetadata for StructArray based on metadata of individual columns
 import DataAPI: metadata, metadatasupport, colmetadata, colmetadatasupport
 
-colmetadatasupport(::Type{<:StructArray}) = (
-    read=any(col -> metadatasupport(typeof(col)).read, Tables.columns(sa)),
+colmetadatasupport(::Type{T}) where {T<:StructArray} = (
+    read=any(col -> metadatasupport(col).read, array_types(T).parameters),
     write=false,  # not implemented
 )
 colmetadata(sa::StructArray, col::Symbol) = metadata(getproperty(sa, col))
