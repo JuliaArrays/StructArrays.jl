@@ -19,13 +19,13 @@ adata = [1 2; 3 4]; bdata = [10 20; 30 40];
 x = StructArray{Foo}((adata, bdata))
 ```
 
-You can also initialze a StructArray by passing in a NamedTuple, in which case the name (rather than the order) specifies how the input arrays are assigned to fields:
+You can also initialize a StructArray by passing in a NamedTuple, in which case the name (rather than the order) specifies how the input arrays are assigned to fields:
 
 ```@repl intro
 x = StructArray{Foo}((b = adata, a = bdata))    # initialize a with bdata and vice versa
 ```
 
-If a struct is not specified, a StructArray with Tuple or NamedTuple elements will be created:
+If a `struct` is not specified, a StructArray with Tuple or NamedTuple elements will be created:
 ```@repl intro
 x = StructArray((adata, bdata))
 x = StructArray((a = adata, b = bdata))
