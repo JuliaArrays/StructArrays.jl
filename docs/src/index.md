@@ -1,6 +1,6 @@
 # Overview of StructArrays.jl
 
-This package introduces the type `StructArray` which is an `AbstractArray` whose elements are `struct` (for example `NamedTuples`,  or `ComplexF64`, or a custom user defined `struct`). While a `StructArray` iterates `structs`, the layout uses separate arrays for each field of the `struct`. This is often called [Structure-Of-Arrays (SOA)](https://en.wikipedia.org/wiki/AoS_and_SoA); the concepts will be explained in greater detail below. `struct` entries of a `StructArray` are constructed on-the-fly. This contrasts with the "Array-Of-Structs" (AOS) layout where individual array elements are explicitly stored as `struct`s.
+This package introduces the type `StructArray` which is an `AbstractArray` whose elements are `struct` (for example `NamedTuple`s,  or `ComplexF64`, or a custom user defined `struct`). While a `StructArray` iterates `struct`s, the layout uses separate arrays for each field of the `struct`. This is often called [Structure-Of-Arrays (SOA)](https://en.wikipedia.org/wiki/AoS_and_SoA); the concepts will be explained in greater detail below. `struct` entries of a `StructArray` are constructed on-the-fly. This contrasts with the "Array-Of-Structs" (AOS) layout where individual array elements are explicitly stored as `struct`s.
 
 `Base.getproperty` or the dot syntax can be used to access `struct` fields of element of a `StructArray`, whereas elements can be accessed with `getindex` (`[]`).
 
