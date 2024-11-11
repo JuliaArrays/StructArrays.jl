@@ -1,14 +1,14 @@
 # Overview of StructArrays.jl
 
-This package introduces the type `StructArray` which is an `AbstractArray` whose elements are `struct` (for example `NamedTuples`,  or `ComplexF64`, or a custom user defined `struct`). While a `StructArray` iterates `structs`, the layout uses separate arrays for each field of the `struct`. This is often called [Structure-Of-Arrays (SOA)](https://en.wikipedia.org/wiki/AoS_and_SoA); the concepts will be explained in greater detail below. `struct` entries of a StructArray are constructed on-the-fly. This contrasts with the "Array-Of-Structs" (AOS) layout where individual array elements are explicitly stored as `struct`s.
+This package introduces the type `StructArray` which is an `AbstractArray` whose elements are `struct` (for example `NamedTuples`,  or `ComplexF64`, or a custom user defined `struct`). While a `StructArray` iterates `structs`, the layout uses separate arrays for each field of the `struct`. This is often called [Structure-Of-Arrays (SOA)](https://en.wikipedia.org/wiki/AoS_and_SoA); the concepts will be explained in greater detail below. `struct` entries of a `StructArray` are constructed on-the-fly. This contrasts with the "Array-Of-Structs" (AOS) layout where individual array elements are explicitly stored as `struct`s.
 
-`Base.getproperty` or the dot syntax can be used to access struct fields of element of a `StructArray`, whereas elements can be accessed with `getindex` (`[]`).
+`Base.getproperty` or the dot syntax can be used to access `struct` fields of element of a `StructArray`, whereas elements can be accessed with `getindex` (`[]`).
 
 The package was largely inspired by the `Columns` type in [IndexedTables](https://github.com/JuliaComputing/IndexedTables.jl) which it now replaces.
 
 ## Collection and initialization
 
-One can create a `StructArray` by providing the struct type and a tuple or NamedTuple of field arrays:
+One can create a `StructArray` by providing the `struct` type and a `tuple` or `NamedTuple` of field arrays:
 ```@repl intro
 using StructArrays
 struct Foo{T}
@@ -19,26 +19,26 @@ adata = [1 2; 3 4]; bdata = [10 20; 30 40];
 x = StructArray{Foo}((adata, bdata))
 ```
 
-You can also initialize a StructArray by passing in a NamedTuple, in which case the name (rather than the order) specifies how the input arrays are assigned to fields:
+You can also initialize a `StructArray` by passing in a `NamedTuple`, in which case the name (rather than the order) specifies how the input arrays are assigned to fields:
 
 ```@repl intro
-x = StructArray{Foo}((b = adata, a = bdata))    # initialize a with bdata and vice versa
+x = Array{Foo}((b = adata, a = bdata))    # initialize a with bdata and vice versa
 ```
 
-If a `struct` is not specified, a StructArray with Tuple or NamedTuple elements will be created:
+If a `struct` is not specified, a `StructArray` with `tuple `or `NamedTuple` elements will be created:
 ```@repl intro
 x = StructArray((adata, bdata))
 x = StructArray((a = adata, b = bdata))
 ```
 
-It's also possible to create a `StructArray` by choosing a particular dimension to interpret as the components of a struct:
+It's also possible to create a `StructArray` by choosing a particular dimension to interpret as the components of a `struct`:
 
 ```@repl intro
 x = StructArray{Complex{Int}}(adata; dims=1)  # along dimension 1, the first item `re` and the second is `im`
 x = StructArray{Complex{Int}}(adata; dims=2)  # along dimension 2, the first item `re` and the second is `im`
 ```
 
-One can also create a `StructArray` from an iterable of structs without creating an intermediate `Array`:
+One can also create a `StructArray` from an iterable of `struct`s without creating an intermediate `Array`:
 
 ```@repl intro
 StructArray(log(j+2.0*im) for j in 1:10)
@@ -58,7 +58,7 @@ julia> rand!(s)
   0.92407+0.929336im  0.267358+0.804478im
 ```
 
-Finally, it is possible to create a StructArray from an array-of-structs:
+Finally, it is possible to create a `StructArray` from an array-of-structs:
 
 ```jldoctest; setup=:(using StructArrays)
 julia> aos = [1+2im, 3+4im]
@@ -86,7 +86,7 @@ julia> soa.re
 
 ## Using custom array types
 
-StructArrays supports using custom array types. It is always possible to pass field arrays of a custom type. The "custom array of structs to struct of custom arrays" transformation will use the `similar` method of the custom array type. This can be useful when working on the GPU for example:
+`StructArray`s supports using custom array types. It is always possible to pass field arrays of a custom type. The "custom array of `struct`s to `struct` of custom arrays" transformation will use the `similar` method of the custom array type. This can be useful when working on the GPU for example:
 
 ```julia
 julia> using StructArrays, CuArrays
@@ -140,7 +140,7 @@ julia> replace_storage(CuArray, s)
 
 ## Lazy row iteration
 
-StructArrays also provides a `LazyRow` wrapper for lazy row iteration. `LazyRow(t, i)` does not materialize the i-th row but returns a lazy wrapper around it on which `getproperty` does the correct thing. This is useful when the row has many fields only some of which are necessary. It also allows changing columns in place.
+`StructArray`s also provides a `LazyRow` wrapper for lazy row iteration. `LazyRow(t, i)` does not materialize the i-th row but returns a lazy wrapper around it on which `getproperty` does the correct thing. This is useful when the row has many fields only some of which are necessary. It also allows changing columns in place.
 
 ```julia
 julia> t = StructArray((a = [1, 2], b = ["x", "y"]));
