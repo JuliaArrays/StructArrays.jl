@@ -8,7 +8,7 @@ The package was largely inspired by the `Columns` type in [IndexedTables](https:
 
 ## Collection and initialization
 
-One can create a `StructArray` by providing the `struct` type and a `tuple` or `NamedTuple` of field arrays:
+One can create a `StructArray` by providing the `struct` type and a `Tuple` or `NamedTuple` of field arrays:
 ```@repl intro
 using StructArrays
 struct Foo{T}
@@ -25,7 +25,7 @@ You can also initialize a `StructArray` by passing in a `NamedTuple`, in which c
 x = Array{Foo}((b = adata, a = bdata))    # initialize a with bdata and vice versa
 ```
 
-If a `struct` is not specified, a `StructArray` with `tuple `or `NamedTuple` elements will be created:
+If a `struct` is not specified, a `StructArray` with `Tuple `or `NamedTuple` elements will be created:
 ```@repl intro
 x = StructArray((adata, bdata))
 x = StructArray((a = adata, b = bdata))
