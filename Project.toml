@@ -45,7 +45,7 @@ Tables = "1"
 Test = "1"
 TypedTables = "1"
 WeakRefStrings = "1"
-julia = "1.6"
+julia = "1.10"
 
 [extras]
 Adapt = "79e6a3ab-5dfb-504d-930d-738a2a938a0e"
