@@ -28,7 +28,7 @@ StructArraysSparseArraysExt = "SparseArrays"
 StructArraysStaticArraysExt = "StaticArrays"
 
 [compat]
-Adapt = "3.4, 4"
+Adapt = "4"
 Aqua = "0.8"
 ConstructionBase = "1"
 DataAPI = "1"
