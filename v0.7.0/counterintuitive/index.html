@@ -1,0 +1,138 @@
+<!DOCTYPE html>
+<html lang="en"><head><meta charset="UTF-8"/><meta name="viewport" content="width=device-width, initial-scale=1.0"/><title>Some counterintuitive behaviors · StructArrays</title><script data-outdated-warner src="../assets/warner.js"></script><link href="https://cdnjs.cloudflare.com/ajax/libs/lato-font/3.0.0/css/lato-font.min.css" rel="stylesheet" type="text/css"/><link href="https://cdnjs.cloudflare.com/ajax/libs/juliamono/0.045/juliamono.min.css" rel="stylesheet" type="text/css"/><link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.15.4/css/fontawesome.min.css" rel="stylesheet" type="text/css"/><link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.15.4/css/solid.min.css" rel="stylesheet" type="text/css"/><link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.15.4/css/brands.min.css" rel="stylesheet" type="text/css"/><link href="https://cdnjs.cloudflare.com/ajax/libs/KaTeX/0.13.24/katex.min.css" rel="stylesheet" type="text/css"/><script>documenterBaseURL=".."</script><script src="https://cdnjs.cloudflare.com/ajax/libs/require.js/2.3.6/require.min.js" data-main="../assets/documenter.js"></script><script src="../siteinfo.js"></script><script src="../../versions.js"></script><link class="docs-theme-link" rel="stylesheet" type="text/css" href="../assets/themes/documenter-dark.css" data-theme-name="documenter-dark" data-theme-primary-dark/><link class="docs-theme-link" rel="stylesheet" type="text/css" href="../assets/themes/documenter-light.css" data-theme-name="documenter-light" data-theme-primary/><script src="../assets/themeswap.js"></script></head><body><div id="documenter"><nav class="docs-sidebar"><div class="docs-package-name"><span class="docs-autofit"><a href="../">StructArrays</a></span></div><form class="docs-search" action="../search/"><input class="docs-search-query" id="documenter-search-query" name="q" type="text" placeholder="Search docs"/></form><ul class="docs-menu"><li><a class="tocitem" href="../">Overview</a></li><li><a class="tocitem" href="../examples/">Example usage</a></li><li class="is-active"><a class="tocitem" href>Some counterintuitive behaviors</a><ul class="internal"><li><a class="tocitem" href="#Modifying-a-field-of-a-struct-element"><span>Modifying a field of a struct element</span></a></li><li><a class="tocitem" href="#Broadcasted-assignment-for-array-entries"><span>Broadcasted assignment for array entries</span></a></li><li><a class="tocitem" href="#Mutability"><span>Mutability</span></a></li></ul></li><li><a class="tocitem" href="../advanced/">Advanced techniques</a></li><li><a class="tocitem" href="../reference/">Index</a></li></ul><div class="docs-version-selector field has-addons"><div class="control"><span class="docs-label button is-static is-size-7">Version</span></div><div class="docs-selector control is-expanded"><div class="select is-fullwidth is-size-7"><select id="documenter-version-selector"></select></div></div></div></nav><div class="docs-main"><header class="docs-navbar"><nav class="breadcrumb"><ul class="is-hidden-mobile"><li class="is-active"><a href>Some counterintuitive behaviors</a></li></ul><ul class="is-hidden-tablet"><li class="is-active"><a href>Some counterintuitive behaviors</a></li></ul></nav><div class="docs-right"><a class="docs-edit-link" href="https://github.com/JuliaArrays/StructArrays.jl/blob/master/docs/src/counterintuitive.md" title="Edit on GitHub"><span class="docs-icon fab"></span><span class="docs-label is-hidden-touch">Edit on GitHub</span></a><a class="docs-settings-button fas fa-cog" id="documenter-settings-button" href="#" title="Settings"></a><a class="docs-sidebar-button fa fa-bars is-hidden-desktop" id="documenter-sidebar-button" href="#"></a></div></header><article class="content" id="documenter-page"><h1 id="Some-counterintuitive-behaviors"><a class="docs-heading-anchor" href="#Some-counterintuitive-behaviors">Some counterintuitive behaviors</a><a id="Some-counterintuitive-behaviors-1"></a><a class="docs-heading-anchor-permalink" href="#Some-counterintuitive-behaviors" title="Permalink"></a></h1><p>When created from parent arrays representing each field of the final <code>struct</code>, StructArrays creates a &quot;view&quot; which doesn&#39;t explicitly store any structs; rather, it materializes a struct element on the fly when <code>getindex</code> is called. This is typically very efficient; for example, if all the struct fields are <code>isbits</code>, then materializing a new struct does not allocate.</p><p>However, on-the-fly generation means that there is no storage allocated for the created <code>struct</code>. Consequently, mutation is transient and may result in counterintuitive behavior.</p><p>Finally, when created from an array-of-structs, StructArrays creates a copy of the &quot;parent&quot; data. This effectively &quot;detaches&quot; the StructArray from the original data.</p><p>These issues are elucidated below.</p><h2 id="Modifying-a-field-of-a-struct-element"><a class="docs-heading-anchor" href="#Modifying-a-field-of-a-struct-element">Modifying a field of a struct element</a><a id="Modifying-a-field-of-a-struct-element-1"></a><a class="docs-heading-anchor-permalink" href="#Modifying-a-field-of-a-struct-element" title="Permalink"></a></h2><p>For this demonstration, throughout we&#39;ll use this mutable struct:</p><pre><code class="language-julia-repl hljs">julia&gt; mutable struct Foo{T}
+           a::T
+           b::T
+       end</code></pre><h3 id="The-&quot;view&quot;-case-(SOA)"><a class="docs-heading-anchor" href="#The-&quot;view&quot;-case-(SOA)">The &quot;view&quot; case (SOA)</a><a id="The-&quot;view&quot;-case-(SOA)-1"></a><a class="docs-heading-anchor-permalink" href="#The-&quot;view&quot;-case-(SOA)" title="Permalink"></a></h3><p>When created from separate parent arrays, you get a view of the parents, which means that modifying the <code>StructArray</code> also modifies the parents:</p><pre><code class="language-julia-repl hljs">julia&gt; a = [1,1,1,1]
+4-element Vector{Int64}:
+ 1
+ 1
+ 1
+ 1
+
+julia&gt; b = [2,2,2,2]
+4-element Vector{Int64}:
+ 2
+ 2
+ 2
+ 2
+
+julia&gt; soa = StructArray{Foo}((a, b))
+4-element StructArray(::Vector{Int64}, ::Vector{Int64}) with eltype Foo:
+ Foo{Int64}(1, 2)
+ Foo{Int64}(1, 2)
+ Foo{Int64}(1, 2)
+ Foo{Int64}(1, 2)</code></pre><p>Now let&#39;s modify some elements:</p><pre><code class="language-julia-repl hljs">julia&gt; soa.a[1] = 5
+5
+
+julia&gt; soa[2] = Foo(6, 7)
+Foo{Int64}(6, 7)
+
+julia&gt; b[3] = 8
+8</code></pre><p>All three of these modify both <code>soa</code> and the parent arrays <code>a</code> and <code>b</code>:</p><pre><code class="language-julia-repl hljs">julia&gt; soa
+4-element StructArray(::Vector{Int64}, ::Vector{Int64}) with eltype Foo:
+ Foo{Int64}(5, 2)
+ Foo{Int64}(6, 7)
+ Foo{Int64}(1, 8)
+ Foo{Int64}(1, 2)
+
+julia&gt; a
+4-element Vector{Int64}:
+ 5
+ 6
+ 1
+ 1
+
+julia&gt; b
+4-element Vector{Int64}:
+ 2
+ 7
+ 8
+ 2</code></pre><p>This is because <code>soa</code> is a &quot;view&quot; of <code>a</code> and <code>b</code> (it has no independent storage of its own).</p><p>However, you may be surprised by the following:</p><pre><code class="language-julia-repl hljs">julia&gt; soa[4].b = 9
+9
+
+julia&gt; soa
+4-element StructArray(::Vector{Int64}, ::Vector{Int64}) with eltype Foo:
+ Foo{Int64}(5, 2)
+ Foo{Int64}(6, 7)
+ Foo{Int64}(1, 8)
+ Foo{Int64}(1, 2)
+
+julia&gt; b
+4-element Vector{Int64}:
+ 2
+ 7
+ 8
+ 2</code></pre><p>This assignment had no persistent effect on <code>soa</code> or <code>b</code>. This occurs because <code>soa[4]</code> is generated on-the-fly; since it returns a <code>Foo</code>, which is mutable, you can change its fields. However, the modified <code>Foo</code> object is not stored anywhere.</p><p>To store a modification, one would instead need</p><pre><code class="language-julia-repl hljs">julia&gt; x = soa[4]; x.b = 10; soa[4] = x     # store the modified `x` in `soa`
+Foo{Int64}(1, 10)
+
+julia&gt; soa
+4-element StructArray(::Vector{Int64}, ::Vector{Int64}) with eltype Foo:
+ Foo{Int64}(5, 2)
+ Foo{Int64}(6, 7)
+ Foo{Int64}(1, 8)
+ Foo{Int64}(1, 10)
+
+julia&gt; b
+4-element Vector{Int64}:
+  2
+  7
+  8
+ 10</code></pre><div class="admonition is-info"><header class="admonition-header">Note</header><div class="admonition-body"><p>This behavior only arises for <em>mutable</em> <code>struct</code>s. If <code>Foo</code> were immutable, re-assigning the <code>b</code> field would be an error, and there would be no opportunity for confusion. Moreover, the performance of immutable struct creation is generally much better than for mutable structs. Thus, it is recommended to use immutable structs with StructArray whenever possible.</p></div></div><h3 id="The-&quot;copy&quot;-case-(AOS-SOA)"><a class="docs-heading-anchor" href="#The-&quot;copy&quot;-case-(AOS-SOA)">The &quot;copy&quot; case (AOS-&gt;SOA)</a><a id="The-&quot;copy&quot;-case-(AOS-SOA)-1"></a><a class="docs-heading-anchor-permalink" href="#The-&quot;copy&quot;-case-(AOS-SOA)" title="Permalink"></a></h3><p>Above, we created a StructArray from arrays <code>a</code> and <code>b</code>, which creates a &quot;view.&quot; The same is not true if you create a StructArray from an array-of-structs:</p><pre><code class="language-julia-repl hljs">julia&gt; aos = [Foo(1,2) for i = 1:4]
+4-element Vector{Foo{Int64}}:
+ Foo{Int64}(1, 2)
+ Foo{Int64}(1, 2)
+ Foo{Int64}(1, 2)
+ Foo{Int64}(1, 2)
+
+julia&gt; soa = StructArray(aos)
+4-element StructArray(::Vector{Int64}, ::Vector{Int64}) with eltype Foo{Int64}:
+ Foo{Int64}(1, 2)
+ Foo{Int64}(1, 2)
+ Foo{Int64}(1, 2)
+ Foo{Int64}(1, 2)
+
+julia&gt; soa.a[1] = 5
+5
+
+julia&gt; soa[2] = Foo(6, 7)
+Foo{Int64}(6, 7)
+
+julia&gt; soa
+4-element StructArray(::Vector{Int64}, ::Vector{Int64}) with eltype Foo{Int64}:
+ Foo{Int64}(5, 2)
+ Foo{Int64}(6, 7)
+ Foo{Int64}(1, 2)
+ Foo{Int64}(1, 2)
+
+julia&gt; aos
+4-element Vector{Foo{Int64}}:
+ Foo{Int64}(1, 2)
+ Foo{Int64}(1, 2)
+ Foo{Int64}(1, 2)
+ Foo{Int64}(1, 2)</code></pre><p>None of the changes to <code>soa</code> &quot;propagated&quot; to <code>aos</code>. This is because a StructArray has an SOA in-memory layout; to generate this layout, the data need to be copied. Consequently, in this case <code>soa</code> is decoupled from <code>aos</code>.</p><h2 id="Broadcasted-assignment-for-array-entries"><a class="docs-heading-anchor" href="#Broadcasted-assignment-for-array-entries">Broadcasted assignment for array entries</a><a id="Broadcasted-assignment-for-array-entries-1"></a><a class="docs-heading-anchor-permalink" href="#Broadcasted-assignment-for-array-entries" title="Permalink"></a></h2><p>Broadcasted in-place assignment can also behave counterintuitively for StructArrays.</p><pre><code class="language-julia-repl hljs">julia&gt; using StaticArrays   # for FieldVector
+
+julia&gt; mutable struct Bar{T} &lt;: FieldVector{2,T}
+       a::T
+       b::T
+       end
+
+julia&gt; x = StructArray([Bar(1,2) for i = 1:5])
+5-element StructArray(::Vector{Int64}, ::Vector{Int64}) with eltype Bar{Int64}:
+ [1, 2]
+ [1, 2]
+ [1, 2]
+ [1, 2]
+ [1, 2]
+
+julia&gt; x[1] .= 1
+2-element Bar{Int64} with indices SOneTo(2):
+ 1
+ 1
+
+julia&gt; x
+5-element StructArray(::Vector{Int64}, ::Vector{Int64}) with eltype Bar{Int64}:
+ [1, 2]
+ [1, 2]
+ [1, 2]
+ [1, 2]
+ [1, 2]</code></pre><p>Because setting <code>x[1] .= 1</code> creates a <code>Bar</code> struct first, broadcasted assignment modifies this new materialized struct rather than the StructArray <code>x</code>. Note, however, that <code>x[1] = x[1] .= 1</code> works, since it assigns the modified materialized struct to the first entry of <code>x</code>.</p><h2 id="Mutability"><a class="docs-heading-anchor" href="#Mutability">Mutability</a><a id="Mutability-1"></a><a class="docs-heading-anchor-permalink" href="#Mutability" title="Permalink"></a></h2><p>The component arrays of a StructArray can be modified in-place mutable even if the <code>struct</code> element type of the overall array is immutable. A StructArray with immutable elements will in many cases behave identically to (but be more efficient than) a StructArray with mutable elements.</p></article><nav class="docs-footer"><a class="docs-footer-prevpage" href="../examples/">« Example usage</a><a class="docs-footer-nextpage" href="../advanced/">Advanced techniques »</a><div class="flexbox-break"></div><p class="footer-message">Powered by <a href="https://github.com/JuliaDocs/Documenter.jl">Documenter.jl</a> and the <a href="https://julialang.org/">Julia Programming Language</a>.</p></nav></div><div class="modal" id="documenter-settings"><div class="modal-background"></div><div class="modal-card"><header class="modal-card-head"><p class="modal-card-title">Settings</p><button class="delete"></button></header><section class="modal-card-body"><p><label class="label">Theme</label><div class="select"><select id="documenter-themepicker"><option value="documenter-light">documenter-light</option><option value="documenter-dark">documenter-dark</option></select></div></p><hr/><p>This document was generated with <a href="https://github.com/JuliaDocs/Documenter.jl">Documenter.jl</a> version 0.27.25 on <span class="colophon-date" title="Saturday 16 November 2024 13:26">Saturday 16 November 2024</span>. Using Julia version 1.11.1.</p></section><footer class="modal-card-foot"></footer></div></div></div></body></html>
