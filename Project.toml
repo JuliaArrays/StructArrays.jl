@@ -1,9 +1,8 @@
 name = "StructArrays"
 uuid = "09ab397b-f2b6-538f-b94a-2f83cf4a842a"
-version = "0.6.19"
+version = "0.7.0"
 
 [deps]
-Adapt = "79e6a3ab-5dfb-504d-930d-738a2a938a0e"
 ConstructionBase = "187b0558-2788-49d3-abe0-74a17ed4e7c9"
 DataAPI = "9a962f9c-6df0-11e9-0e5d-c546b8b5ee8a"
 GPUArraysCore = "46192b85-c4d5-4398-a991-12ede77f4527"
@@ -16,26 +15,28 @@ Tables = "bd369af6-aec1-5ad0-b16a-f7cc5008161c"
 Adapt = "79e6a3ab-5dfb-504d-930d-738a2a938a0e"
 GPUArraysCore = "46192b85-c4d5-4398-a991-12ede77f4527"
 LinearAlgebra = "37e2e46d-f89d-539d-b4ee-838fcccc9c8e"
+KernelAbstractions = "63c18a36-062a-441e-b654-da1e3ab1ce7c"
 SparseArrays = "2f01184e-e22b-5df5-ae63-d93ebab69eaf"
 StaticArrays = "90137ffa-7385-5640-81b9-e52037218182"
 
 [extensions]
 StructArraysAdaptExt = "Adapt"
-StructArraysGPUArraysCoreExt = "GPUArraysCore"
+StructArraysGPUArraysCoreExt = ["GPUArraysCore", "KernelAbstractions"]
 StructArraysLinearAlgebraExt = "LinearAlgebra"
 StructArraysSparseArraysExt = "SparseArrays"
 StructArraysStaticArraysExt = "StaticArrays"
 
 [compat]
-Adapt = "3.4, 4"
+Adapt = "4"
 Aqua = "0.8"
 ConstructionBase = "1"
 DataAPI = "1"
 Documenter = "1"
-GPUArraysCore = "0.1.2, 0.2"
+GPUArraysCore = "0.2"
 InfiniteArrays = "0.13"
-JLArrays = "0.1"
+JLArrays = "0.2"
 LinearAlgebra = "1"
+KernelAbstractions = "0.9"
 OffsetArrays = "1"
 PooledArrays = "1"
 SparseArrays = "1"
@@ -44,7 +45,7 @@ Tables = "1"
 Test = "1"
 TypedTables = "1"
 WeakRefStrings = "1"
-julia = "1.6"
+julia = "1.10"
 
 [extras]
 Adapt = "79e6a3ab-5dfb-504d-930d-738a2a938a0e"
@@ -54,6 +55,7 @@ GPUArraysCore = "46192b85-c4d5-4398-a991-12ede77f4527"
 InfiniteArrays = "4858937d-0d70-526a-a4dd-2d5cb5dd786c"
 JLArrays = "27aeb0d3-9eb9-45fb-866b-73c2ecf80fcb"
 LinearAlgebra = "37e2e46d-f89d-539d-b4ee-838fcccc9c8e"
+KernelAbstractions = "63c18a36-062a-441e-b654-da1e3ab1ce7c"
 OffsetArrays = "6fe1bfb0-de20-5000-8ca7-80f57d26f881"
 PooledArrays = "2dfb63ee-cc39-5dd5-95bd-886bf059d720"
 SparseArrays = "2f01184e-e22b-5df5-ae63-d93ebab69eaf"
@@ -63,4 +65,4 @@ TypedTables = "9d95f2ec-7b3d-5a63-8d20-e2491e220bb9"
 WeakRefStrings = "ea10d353-3f73-51f8-a26c-33c1cb351aa5"
 
 [targets]
-test = ["Adapt", "Aqua", "Documenter", "GPUArraysCore", "InfiniteArrays", "JLArrays", "LinearAlgebra", "OffsetArrays", "PooledArrays", "SparseArrays", "StaticArrays", "Test", "TypedTables", "WeakRefStrings"]
+test = ["Adapt", "Aqua", "Documenter", "GPUArraysCore", "InfiniteArrays", "JLArrays", "LinearAlgebra", "KernelAbstractions", "OffsetArrays", "PooledArrays", "SparseArrays", "StaticArrays", "Test", "TypedTables", "WeakRefStrings"]

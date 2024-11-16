@@ -2,17 +2,18 @@ using StructArrays
 using StructArrays: staticschema, iscompatible, _promote_typejoin, append!!
 using OffsetArrays: OffsetArray, OffsetVector, OffsetMatrix
 using StaticArrays
-import Tables, PooledArrays, WeakRefStrings
 using TypedTables: Table
 using DataAPI: refarray, refvalue
 using Adapt: adapt, Adapt
 using JLArrays
-using GPUArraysCore: backend
 using LinearAlgebra
 using Test
 using SparseArrays
 using InfiniteArrays
+
 import Aqua
+import KernelAbstractions as KA
+import Tables, PooledArrays, WeakRefStrings
 
 using Documenter: doctest
 if Base.VERSION == v"1.6" && Int === Int64
@@ -1192,6 +1193,7 @@ end
 struct ArrayConverter end
 
 Adapt.adapt_storage(::ArrayConverter, xs::AbstractArray) = convert(Array, xs)
+Adapt.adapt_structure(::ArrayConverter, xs::UnitRange) = convert(Array, xs)
 
 @testset "adapt" begin
     s = StructArray(a = 1:10, b = StructArray(c = 1:10, d = 1:10))
@@ -1372,11 +1374,11 @@ Base.BroadcastStyle(::Broadcast.ArrayStyle{MyArray2}, S::Broadcast.DefaultArrayS
         a = StructArray(randn(ComplexF32, 10, 10))
         sa = jl(a)
         @test sa isa StructArray
-        @test @inferred(backend(sa)) === backend(sa.re) === backend(sa.im) === backend(jl(a.re))
+        @test @inferred(KA.get_backend(sa)) === KA.get_backend(sa.re) === KA.get_backend(sa.im) === KA.get_backend(jl(a.re))
         @test collect(@inferred(bcabs(sa))) == bcabs(a)
-        @test backend(bcabs(sa)) === backend(sa)
+        @test KA.get_backend(bcabs(sa)) === KA.get_backend(sa)
         @test @inferred(bcmul2(sa)) isa StructArray
-        @test backend(bcmul2(sa)) === backend(sa)
+        @test KA.get_backend(bcmul2(sa)) === KA.get_backend(sa)
         @test (sa .+= 1) === sa
     end
 
