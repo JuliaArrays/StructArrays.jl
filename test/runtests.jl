@@ -1190,6 +1190,24 @@ end
     end
 end
 
+@testset "metadata" begin
+    using DataAPI: colmetadatasupport, colmetadata, metadata, DataAPI
+    
+    struct MyArray <: AbstractVector{Int} end
+    Base.size(::MyArray) = (2,)
+    DataAPI.metadatasupport(::Type{<:MyArray}) = (read=true, write=false)
+    DataAPI.metadata(::MyArray) = (x=1, y="2")
+
+    sa = StructArray(a=[1,2], b=[1,2])
+    @test colmetadatasupport(typeof(sa)) == (read=false, write=false)
+
+    sa = StructArray(a=MyArray(), b=[1,2])
+    @test metadata(sa.a) == (x=1, y="2")
+    @test colmetadatasupport(typeof(sa)) == (read=true, write=false)
+    @test colmetadata(sa, :a) == (x=1, y="2")
+    @test colmetadata(sa) == (a=(x=1, y="2"), b=nothing)
+end
+
 struct ArrayConverter end
 
 Adapt.adapt_storage(::ArrayConverter, xs::AbstractArray) = convert(Array, xs)

@@ -25,6 +25,19 @@ function refvalue(s::StructArray{T}, v::Tup) where {T}
     createinstance(T, map(refvalue, components(s), v)...)
 end
 
+# implement colmetadata for StructArray based on metadata of individual columns
+import DataAPI: metadata, metadatasupport, colmetadata, colmetadatasupport
+
+colmetadatasupport(::Type{T}) where {T<:StructArray} = (
+    read=any(col -> metadatasupport(col).read, array_types(T).parameters),
+    write=false,  # not implemented
+)
+colmetadata(sa::StructArray, col::Symbol) = metadata(getproperty(sa, col))
+colmetadata(sa::StructArray) =
+    map(Tables.columns(sa)) do col
+        metadatasupport(typeof(col)).read ? metadata(col) : nothing
+    end
+
 @static if !isdefined(Base, :get_extension)
     include("../ext/StructArraysAdaptExt.jl")
     include("../ext/StructArraysGPUArraysCoreExt.jl")
