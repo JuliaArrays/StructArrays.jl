@@ -13,6 +13,7 @@ include("utils.jl")
 include("collect.jl")
 include("sort.jl")
 include("lazy.jl")
+include("constructionbase.jl")
 include("tables.jl")
 
 # Implement refarray and refvalue to deal with pooled arrays and weakrefstrings effectively
