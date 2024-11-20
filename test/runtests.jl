@@ -5,6 +5,7 @@ using StaticArrays
 using TypedTables: Table
 using DataAPI: refarray, refvalue
 using Adapt: adapt, Adapt
+using ConstructionBase: constructorof, setproperties, getproperties, getfields
 using JLArrays
 using LinearAlgebra
 using Test
@@ -527,6 +528,47 @@ end
     @test t2 == StructArray{Pair{Float64, String}}(([1.2], ["test"]))
 
     @test_throws ArgumentError StructArray(a=[1, 2], b=[3])
+end
+
+@testset "ConstructionBase" begin
+    # first, check the required invariants
+    @testset for obj in Any[
+        StructArray(([1, 2, 3],)),
+        StructArray((Int[],)),
+        StructArray(([1, 2, 3], 4:6)),
+        StructArray(a=[1, 2, 3]),
+        StructArray(a=[1, 2, 3], b=4:6),
+        StructArray([1+2im, 3+4im, 5+6im]),
+        StructArray(ComplexF64[]),
+    ]
+        # constructorof of getfields returns the same object
+        @test constructorof(typeof(obj))(getfields(obj)...) === obj
+
+        # setproperties with getproperties, or with empty properties, returns the same object
+        @test setproperties(obj, getproperties(obj)) === obj
+        if getproperties(obj) isa Tuple
+            @test setproperties(obj, ()) === obj
+        else
+            @test setproperties(obj, (;)) === obj
+        end
+    end
+
+    # now, check less trivial cases: reconstruction with different property types and names
+    s = StructArray(a=[1, 2, 3])
+    @test constructorof(typeof(s))((a=1:3,)) === StructArray(a=1:3)
+    @test constructorof(typeof(s))((b=1.0:3.0,)) === StructArray(b=1.0:3.0)
+
+    s = StructArray(a=[1, 2, 3], b=4:6)
+    @test setproperties(s, a=10:12)::StructArray === StructArray(a=10:12, b=4:6)
+    @test_throws ArgumentError setproperties(s, ccc=10:12)
+
+    s = StructArray(([1, 2, 3], 4:6))
+    @test setproperties(s, (10:12,))::StructArray === StructArray((10:12, 4:6))
+
+    s = StructArray([1+2im, 3+4im, 5+6im])
+    @test constructorof(typeof(s))((re=10:0.1:10.2, im=[1,2,3]))::StructArray == StructArray{ComplexF64}((10:0.1:10.2, [1,2,3]))
+    @test constructorof(typeof(s))((10:0.1:10.2, [1,2,3]))::StructArray == StructArray{ComplexF64}((10:0.1:10.2, [1,2,3]))
+    @test setproperties(s, re=10:0.1:10.2)::StructArray == StructArray{ComplexF64}((10:0.1:10.2, [2,4,6]))
 end
 
 @testset "complex" begin
