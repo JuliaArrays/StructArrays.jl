@@ -396,7 +396,7 @@ end
     @test s isa Matrix{Float32}
     @test size(s) == (2, 2)
 
-    s = similar(t, Float32, Int8(2), 2)
+    s = similar(t, Float32, (Int8(2), 2))
     @test s isa Matrix{Float32}
     @test size(s) == (2, 2)
 
