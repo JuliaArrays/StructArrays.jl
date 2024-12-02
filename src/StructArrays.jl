@@ -39,12 +39,4 @@ colmetadata(sa::StructArray) =
         metadatasupport(typeof(col)).read ? metadata(col) : nothing
     end
 
-@static if !isdefined(Base, :get_extension)
-    include("../ext/StructArraysAdaptExt.jl")
-    include("../ext/StructArraysGPUArraysCoreExt.jl")
-    include("../ext/StructArraysSparseArraysExt.jl")
-    include("../ext/StructArraysStaticArraysExt.jl")
-    include("../ext/StructArraysLinearAlgebraExt.jl")
-end
-
 end # module
