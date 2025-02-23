@@ -262,10 +262,8 @@ end
     @test d == c == StructArray(a=[1,10,2,3], b=[2,20,3,4], c=["a","A","b","c"])
     d = deleteat!(c, 2)
     @test d == c == StructArray(a=[1,2,3], b=[2,3,4], c=["a","b","c"])
-    if Base.VERSION >= v"1.7.0"
-        d = keepat!(c, 2)
-        @test d == c == StructArray(a=[2], b=[3], c=["b"])
-    end
+    d = keepat!(c, 2)
+    @test d == c == StructArray(a=[2], b=[3], c=["b"])
 
     c = StructArray(a=[1], b=[2], c=["a"])
     d = [(a=10, b=20, c="A")]
@@ -302,10 +300,8 @@ end
     @test d == c == StructArray{C}(a=[1,10,2,3], b=[2,20,3,4], c=["a","A","b","c"])
     d = deleteat!(c, 2)
     @test d == c == StructArray{C}(a=[1,2,3], b=[2,3,4], c=["a","b","c"])
-    if Base.VERSION >= v"1.7.0"
-        d = keepat!(c, 2)
-        @test d == c == StructArray{C}(a=[2], b=[3], c=["b"])
-    end
+    d = keepat!(c, 2)
+    @test d == c == StructArray{C}(a=[2], b=[3], c=["b"])
 
     c = StructArray{C}(a=[1], b=[2], c=["a"])
     d = [C(10, 20, "A")]
@@ -491,14 +487,12 @@ end
 end
 
 @testset "constructor from slices" begin
-    if VERSION >= v"1.1"
-        X = [1.0 2.0; 3.0 4.0]
-        @test StructArray{Complex{Float64}}(X; dims=1) == [Complex(1.0,3.0), Complex(2.0,4.0)]
-        @test StructArray{Complex{Float64}}(X; dims=2) == [Complex(1.0,2.0), Complex(3.0,4.0)]
+    X = [1.0 2.0; 3.0 4.0]
+    @test StructArray{Complex{Float64}}(X; dims=1) == [Complex(1.0,3.0), Complex(2.0,4.0)]
+    @test StructArray{Complex{Float64}}(X; dims=2) == [Complex(1.0,2.0), Complex(3.0,4.0)]
 
-        X = [1.0 2.0; 3.0 4.0; 5.0 6.0]
-        @test StructArray{Tuple{Float64,Complex{Float64}}}(X; dims=1) == [(1.0,Complex(3.0,5.0)), (2.0, Complex(4.0,6.0))]
-    end
+    X = [1.0 2.0; 3.0 4.0; 5.0 6.0]
+    @test StructArray{Tuple{Float64,Complex{Float64}}}(X; dims=1) == [(1.0,Complex(3.0,5.0)), (2.0, Complex(4.0,6.0))]
 end
 
 struct A
@@ -1105,19 +1099,11 @@ end
     io = IOBuffer()
     Base.showarg(io, rows, true)
     str = String(take!(io))
-    if VERSION < v"1.6-"
-        @test str == "LazyRows(::Array{Float64,2}, ::Array{Float64,2}) with eltype LazyRow{Complex{Float64}}"
-    else
-        @test str == "LazyRows(::Matrix{Float64}, ::Matrix{Float64}) with eltype LazyRow{ComplexF64}"
-    end
+    @test str == "LazyRows(::Matrix{Float64}, ::Matrix{Float64}) with eltype LazyRow{ComplexF64}"
     io = IOBuffer()
     Base.showarg(io, rows, false)
     str = String(take!(io))
-    if VERSION < v"1.6-"
-        @test str == "LazyRows(::Array{Float64,2}, ::Array{Float64,2})"
-    else
-        @test str == "LazyRows(::Matrix{Float64}, ::Matrix{Float64})"
-    end
+    @test str == "LazyRows(::Matrix{Float64}, ::Matrix{Float64})"
     s = StructArray((rand(10, 10), rand(10, 10)))
     rows = LazyRows(s)
     @test IndexStyle(rows) isa IndexLinear
@@ -1137,19 +1123,11 @@ end
     io = IOBuffer()
     Base.showarg(io, rows, true)
     str = String(take!(io))
-    if VERSION < v"1.6-"
-        @test str == "LazyRows(::Array{Float64,2}, ::Array{Float64,2}) with eltype LazyRow{Tuple{Float64,Float64}}"
-    else
-        @test str == "LazyRows(::Matrix{Float64}, ::Matrix{Float64}) with eltype LazyRow{Tuple{Float64, Float64}}"
-    end
+    @test str == "LazyRows(::Matrix{Float64}, ::Matrix{Float64}) with eltype LazyRow{Tuple{Float64, Float64}}"
     io = IOBuffer()
     Base.showarg(io, rows, false)
     str = String(take!(io))
-    if VERSION < v"1.6-"
-        @test str == "LazyRows(::Array{Float64,2}, ::Array{Float64,2})"
-    else
-        @test str == "LazyRows(::Matrix{Float64}, ::Matrix{Float64})"
-    end
+    @test str == "LazyRows(::Matrix{Float64}, ::Matrix{Float64})"
 end
 
 @testset "refarray" begin
@@ -1179,19 +1157,11 @@ end
     io = IOBuffer()
     Base.showarg(io, s, true)
     str = String(take!(io))
-    if VERSION < v"1.6-"
-        @test str == "StructArray(::Array{Int64,1}, ::Array{Int64,1}) with eltype Complex{Int64}"
-    else
-        @test str == "StructArray(::Vector{Int64}, ::Vector{Int64}) with eltype Complex{Int64}"
-    end
+    @test str == "StructArray(::Vector{Int64}, ::Vector{Int64}) with eltype Complex{Int64}"
     io = IOBuffer()
     Base.showarg(io, s, false)
     str = String(take!(io))
-    if VERSION < v"1.6-"
-        @test str == "StructArray(::Array{Int64,1}, ::Array{Int64,1})"
-    else
-        @test str == "StructArray(::Vector{Int64}, ::Vector{Int64})"
-    end
+    @test str == "StructArray(::Vector{Int64}, ::Vector{Int64})"
 end
 
 @testset "append!!" begin
@@ -1468,7 +1438,7 @@ end
     t = map(x -> (a=rand(["", 1, nothing]),), StructVector(a=1:10))::StructVector
     @test eltype(t) <: NamedTuple{(:a,)}
 
-    t = VERSION >= v"1.7" ? @inferred(map(x -> (a=x.a, b=2), s)) : map(x -> (a=x.a, b=2), s)
+    t = @inferred map(x -> (a=x.a, b=2), s)
     @test t isa StructArray
     @test map(x -> (a=x.a, b=2), s) == [(a=1, b=2), (a=2, b=2), (a=3, b=2)]
 
