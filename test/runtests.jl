@@ -1636,5 +1636,5 @@ end
 end
 
 @testset "project quality" begin
-    Aqua.test_all(StructArrays, ambiguities = VERSION >= v"1.10")
+    Aqua.test_all(StructArrays)
 end
