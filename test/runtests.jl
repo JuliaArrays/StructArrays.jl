@@ -17,7 +17,7 @@ import KernelAbstractions as KA
 import Tables, PooledArrays, WeakRefStrings
 
 using Documenter: doctest
-if Base.VERSION == v"1.6" && Int === Int64
+if v"1.10" ≤ Base.VERSION < v"1.11" && Int === Int64
     doctest(StructArrays)
 end
 
