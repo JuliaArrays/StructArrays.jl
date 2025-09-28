@@ -6,6 +6,7 @@ using ConstructionBase: constructorof
 export StructArray, StructVector, LazyRow, LazyRows
 export collect_structarray
 export replace_storage
+export components
 
 include("interface.jl")
 include("structarray.jl")
