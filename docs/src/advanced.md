@@ -99,7 +99,7 @@ Combined with [function barriers](https://docs.julialang.org/en/latest/manual/pe
 
 ## Using StructArrays in CUDA kernels
 
-It is possible to combine StructArrays with [CUDA](https://github.com/JuliaGPU/CUDAn.jl), in order to create CUDA kernels that work on StructArrays directly on the GPU. Make sure you are familiar with the CUDAnative documentation (esp. kernels with plain `CuArray`s) before experimenting with kernels based on `StructArray`s.
+It is possible to combine StructArrays with [CUDA](https://github.com/JuliaGPU/CUDA.jl), in order to create CUDA kernels that work on StructArrays directly on the GPU. Make sure you are familiar with the CUDAnative documentation (esp. kernels with plain `CuArray`s) before experimenting with kernels based on `StructArray`s.
 
 ```julia
 using CUDA, StructArrays
