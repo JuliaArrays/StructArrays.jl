@@ -11,6 +11,7 @@ using LinearAlgebra
 using Test
 using SparseArrays
 using InfiniteArrays
+using FixedSizeArrays
 
 import Aqua
 import KernelAbstractions as KA
@@ -1603,6 +1604,18 @@ end
         @test A * v ≈ MA * Mv
         @test mul!(ones(ComplexF64,size(v)), A, v, 2.0, 3.0) ≈ 2 * A * v .+ 3
     end
+end
+
+@testset "FixedSizeArray" begin
+    itr = (ComplexF64(x, x) for x in 1:10)
+    a = collect_structarray(
+        itr;
+        initializer = StructArrays.fixed_size_array_backed_initializer,
+    )
+    @test a isa StructArray
+    @test a.re isa FixedSizeArray
+    b = collect_structarray(itr)
+    @test all(a .== b)
 end
 
 @testset "project quality" begin
