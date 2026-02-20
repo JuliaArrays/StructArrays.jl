@@ -5,6 +5,7 @@ version = "0.7.2"
 [deps]
 ConstructionBase = "187b0558-2788-49d3-abe0-74a17ed4e7c9"
 DataAPI = "9a962f9c-6df0-11e9-0e5d-c546b8b5ee8a"
+LightBoundsErrors = "e21c612c-4641-4669-b9c3-3f4360ced9da"
 Tables = "bd369af6-aec1-5ad0-b16a-f7cc5008161c"
 
 [weakdeps]
@@ -31,6 +32,7 @@ Documenter = "1"
 GPUArraysCore = "0.2"
 InfiniteArrays = "0.15"
 JLArrays = "0.2"
+LightBoundsErrors = "1"
 LinearAlgebra = "1"
 KernelAbstractions = "0.9"
 OffsetArrays = "1"

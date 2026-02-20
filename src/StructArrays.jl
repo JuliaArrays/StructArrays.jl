@@ -17,6 +17,8 @@ include("lazy.jl")
 include("constructionbase.jl")
 include("tables.jl")
 
+using LightBoundsErrors: checkbounds_lightboundserror
+
 # Implement refarray and refvalue to deal with pooled arrays and weakrefstrings effectively
 import DataAPI: refarray, refvalue
 using DataAPI: defaultarray
