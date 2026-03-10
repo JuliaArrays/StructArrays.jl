@@ -342,6 +342,10 @@ map(c -> c[I...], Tuple(cols))
 """
 @inline @generated get_ith(cols::Tup, I...) = :(Base.Cartesian.@ntuple $(fieldcount(cols)) i -> @inbounds cols[i][I...])
 
+function Base.checkbounds(x::StructArray, I...)
+    checkbounds_lightboundserror(x, I...)
+end
+
 Base.@propagate_inbounds Base.getindex(x::StructArray, I...) = _getindex(x, to_indices(x, I)...)
 
 Base.@propagate_inbounds function _getindex(x::StructArray{T}, I::Vararg{Int}) where {T}

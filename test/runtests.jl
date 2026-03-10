@@ -11,6 +11,7 @@ using LinearAlgebra
 using Test
 using SparseArrays
 using InfiniteArrays
+using LightBoundsErrors: LightBoundsError
 
 import Aqua
 import KernelAbstractions as KA
@@ -43,7 +44,7 @@ Base.convert(::Type{Millimeters}, x::Meters) = Millimeters(x.x*1000)
     t = StructArray((a = a, b = b))
     @test (@inferred t[2,2]) == (a = 4, b = 7)
     @test (@inferred t[2,1:2]) == StructArray((a = [3, 4], b = [6, 7]))
-    @test_throws BoundsError t[3,3]
+    @test_throws LightBoundsError t[3,3]
     @test (@inferred view(t, 2, 1:2)) == StructArray((a = view(a, 2, 1:2), b = view(b, 2, 1:2)))
     @test @inferred(parentindices(view(t, 2, 1:2))) == (2, 1:2)
     @test_throws ArgumentError parentindices(StructArray((view([1, 2], [1]), view([1, 2], [2]))))
