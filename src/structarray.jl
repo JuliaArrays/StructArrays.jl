@@ -452,6 +452,16 @@ function Base.sizehint!(s::StructArray, i::Integer)
     return s
 end
 
+function _reducecat_structarray(op, A::AbstractVector{<:StructArray})
+    isempty(A) && return Base.mapreduce_empty(eltype, promote_type, eltype(A))
+    cols = map(components, A)
+    firstcols = first(cols)
+    ks = keys(firstcols)
+    newcols = ntuple(i -> reduce(op, map(Base.Fix2(getindex, ks[i]), cols)), length(firstcols))
+    T = mapreduce(eltype, promote_type, A)
+    return StructArray{T}(strip_params(typeof(firstcols))(newcols))
+end
+
 for op in [:cat, :hcat, :vcat]
     curried_op = Symbol(:curried, op)
     @eval begin
@@ -463,6 +473,9 @@ for op in [:cat, :hcat, :vcat]
         end
     end
 end
+
+Base.reduce(::typeof(vcat), A::AbstractVector{<:StructArray}) = _reducecat_structarray(vcat, A)
+Base.reduce(::typeof(hcat), A::AbstractVector{<:StructArray}) = _reducecat_structarray(hcat, A)
 
 Base.copy(s::StructArray{T}) where {T} = StructArray{T}(map(copy, components(s)))
 

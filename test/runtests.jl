@@ -693,6 +693,16 @@ end
     @test @inferred(vcat(t3)) == t3
     @inferred vcat(t3, t3)
     @inferred vcat(t3, collect(t3))
+    a = StructArray(y = Union{Missing, Int}[missing])
+    b = StructArray(y = [3])
+    c = StructArray(y = Union{Missing, Int}[4])
+    reduced_vcat = reduce(vcat, [a, b, c])
+    @test eltype(reduced_vcat) === eltype(vcat(a, b, c))
+    @test isequal(reduced_vcat, vcat(a, b, c))
+    @test reduced_vcat.y isa Vector{Union{Missing, Int}}
+    reduced_hcat = reduce(hcat, [reshape(a, 1, 1), reshape(b, 1, 1), reshape(c, 1, 1)])
+    @test isequal(reduced_hcat, hcat(reshape(a, 1, 1), reshape(b, 1, 1), reshape(c, 1, 1)))
+    @test reduced_hcat.y isa Matrix{Union{Missing, Int}}
     # Check that `cat(dims=1)` doesn't commit type piracy (#254)
     # We only test that this works, the return value is immaterial
     @test cat(dims=1) == vcat()
