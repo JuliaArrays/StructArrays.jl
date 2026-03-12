@@ -696,13 +696,33 @@ end
     a = StructArray(y = Union{Missing, Int}[missing])
     b = StructArray(y = [3])
     c = StructArray(y = Union{Missing, Int}[4])
+    vcatted = vcat(a, b, c)
+    @test eltype(vcatted) === NamedTuple{(:y,), Tuple{Union{Missing, Int}}}
     reduced_vcat = reduce(vcat, [a, b, c])
-    @test eltype(reduced_vcat) === eltype(vcat(a, b, c))
-    @test isequal(reduced_vcat, vcat(a, b, c))
+    @test eltype(reduced_vcat) === eltype(vcatted)
+    @test isequal(reduced_vcat, vcatted)
     @test reduced_vcat.y isa Vector{Union{Missing, Int}}
+    hcatted = hcat(reshape(a, 1, 1), reshape(b, 1, 1), reshape(c, 1, 1))
+    @test eltype(hcatted) === NamedTuple{(:y,), Tuple{Union{Missing, Int}}}
     reduced_hcat = reduce(hcat, [reshape(a, 1, 1), reshape(b, 1, 1), reshape(c, 1, 1)])
-    @test isequal(reduced_hcat, hcat(reshape(a, 1, 1), reshape(b, 1, 1), reshape(c, 1, 1)))
+    @test eltype(reduced_hcat) === eltype(hcatted)
+    @test isequal(reduced_hcat, hcatted)
     @test reduced_hcat.y isa Matrix{Union{Missing, Int}}
+
+    struct CatTestType{A, B}
+        a::A
+        b::B
+    end
+    custom_a = StructArray{CatTestType{Int, Missing}}((a = [1], b = Missing[missing]))
+    custom_b = StructArray{CatTestType{Int, Int}}((a = [2], b = [3]))
+    custom_vcat = vcat(custom_a, custom_b, custom_a)
+    @test custom_vcat == CatTestType{Int}[CatTestType(1, missing), CatTestType(2, 3), CatTestType(1, missing)]
+    @test custom_vcat.b isa Vector{Union{Missing, Int}}
+    reduced_custom_vcat = reduce(vcat, [custom_a, custom_b, custom_a])
+    @test isequal(reduced_custom_vcat, custom_vcat)
+    @test eltype(reduced_custom_vcat) === eltype(custom_vcat) === CatTestType{Int}
+    @test reduced_custom_vcat.b isa Vector{Union{Missing, Int}}
+
     # Check that `cat(dims=1)` doesn't commit type piracy (#254)
     # We only test that this works, the return value is immaterial
     @test cat(dims=1) == vcat()

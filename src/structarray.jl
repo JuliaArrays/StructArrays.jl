@@ -452,14 +452,18 @@ function Base.sizehint!(s::StructArray, i::Integer)
     return s
 end
 
+_cateltype(::Type{T}, newcols::Tup) where {T<:Tup} = eltypes(newcols)
+_cateltype(::Type{T}, newcols::Tup) where {T} = T
+
 function _reducecat_structarray(op, A::AbstractVector{<:StructArray})
     isempty(A) && return Base.mapreduce_empty(eltype, promote_type, eltype(A))
     cols = map(components, A)
     firstcols = first(cols)
     ks = keys(firstcols)
     newcols = ntuple(i -> reduce(op, map(Base.Fix2(getindex, ks[i]), cols)), length(firstcols))
-    T = mapreduce(eltype, promote_type, A)
-    return StructArray{T}(strip_params(typeof(firstcols))(newcols))
+    typedcols = strip_params(typeof(firstcols))(newcols)
+    T = _cateltype(mapreduce(eltype, promote_type, A), typedcols)
+    return StructArray{T}(typedcols)
 end
 
 for op in [:cat, :hcat, :vcat]
@@ -468,8 +472,9 @@ for op in [:cat, :hcat, :vcat]
         function Base.$op(arg::StructArray, others::StructArray...; kwargs...)
             $curried_op(A...) = $op(A...; kwargs...)
             args = (arg, others...)
-            T = mapreduce(eltype, promote_type, args)
-            StructArray{T}(map($curried_op, map(components, args)...))
+            newcols = map($curried_op, map(components, args)...)
+            T = _cateltype(mapreduce(eltype, promote_type, args), newcols)
+            StructArray{T}(newcols)
         end
     end
 end
