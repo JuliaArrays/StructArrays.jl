@@ -723,6 +723,24 @@ end
     @test eltype(reduced_custom_vcat) === eltype(custom_vcat) === CatTestType{Int}
     @test reduced_custom_vcat.b isa Vector{Union{Missing, Int}}
 
+    # error behavior is consistent between reduce(vcat) and vcat(), and is generally reasonable
+    mismatched_names_a = StructArray(a = [1], b = [2])
+    mismatched_names_b = StructArray(x = [3], y = [4])
+    @test_throws ArgumentError vcat(mismatched_names_a, mismatched_names_b)
+    @test_throws ArgumentError reduce(vcat, [mismatched_names_a, mismatched_names_b])
+    mixed_rowtype_a = StructArray(re = [1.0], im = [2.0])
+    mixed_rowtype_b = StructArray(ComplexF64[3 + 4im])
+    @test_throws ArgumentError vcat(mixed_rowtype_a, mixed_rowtype_b)
+    @test_throws ArgumentError reduce(vcat, [mixed_rowtype_a, mixed_rowtype_b])
+    different_names_a = StructArray(a = [1])
+    different_names_b = StructArray(x = [2], y = [3], z = [4])
+    @test_throws ArgumentError vcat(different_names_a, different_names_b)
+    @test_throws ArgumentError reduce(vcat, [different_names_a, different_names_b])
+    different_lengths_a = StructArray(([1], [2], [3]))
+    different_lengths_b = StructArray(([4], [5]))
+    @test_throws ArgumentError reduce(vcat, [different_lengths_a, different_lengths_b])
+    @test_throws ArgumentError reduce(hcat, [reshape(different_lengths_a, 1, 1), reshape(different_lengths_b, 1, 1)])
+
     # Check that `cat(dims=1)` doesn't commit type piracy (#254)
     # We only test that this works, the return value is immaterial
     @test cat(dims=1) == vcat()
