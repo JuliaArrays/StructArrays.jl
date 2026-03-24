@@ -33,12 +33,12 @@ function StructArrays.component(s::StructArray{<:Union{SVector,MVector}}, key::S
     StructArrays.component(s, i)
 end
 
-# invoke general fallbacks for a `FieldArray` type.
+# use general fallbacks for a `FieldArray` type.
 @inline function StructArrays.staticschema(T::Type{<:FieldArray})
-    invoke(StructArrays.staticschema, Tuple{Type{<:Any}}, T)
+    StructArrays.staticschema_generic(T)
 end
-StructArrays.component(s::FieldArray, i) = invoke(StructArrays.component, Tuple{Any, Any}, s, i)
-StructArrays.createinstance(T::Type{<:FieldArray}, args...) = invoke(StructArrays.createinstance, Tuple{Type{<:Any}, Vararg}, T, args...)
+StructArrays.component(s::FieldArray, i) = getfield(s, i)
+StructArrays.createinstance(T::Type{<:FieldArray}, args...) = StructArrays.createinstance_generic(T, args...)
 
 # disambiguation
 Base.similar(s::StructArray, S::Type, sz::Tuple{Union{Integer, Base.OneTo, SOneTo}, Vararg{Union{Union{Integer, Base.OneTo, SOneTo}}}}) = StructArrays._similar(s, S, sz)
