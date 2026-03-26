@@ -25,7 +25,11 @@ julia> StructArrays.staticschema(Complex{Float64})
 NamedTuple{(:re, :im),Tuple{Float64,Float64}}
 ```
 """
-@generated function staticschema(::Type{T}) where {T}
+function staticschema(::Type{T}) where {T}
+    return staticschema_generic(T)
+end
+
+@generated function staticschema_generic(::Type{T}) where {T}
     name_tuple = Expr(:tuple, [QuoteNode(f) for f in fieldnames(T)]...)
     type_tuple = Expr(:curly, :Tuple, [Expr(:call, :fieldtype, :T, i) for i in 1:fieldcount(T)]...)
     Expr(:curly, :NamedTuple, name_tuple, type_tuple)
@@ -46,6 +50,10 @@ julia> StructArrays.createinstance(Complex{Float64}, (re=1.0, im=2.0)...)
 ```
 """
 function createinstance(::Type{T}, args...)::T where {T}
+    return createinstance_generic(T, args...)
+end
+
+function createinstance_generic(::Type{T}, args...)::T where {T}
     isconcretetype(T) ? bypass_constructor(T, args) : constructorof(T)(args...)
 end
 
