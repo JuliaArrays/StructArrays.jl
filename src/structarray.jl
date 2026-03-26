@@ -452,17 +452,35 @@ function Base.sizehint!(s::StructArray, i::Integer)
     return s
 end
 
+_cateltype(::Type{T}, newcols::Tup) where {T<:Tup} = eltypes(newcols)
+_cateltype(::Type{T}, newcols::Tup) where {T} = T
+
+function _reducecat_structarray(op, A::AbstractVector{<:StructArray})
+    isempty(A) && return Base.mapreduce_empty(eltype, promote_type, eltype(A))
+    cols = map(components, A)
+    firstcols = first(cols)
+    all(col -> keys(col) == keys(firstcols), cols) || throw(ArgumentError("StructArray columns must have matching keys."))
+    newcols = map(key -> reduce(op, map(Base.Fix2(getindex, key), cols)), keys(firstcols))
+    typedcols = strip_params(typeof(firstcols))(newcols)
+    T = _cateltype(mapreduce(eltype, promote_type, A), typedcols)
+    return StructArray{T}(typedcols)
+end
+
 for op in [:cat, :hcat, :vcat]
     curried_op = Symbol(:curried, op)
     @eval begin
         function Base.$op(arg::StructArray, others::StructArray...; kwargs...)
             $curried_op(A...) = $op(A...; kwargs...)
             args = (arg, others...)
-            T = mapreduce(eltype, promote_type, args)
-            StructArray{T}(map($curried_op, map(components, args)...))
+            newcols = map($curried_op, map(components, args)...)
+            T = _cateltype(mapreduce(eltype, promote_type, args), newcols)
+            StructArray{T}(newcols)
         end
     end
 end
+
+Base.reduce(::typeof(vcat), A::AbstractVector{<:StructArray}) = _reducecat_structarray(vcat, A)
+Base.reduce(::typeof(hcat), A::AbstractVector{<:StructArray}) = _reducecat_structarray(hcat, A)
 
 Base.copy(s::StructArray{T}) where {T} = StructArray{T}(map(copy, components(s)))
 

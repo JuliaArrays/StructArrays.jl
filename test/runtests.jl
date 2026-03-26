@@ -693,6 +693,54 @@ end
     @test @inferred(vcat(t3)) == t3
     @inferred vcat(t3, t3)
     @inferred vcat(t3, collect(t3))
+    a = StructArray(y = Union{Missing, Int}[missing])
+    b = StructArray(y = [3])
+    c = StructArray(y = Union{Missing, Int}[4])
+    vcatted = vcat(a, b, c)
+    @test eltype(vcatted) === NamedTuple{(:y,), Tuple{Union{Missing, Int}}}
+    reduced_vcat = reduce(vcat, [a, b, c])
+    @test eltype(reduced_vcat) === eltype(vcatted)
+    @test isequal(reduced_vcat, vcatted)
+    @test reduced_vcat.y isa Vector{Union{Missing, Int}}
+    hcatted = hcat(reshape(a, 1, 1), reshape(b, 1, 1), reshape(c, 1, 1))
+    @test eltype(hcatted) === NamedTuple{(:y,), Tuple{Union{Missing, Int}}}
+    reduced_hcat = reduce(hcat, [reshape(a, 1, 1), reshape(b, 1, 1), reshape(c, 1, 1)])
+    @test eltype(reduced_hcat) === eltype(hcatted)
+    @test isequal(reduced_hcat, hcatted)
+    @test reduced_hcat.y isa Matrix{Union{Missing, Int}}
+
+    struct CatTestType{A, B}
+        a::A
+        b::B
+    end
+    custom_a = StructArray{CatTestType{Int, Missing}}((a = [1], b = Missing[missing]))
+    custom_b = StructArray{CatTestType{Int, Int}}((a = [2], b = [3]))
+    custom_vcat = vcat(custom_a, custom_b, custom_a)
+    @test custom_vcat == CatTestType{Int}[CatTestType(1, missing), CatTestType(2, 3), CatTestType(1, missing)]
+    @test custom_vcat.b isa Vector{Union{Missing, Int}}
+    reduced_custom_vcat = reduce(vcat, [custom_a, custom_b, custom_a])
+    @test isequal(reduced_custom_vcat, custom_vcat)
+    @test eltype(reduced_custom_vcat) === eltype(custom_vcat) === CatTestType{Int}
+    @test reduced_custom_vcat.b isa Vector{Union{Missing, Int}}
+
+    # error behavior is consistent between reduce(vcat) and vcat(), and is generally reasonable
+    mismatched_names_a = StructArray(a = [1], b = [2])
+    mismatched_names_b = StructArray(x = [3], y = [4])
+    @test_throws ArgumentError vcat(mismatched_names_a, mismatched_names_b)
+    @test_throws ArgumentError reduce(vcat, [mismatched_names_a, mismatched_names_b])
+    mixed_rowtype_a = StructArray(re = [1.0], im = [2.0])
+    mixed_rowtype_b = StructArray(ComplexF64[3 + 4im])
+    @test_throws ArgumentError vcat(mixed_rowtype_a, mixed_rowtype_b)
+    @test_throws ArgumentError reduce(vcat, [mixed_rowtype_a, mixed_rowtype_b])
+    different_names_a = StructArray(a = [1])
+    different_names_b = StructArray(x = [2], y = [3], z = [4])
+    @test_throws ArgumentError vcat(different_names_a, different_names_b)
+    @test_throws ArgumentError reduce(vcat, [different_names_a, different_names_b])
+    different_lengths_a = StructArray(([1], [2], [3]))
+    different_lengths_b = StructArray(([4], [5]))
+    @test_throws ArgumentError reduce(vcat, [different_lengths_a, different_lengths_b])
+    @test_throws ArgumentError reduce(hcat, [reshape(different_lengths_a, 1, 1), reshape(different_lengths_b, 1, 1)])
+
     # Check that `cat(dims=1)` doesn't commit type piracy (#254)
     # We only test that this works, the return value is immaterial
     @test cat(dims=1) == vcat()
