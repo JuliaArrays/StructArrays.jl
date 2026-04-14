@@ -344,6 +344,8 @@ map(c -> c[I...], Tuple(cols))
 
 Base.@propagate_inbounds Base.getindex(x::StructArray, I...) = _getindex(x, to_indices(x, I)...)
 
+Base.getindex(s::StructArray{<:NamedTuple, <:Any, <:NamedTuple}, keys::Tuple{Vararg{Symbol}}) = StructArray(components(s)[keys])
+
 Base.@propagate_inbounds function _getindex(x::StructArray{T}, I::Vararg{Int}) where {T}
     cols = components(x)
     @boundscheck checkbounds(x, I...)
