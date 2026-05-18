@@ -22,7 +22,7 @@ x = StructArray{Foo}((adata, bdata))
 You can also initialize a `StructArray` by passing in a `NamedTuple`, in which case the name (rather than the order) specifies how the input arrays are assigned to fields:
 
 ```@repl intro
-x = Array{Foo}((b = adata, a = bdata))    # initialize a with bdata and vice versa
+x = StructArray{Foo}((b = adata, a = bdata))    # initialize a with bdata and vice versa
 ```
 
 If a `struct` is not specified, a `StructArray` with `Tuple `or `NamedTuple` elements will be created:
