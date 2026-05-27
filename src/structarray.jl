@@ -516,25 +516,30 @@ function Base.showarg(io::IO, s::StructArray{T}, toplevel) where T
 end
 
 # broadcast
-import Base.Broadcast: BroadcastStyle, AbstractArrayStyle, Broadcasted, DefaultArrayStyle, Unknown, ArrayConflict
+import Base.Broadcast: BroadcastStyle, AbstractArrayStyle, Broadcasted, DefaultArrayStyle, Unknown, ArrayConflict, Style
 using Base.Broadcast: combine_styles
 
 struct StructArrayStyle{S, N} <: AbstractArrayStyle{N} end
-
-# Here we define the dimension tracking behavior of StructArrayStyle
-function StructArrayStyle{S, M}(::Val{N}) where {S, M, N}
-    T = S <: AbstractArrayStyle{M} ? typeof(S(Val{N}())) : S
-    return StructArrayStyle{T, N}()
+StructArrayStyle(::S) where S<:AbstractArrayStyle{N} where N = StructArrayStyle{S, N}()
+StructArrayStyle(::S) where {S<:StructArrayStyle} = S()
+StructArrayStyle(::S, ::Val{N}) where {S,N} = StructArrayStyle(S(Val(N)))
+StructArrayStyle(::Val{N}) where {N} = StructArrayStyle{DefaultArrayStyle{N}, N}()
+function StructArrayStyle(a::BroadcastStyle, b::BroadcastStyle)
+    # This is a hack so if we have an ArrayConflict it gets wrapped in StructArrayStyle
+    inner_style = Broadcast.result_style(a, b)
+    if inner_style isa Unknown
+        return Unknown()
+    else
+        return StructArrayStyle(inner_style)
+    end
 end
 
-# StructArrayStyle is a wrapped style.
-# Here we try our best to resolve style conflict.
-function BroadcastStyle(b::AbstractArrayStyle{M}, a::StructArrayStyle{S, N}) where {S, N, M}
-    N′ = M === Any || N === Any ? Any : max(M, N)
-    S′ = Broadcast.result_style(S(), b)
-    return S′ isa StructArrayStyle ? typeof(S′)(Val{N′}()) : StructArrayStyle{typeof(S′), N′}()
-end
-BroadcastStyle(::StructArrayStyle, ::DefaultArrayStyle) = Unknown()
+BroadcastStyle(::StructArrayStyle, ::Unknown) = Unknown()
+BroadcastStyle(::StructArrayStyle{A}, ::StructArrayStyle{B}) where {A, B} = StructArrayStyle(A(), B())
+BroadcastStyle(::StructArrayStyle{S}, b::AbstractArrayStyle) where {S} = StructArrayStyle(S(), b)
+BroadcastStyle(::StructArrayStyle{S}, b::DefaultArrayStyle) where {S} = StructArrayStyle(S(), b)
+BroadcastStyle(::StructArrayStyle{S}, b::Style{Tuple}) where {S} = StructArrayStyle(S(), b)
+
 
 @inline combine_style_types(::Type{A}, args...) where {A<:AbstractArray} =
     combine_style_types(BroadcastStyle(A), args...)
