@@ -61,6 +61,9 @@ Base.convert(::Type{Millimeters}, x::Meters) = Millimeters(x.x*1000)
 
     s = StructArray(a=1:5)
     @test s[2:3].a === 2:3
+
+    t2 = StructArray(x = [1, 2], y = [3, 4], z = [5, 6])
+    @test t2[(:x, :y)] == StructArray(x = [1, 2], y = [3, 4])
 end
 
 @testset "eltype conversion" begin
