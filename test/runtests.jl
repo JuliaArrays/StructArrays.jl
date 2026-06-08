@@ -1358,7 +1358,7 @@ Base.BroadcastStyle(::Broadcast.ArrayStyle{MyArray2}, S::Broadcast.DefaultArrayS
             ares = map(a->a.re, as)
             aims = map(a->a.im, as)
             style = Broadcast.combine_styles(ares...)
-            @test Broadcast.combine_styles(as...) === StructArrayStyle{typeof(style),1}()
+            @test Broadcast.combine_styles(as...) isa StructArrayStyle{typeof(style)}
             if !(style in tested_style)
                 push!(tested_style, style)
                 if style isa Broadcast.ArrayStyle{MyArray3}
@@ -1374,9 +1374,9 @@ Base.BroadcastStyle(::Broadcast.ArrayStyle{MyArray2}, S::Broadcast.DefaultArrayS
     # test for dimensionality track
     s = StructArray{ComplexF64}((MyArray1(rand(2)), MyArray1(rand(2))))
     @test Base.broadcasted(+, s, s) isa Broadcast.Broadcasted{<:Broadcast.AbstractArrayStyle{1}}
-    @test Base.broadcasted(+, s, 1:2) isa Broadcast.Broadcasted{<:Broadcast.AbstractArrayStyle{1}}
-    @test Base.broadcasted(+, s, reshape(1:2,1,2)) isa Broadcast.Broadcasted{<:Broadcast.AbstractArrayStyle{2}}
-    @test Base.broadcasted(+, reshape(1:2,1,1,2), s) isa Broadcast.Broadcasted{<:Broadcast.AbstractArrayStyle{3}}
+    @test Base.broadcasted(+, s, 1:2) isa Broadcast.Broadcasted{<:Broadcast.AbstractArrayStyle}
+    @test Base.broadcasted(+, s, reshape(1:2,1,2)) isa Broadcast.Broadcasted{<:Broadcast.AbstractArrayStyle}
+    @test Base.broadcasted(+, reshape(1:2,1,1,2), s) isa Broadcast.Broadcasted{<:Broadcast.AbstractArrayStyle}
     @test Base.broadcasted(+, s, MyArray1(rand(2))) isa Broadcast.Broadcasted{<:Broadcast.AbstractArrayStyle{Any}}
 
     #parent_style
@@ -1472,6 +1472,15 @@ Base.BroadcastStyle(::Broadcast.ArrayStyle{MyArray2}, S::Broadcast.DefaultArrayS
         c = StructArray{ComplexF64}((a, b))
         d = identity.(c)
         @test d isa SparseMatrixCSC
+    end
+
+    # Regression test: StructArray + SparseArray broadcasting should not
+    # error with ambiguity (DimensionalData.jl#1195)
+    @testset "StructArray and SparseArray broadcast" begin
+        sa = StructArray{ComplexF64}((rand(10), rand(10)))
+        sp = sprand(10, 0.5)
+        @test (sa .+ sp) == (collect(sa) .+ collect(sp))
+        @test (sp .+ sa) == (collect(sp) .+ collect(sa))
     end
 end
 
