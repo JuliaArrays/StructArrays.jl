@@ -18,21 +18,13 @@ struct StructArray{T, N, C<:Tup, I} <: AbstractArray{T, N}
         ax = findconsistentvalue(axes, c)
         (ax === nothing) && throw(ArgumentError("all component arrays must have the same shape"))
         length(ax) == N || throw(ArgumentError("wrong number of dimensions"))
-        new{T, N, C, index_type(c)}(c)
+        # Compute optimal type to use for indexing as a function of components
+        I = IndexStyle(c...) isa IndexLinear ? Int : CartesianIndex{N}
+        return new{T, N, C, I}(c)
     end
 end
 
-# compute optimal type to use for indexing as a function of components
-index_type(components::NamedTuple) = index_type(values(components))
-index_type(::Tuple{}) = Int
-function index_type(components::Tuple)
-    f, ls = first(components), tail(components)
-    return IndexStyle(f) isa IndexCartesian ? CartesianIndex{ndims(f)} : index_type(ls)
-end
-# Only check first component if the all the component types match
-index_type(components::NTuple) = invoke(index_type, Tuple{Tuple}, (first(components),))
-# Return the index type parameter as a function of the StructArray type or instance
-index_type(s::StructArray) = index_type(typeof(s))
+# Return the index type parameter as a function of the StructArray type
 index_type(::Type{StructArray{T, N, C, I}}) where {T, N, C, I} = I
 
 array_types(::Type{StructArray{T, N, C, I}}) where {T, N, C, I} = array_types(C)
