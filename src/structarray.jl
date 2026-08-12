@@ -350,6 +350,12 @@ Base.@propagate_inbounds function _getindex(x::StructArray{T}, I::Vararg{Int}) w
     return createinstance(T, get_ith(cols, I...)...)
 end
 
+Base.@propagate_inbounds function _getindex(x::StructArray{T}, I::Vararg{Int}) where {T<:Tup}
+    cols = components(x)
+    @boundscheck checkbounds(x, I...)
+    return T(get_ith(cols, I...))
+end
+
 @inline function _getindex(s::StructArray{T}, I...) where {T}
     @boundscheck checkbounds(s, I...)
     StructArray{T}(map(v -> @inbounds(getindex(v, I...)), components(s)))

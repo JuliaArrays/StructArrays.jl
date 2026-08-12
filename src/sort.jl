@@ -35,8 +35,24 @@ Base.eltype(::Type{<:GroupPerm}) = UnitRange{Int}
     return eq
 end
 
-roweq(t::Tuple{}, i, j) = true
-roweq(t::Tuple, i, j) = roweq(t[1], i, j) ? roweq(tail(t), i, j) : false
+_roweq(t::Tuple{}, i, j) = true
+_roweq(t::Tuple, i, j) = roweq(t[1], i, j) ? _roweq(tail(t), i, j) : false
+function roweq(t::T, i, j) where {T<:Tuple}
+    if @generated
+        types = fieldtypes(T)
+        if length(types) > 32 && all(==(types[1]), types) && isconcretetype(types[1])
+            return quote
+                for col in t
+                    roweq(col, i, j) || return false
+                end
+                return true
+            end
+        end
+        return :(_roweq(t, i, j))
+    else
+        return _roweq(t, i, j)
+    end
+end
 roweq(s::StructArray, i, j) = roweq(Tuple(components(s)), i, j)
 
 function uniquesorted(keys, perm=sortperm(keys))
@@ -72,30 +88,29 @@ forward_vec(::Ordering) = nothing
 
 # Methods from IndexedTables to refine sorting:
 # # assuming x[p] is sorted, sort by remaining columns where x[p] is constant
-function refine_perm!(p, cols, c, x, y′, lo, hi)
-    temp = similar(p, 0)
+function refine_perm!(p, cols, c, x, y′, lo, hi, temp=similar(p, 0), counts=Int[])
     order = Perm(Forward, y′)
     y = something(forward_vec(order), y′)
     nc = length(cols)
     for idxs in GroupPerm(x, p, lo:hi)
         i, i1 = extrema(idxs)
         if i1 > i
-            sort_sub_by!(p, i, i1, y, order, temp)
+            sort_sub_by!(p, i, i1, y, order, temp, counts)
             if c < nc-1
                 z = cols[c+2]
-                refine_perm!(p, cols, c+1, y, z, i, i1)
+                refine_perm!(p, cols, c+1, y, z, i, i1, temp, counts)
             end
         end
     end
 end
 
 # sort the values in v[i0:i1] in place, by array `by`
-Base.@noinline function sort_sub_by!(v, i0, i1, by, order, temp)
+Base.@noinline function sort_sub_by!(v, i0, i1, by, order, temp, counts=Int[])
     empty!(temp)
     sort!(v, i0, i1, MergeSort, order, temp)
 end
 
-Base.@noinline function sort_sub_by!(v, i0, i1, by::AbstractVector{T}, order, temp) where T<:Integer
+Base.@noinline function sort_sub_by!(v, i0, i1, by::AbstractVector{T}, order, temp, counts=Int[]) where T<:Integer
     min = max = by[v[i0]]
     @inbounds for i = i0+1:i1
         val = by[v[i]]
@@ -108,7 +123,7 @@ Base.@noinline function sort_sub_by!(v, i0, i1, by::AbstractVector{T}, order, te
     rangelen = max-min+1
     n = i1-i0+1
     if rangelen <= n
-        sort_int_range_sub_by!(v, i0-1, n, by, rangelen, min, temp)
+        sort_int_range_sub_by!(v, i0-1, n, by, rangelen, min, temp, counts)
     else
         empty!(temp)
         sort!(v, i0, i1, MergeSort, order, temp)
@@ -117,10 +132,11 @@ Base.@noinline function sort_sub_by!(v, i0, i1, by::AbstractVector{T}, order, te
 end
 
 # in-place counting sort of x[ioffs+1:ioffs+n] by values in `by`
-function sort_int_range_sub_by!(x, ioffs, n, by, rangelen, minval, temp)
+function sort_int_range_sub_by!(x, ioffs, n, by, rangelen, minval, temp, where=Int[])
     offs = 1 - minval
 
-    where = fill(0, rangelen+1)
+    resize!(where, rangelen+1)
+    fill!(where, 0)
     where[1] = 1
     @inbounds for i = 1:n
         where[by[x[i+ioffs]] + offs + 1] += 1
