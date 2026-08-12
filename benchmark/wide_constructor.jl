@@ -3,7 +3,8 @@ using StructArrays
 
 construct_wide(columns) = StructArray(columns)
 
-columns = ntuple(_ -> rand(1), 128)
+names = ntuple(i -> Symbol(:x, i), 128)
+columns = NamedTuple{names}(ntuple(_ -> rand(1), 128))
 probe = construct_wide(columns)
 @assert size(probe) == (1,)
 
