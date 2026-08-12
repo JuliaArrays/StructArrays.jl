@@ -216,9 +216,25 @@ function _findconsistentvalue(f, cols)
     return ifelse(isconsistent, val, nothing)
 end
 
-findconsistentvalue(f::F, cols::NamedTuple) where {F} = _findconsistentvalue(f, cols)
-
 function findconsistentvalue(f::F, cols::T) where {F, T<:Tuple}
+    if @generated
+        types = fieldtypes(T)
+        if length(types) > 32 && all(==(types[1]), types) && isconcretetype(types[1])
+            return quote
+                val = f(first(cols))
+                for col in cols
+                    isequal(val, f(col)) || return nothing
+                end
+                return val
+            end
+        end
+        return :(_findconsistentvalue(f, cols))
+    else
+        return _findconsistentvalue(f, cols)
+    end
+end
+
+function findconsistentvalue(f::F, cols::T) where {F, T<:NamedTuple}
     if @generated
         types = fieldtypes(T)
         if length(types) > 32 && all(==(types[1]), types) && isconcretetype(types[1])
