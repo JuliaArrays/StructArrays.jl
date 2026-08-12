@@ -35,8 +35,24 @@ Base.eltype(::Type{<:GroupPerm}) = UnitRange{Int}
     return eq
 end
 
-roweq(t::Tuple{}, i, j) = true
-roweq(t::Tuple, i, j) = roweq(t[1], i, j) ? roweq(tail(t), i, j) : false
+_roweq(t::Tuple{}, i, j) = true
+_roweq(t::Tuple, i, j) = roweq(t[1], i, j) ? _roweq(tail(t), i, j) : false
+function roweq(t::T, i, j) where {T<:Tuple}
+    if @generated
+        types = fieldtypes(T)
+        if length(types) > 32 && all(==(types[1]), types) && isconcretetype(types[1])
+            return quote
+                for col in t
+                    roweq(col, i, j) || return false
+                end
+                return true
+            end
+        end
+        return :(_roweq(t, i, j))
+    else
+        return _roweq(t, i, j)
+    end
+end
 roweq(s::StructArray, i, j) = roweq(Tuple(components(s)), i, j)
 
 function uniquesorted(keys, perm=sortperm(keys))
