@@ -72,8 +72,7 @@ forward_vec(::Ordering) = nothing
 
 # Methods from IndexedTables to refine sorting:
 # # assuming x[p] is sorted, sort by remaining columns where x[p] is constant
-function refine_perm!(p, cols, c, x, y′, lo, hi)
-    temp = similar(p, 0)
+function refine_perm!(p, cols, c, x, y′, lo, hi, temp=similar(p, 0))
     order = Perm(Forward, y′)
     y = something(forward_vec(order), y′)
     nc = length(cols)
@@ -83,7 +82,7 @@ function refine_perm!(p, cols, c, x, y′, lo, hi)
             sort_sub_by!(p, i, i1, y, order, temp)
             if c < nc-1
                 z = cols[c+2]
-                refine_perm!(p, cols, c+1, y, z, i, i1)
+                refine_perm!(p, cols, c+1, y, z, i, i1, temp)
             end
         end
     end
