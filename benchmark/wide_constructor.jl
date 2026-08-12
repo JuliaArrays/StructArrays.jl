@@ -1,9 +1,7 @@
 using BenchmarkTools
 using StructArrays
 
-function construct_wide(columns::NTuple{N, Vector{Float64}}) where {N}
-    StructArray{NTuple{N, Float64}}(columns)
-end
+construct_wide(columns) = StructArray(columns)
 
 columns = ntuple(_ -> rand(1), 128)
 probe = construct_wide(columns)

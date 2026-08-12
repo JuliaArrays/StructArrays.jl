@@ -3,7 +3,18 @@ argtail(_, args...) = args
 split_tuple_type(T) = fieldtype(T, 1), Tuple{argtail(T.parameters...)...}
 
 eltypes(nt::NamedTuple{names}) where {names} = NamedTuple{names, eltypes(values(nt))}
-eltypes(t::Tuple) = Tuple{map(eltype, t)...}
+_eltypes(t::Tuple) = Tuple{map(eltype, t)...}
+function eltypes(t::T) where {T<:Tuple}
+    if @generated
+        types = fieldtypes(T)
+        if !isempty(types) && all(==(types[1]), types) && isconcretetype(types[1]) && types[1] <: AbstractArray
+            return :(NTuple{$(length(types)), $(eltype(types[1]))})
+        end
+        return :(_eltypes(t))
+    else
+        return _eltypes(t)
+    end
+end
 
 alwaysfalse(t) = false
 
