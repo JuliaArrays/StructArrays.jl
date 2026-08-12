@@ -199,8 +199,28 @@ maybe_convert_elt(::Type{T}, vals::NamedTuple) where T = T<:NamedTuple ? convert
 Compute the unique value that `f` takes on each `component ∈ components`.
 If not all values are equal, return `nothing`. Otherwise, return the unique value.
 """
-function findconsistentvalue(f::F, cols::Tup) where F
+function _findconsistentvalue(f, cols)
     val = f(first(cols))
     isconsistent = all(map(isequal(val) ∘ f, values(cols)))
     return ifelse(isconsistent, val, nothing)
+end
+
+findconsistentvalue(f::F, cols::NamedTuple) where {F} = _findconsistentvalue(f, cols)
+
+function findconsistentvalue(f::F, cols::T) where {F, T<:Tuple}
+    if @generated
+        types = fieldtypes(T)
+        if length(types) > 32 && all(==(types[1]), types) && isconcretetype(types[1])
+            return quote
+                val = f(first(cols))
+                for col in cols
+                    isequal(val, f(col)) || return nothing
+                end
+                return val
+            end
+        end
+        return :(_findconsistentvalue(f, cols))
+    else
+        return _findconsistentvalue(f, cols)
+    end
 end
