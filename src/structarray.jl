@@ -642,7 +642,7 @@ end
 
 # for aliasing analysis during broadcast
 function Broadcast.broadcast_unalias(dest::StructArray, src::AbstractArray)
-    if dest === src || any(Base.Fix2(===, src), components(dest))
+    if dest === src || any(Base.Fix2(===, src), values(components(dest))) # values() works around Julia 1.13 allocation regression
         return src
     else
         return Base.unalias(dest, src)
