@@ -1,4 +1,4 @@
-module StructArraysLinearAlgebraExt
+module LinearAlgebraExt
 
 using StructArrays
 using LinearAlgebra

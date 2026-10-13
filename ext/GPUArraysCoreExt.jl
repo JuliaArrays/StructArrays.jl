@@ -1,4 +1,4 @@
-module StructArraysGPUArraysCoreExt
+module GPUArraysCoreExt
 
 using StructArrays
 using StructArrays: map_params, array_types

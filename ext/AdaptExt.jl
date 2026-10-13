@@ -1,4 +1,4 @@
-module StructArraysAdaptExt
+module AdaptExt
 # Use Adapt allows for automatic conversion of CPU to GPU StructArrays
 using Adapt, StructArrays
 
