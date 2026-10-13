@@ -17,7 +17,8 @@ StaticArrays = "90137ffa-7385-5640-81b9-e52037218182"
 
 [extensions]
 AdaptExt = "Adapt"
-GPUArraysCoreExt = ["GPUArraysCore", "KernelAbstractions"]
+GPUArraysCoreExt = "GPUArraysCore"
+KernelAbstractionsExt = "KernelAbstractions"
 LinearAlgebraExt = "LinearAlgebra"
 SparseArraysExt = "SparseArrays"
 StaticArraysExt = "StaticArrays"
