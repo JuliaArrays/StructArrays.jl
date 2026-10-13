@@ -1,4 +1,12 @@
 using StructArrays
+using Test
+import KernelAbstractions as KA
+
+@testset "KernelAbstractions without GPUArraysCore" begin
+    s = StructArray(a=[1, 2], b=[3, 4])
+    @test (@inferred KA.get_backend(s)) == KA.CPU()
+end
+
 using StructArrays: staticschema, iscompatible, _promote_typejoin, append!!
 using OffsetArrays: OffsetArray, OffsetVector, OffsetMatrix
 using StaticArrays
@@ -8,12 +16,10 @@ using Adapt: adapt, Adapt
 using ConstructionBase: constructorof, setproperties, getproperties, getfields
 using JLArrays
 using LinearAlgebra
-using Test
 using SparseArrays
 using InfiniteArrays
 
 import Aqua
-import KernelAbstractions as KA
 import Tables, PooledArrays, WeakRefStrings
 
 using Documenter: doctest
