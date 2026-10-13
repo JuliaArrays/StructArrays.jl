@@ -1534,6 +1534,7 @@ end
         # potential ambiguities
         x = StructArray((SA[1,2], SA[1,2]))
         @test eltype(similar(x)::StructArray) == eltype(x)
+        @test eltype(similar(typeof(x), axes(x))::StructArray) == eltype(x)
         @test map(x->x, x)::StructArray == x
         @test size(reshape(x, (SOneTo(2), SOneTo(1)))::StructArray) == (2, 1)
     end
