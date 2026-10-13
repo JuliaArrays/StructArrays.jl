@@ -40,7 +40,7 @@ StaticArrays = "1.5.6"
 Tables = "1"
 Test = "1"
 TypedTables = "1"
-WeakRefStrings = "1"
+WeakRefStrings = "1, 2"
 julia = "1.10"
 
 [extras]
