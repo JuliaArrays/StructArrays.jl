@@ -1,7 +1,7 @@
 module StructArraysStaticArraysExt
 
 using StructArrays
-using StaticArrays: StaticArray, FieldArray, tuple_prod, SVector, MVector, SOneTo
+using StaticArrays: StaticArray, FieldArray, tuple_prod, SVector, MVector, SOneTo, HeterogeneousShapeTuple
 
 """
     StructArrays.staticschema(::Type{<:StaticArray{S, T}}) where {S, T}
@@ -41,7 +41,11 @@ StructArrays.component(s::FieldArray, i) = getfield(s, i)
 StructArrays.createinstance(T::Type{<:FieldArray}, args...) = StructArrays.createinstance_generic(T, args...)
 
 # disambiguation
-Base.similar(s::StructArray, S::Type, sz::Tuple{Union{Integer, Base.OneTo, SOneTo}, Vararg{Union{Union{Integer, Base.OneTo, SOneTo}}}}) = StructArrays._similar(s, S, sz)
+let shape = isdefined(Base, :AbstractOneTo) && SOneTo <: Base.AbstractOneTo ?
+        Tuple{SOneTo, Vararg{SOneTo}} : HeterogeneousShapeTuple
+    @eval Base.similar(s::StructArray, ::Type{T}, sz::$shape) where T = StructArrays._similar(s, T, sz)
+    @eval Base.similar(::Type{<:StructArray{T, N, C}}, sz::$shape) where {T, N, C} = StructArrays.buildfromschema(typ -> similar(typ, sz), T, C)
+end
 Base.reshape(s::StructArray{T}, d::Tuple{SOneTo, Vararg{SOneTo}}) where {T} = StructArray{T}(map(x -> reshape(x, d), StructArrays.components(s)))
 
 # Broadcast overload
