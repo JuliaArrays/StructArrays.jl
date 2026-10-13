@@ -1,6 +1,6 @@
 name = "StructArrays"
 uuid = "09ab397b-f2b6-538f-b94a-2f83cf4a842a"
-version = "0.7.3"
+version = "0.7.4"
 
 [deps]
 ConstructionBase = "187b0558-2788-49d3-abe0-74a17ed4e7c9"
@@ -30,8 +30,8 @@ DataAPI = "1"
 Documenter = "1"
 GPUArraysCore = "0.2"
 InfiniteArrays = "0.15"
-JLArrays = "0.2"
-KernelAbstractions = "0.9"
+JLArrays = "0.2, 0.4"
+KernelAbstractions = "0.9, 0.10"
 LinearAlgebra = "1"
 OffsetArrays = "1"
 PooledArrays = "1"
