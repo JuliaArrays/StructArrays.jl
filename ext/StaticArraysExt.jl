@@ -1,4 +1,4 @@
-module StructArraysStaticArraysExt
+module StaticArraysExt
 
 using StructArrays
 using StaticArrays: StaticArray, FieldArray, tuple_prod, SVector, MVector, SOneTo, HeterogeneousShapeTuple

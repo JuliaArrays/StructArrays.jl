@@ -1,4 +1,4 @@
-module StructArraysSparseArraysExt
+module SparseArraysExt
 
 using StructArrays: StructArray, components, createinstance
 import SparseArrays: sparse, issparse
