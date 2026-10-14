@@ -3,7 +3,18 @@ argtail(_, args...) = args
 split_tuple_type(T) = fieldtype(T, 1), Tuple{argtail(T.parameters...)...}
 
 eltypes(nt::NamedTuple{names}) where {names} = NamedTuple{names, eltypes(values(nt))}
-eltypes(t::Tuple) = Tuple{map(eltype, t)...}
+_eltypes(t::Tuple) = Tuple{map(eltype, t)...}
+function eltypes(t::T) where {T<:Tuple}
+    if @generated
+        types = fieldtypes(T)
+        if !isempty(types) && all(==(types[1]), types) && isconcretetype(types[1]) && types[1] <: AbstractArray
+            return :(NTuple{$(length(types)), $(eltype(types[1]))})
+        end
+        return :(_eltypes(t))
+    else
+        return _eltypes(t)
+    end
+end
 
 alwaysfalse(t) = false
 
@@ -199,8 +210,44 @@ maybe_convert_elt(::Type{T}, vals::NamedTuple) where T = T<:NamedTuple ? convert
 Compute the unique value that `f` takes on each `component ∈ components`.
 If not all values are equal, return `nothing`. Otherwise, return the unique value.
 """
-function findconsistentvalue(f::F, cols::Tup) where F
+function _findconsistentvalue(f, cols)
     val = f(first(cols))
     isconsistent = all(map(isequal(val) ∘ f, values(cols)))
     return ifelse(isconsistent, val, nothing)
+end
+
+function findconsistentvalue(f::F, cols::T) where {F, T<:Tuple}
+    if @generated
+        types = fieldtypes(T)
+        if length(types) > 32 && all(==(types[1]), types) && isconcretetype(types[1])
+            return quote
+                val = f(first(cols))
+                for col in cols
+                    isequal(val, f(col)) || return nothing
+                end
+                return val
+            end
+        end
+        return :(_findconsistentvalue(f, cols))
+    else
+        return _findconsistentvalue(f, cols)
+    end
+end
+
+function findconsistentvalue(f::F, cols::T) where {F, T<:NamedTuple}
+    if @generated
+        types = fieldtypes(T)
+        if length(types) > 32 && all(==(types[1]), types) && isconcretetype(types[1])
+            return quote
+                val = f(first(cols))
+                for col in cols
+                    isequal(val, f(col)) || return nothing
+                end
+                return val
+            end
+        end
+        return :(_findconsistentvalue(f, cols))
+    else
+        return _findconsistentvalue(f, cols)
+    end
 end
