@@ -1660,6 +1660,104 @@ end
     end
 end
 
+@testset "wide component tuples" begin
+    # These widths are above `StructArrays.WIDE_TUPLE_LENGTH`, exercising the
+    # loop-based code paths for homogeneous component tuples.
+    N = 2 * StructArrays.WIDE_TUPLE_LENGTH
+    names = ntuple(i -> Symbol(:x, i), N)
+
+    @testset "construction" begin
+        cols = ntuple(_ -> rand(10), N)
+        s = @inferred StructArray(cols)
+        @test eltype(s) == NTuple{N, Float64}
+        @test size(s) == (10,)
+        @test @allocated(StructArray(cols)) == 0
+
+        ncols = NamedTuple{names}(cols)
+        ns = @inferred StructArray(ncols)
+        @test eltype(ns) == NamedTuple{names, NTuple{N, Float64}}
+        @test @allocated(StructArray(ncols)) == 0
+
+        bad = ntuple(i -> i == N ? rand(9) : rand(10), N)
+        @test_throws ArgumentError StructArray(bad)
+        @test_throws ArgumentError StructArray(NamedTuple{names}(bad))
+        bad2d = ntuple(i -> i == N ? rand(10, 1) : rand(10), N)
+        @test_throws ArgumentError StructArray(bad2d)
+
+        # heterogeneous wide tuples still go through the generic path
+        mixed = ntuple(i -> isodd(i) ? rand(10) : rand(1:3, 10), N)
+        ms = StructArray(mixed)
+        @test eltype(ms) == Tuple{ntuple(i -> isodd(i) ? Float64 : Int, N)...}
+    end
+
+    @testset "getindex" begin
+        cols = ntuple(_ -> rand(10), N)
+        s = StructArray(cols)
+        rowsum(s, i) = sum(s[i]) # avoid measuring the boxing of a returned wide tuple
+        @test @inferred(s[3]) == map(c -> c[3], cols)
+        rowsum(s, 3)
+        @test @allocated(rowsum(s, 3)) == 0
+        @test_throws BoundsError s[11]
+
+        ns = StructArray(NamedTuple{names}(cols))
+        @test @inferred(ns[3]) == NamedTuple{names}(map(c -> c[3], cols))
+        rowsum(ns, 3)
+        @test @allocated(rowsum(ns, 3)) == 0
+
+        # conversion to the declared eltype is preserved
+        cs = StructArray{NTuple{2, Float64}}(([1, 2], [3, 4]))
+        @test cs[1] === (1.0, 3.0)
+        cns = StructArray{@NamedTuple{a::Float64, b::Int}}(([1, 2], [3, 4]))
+        @test cns[2] === (a = 2.0, b = 4)
+    end
+
+    @testset "roweq and grouping" begin
+        cols = ntuple(i -> rand(1:2, 200), N)
+        s = StructArray(cols)
+        for (i, j) in ((1, 1), (1, 2), (3, 7))
+            @test StructArrays.roweq(s, i, j) == (s[i] == s[j])
+        end
+        t = StructArray(ntuple(_ -> [1, 1, 2], N))
+        @test StructArrays.roweq(t, 1, 2)
+        @test !StructArrays.roweq(t, 1, 3)
+        @test @allocated(StructArrays.roweq(t, 1, 2)) == 0
+
+        k = StructArray(ntuple(i -> i == N ? [1, 2, 1, 2] : [1, 1, 1, 1], N))
+        groups = collect(StructArrays.GroupPerm(k, sortperm(k)))
+        @test length(groups) == 2
+        @test all(g -> allequal(k[sortperm(k)[g]]), groups)
+    end
+end
+
+@testset "sortperm workspace reuse" begin
+    # Many subgroups on several levels, so the merge-sort scratch vector and the
+    # counting-sort histogram are reused (and resized) across recursive calls.
+    for T in (Int, Float64)
+        n = 2_000
+        cols = (T.(rand(1:4, n)), T.(rand(1:8, n)), T.(rand(1:3, n)), T.(rand(1:50, n)), T.(rand(1:2, n)))
+        s = StructArray(cols)
+        p = sortperm(s)
+        @test p == sortperm(collect(s))
+        @test issorted(s[p])
+    end
+    # integer sub-keys whose ranges shrink and grow between groups
+    a = repeat(1:3, inner = 4)
+    b = [5, 1, 3, 2, 100, 90, 95, 99, 0, -3, 7, 7]
+    s = StructArray((a, b))
+    @test sortperm(s) == sortperm(collect(s))
+end
+
+@testset "append! with iterator" begin
+    s = StructArray(a = [1], b = [1.0])
+    itr = ((a = i, b = Float64(i)) for i in 2:100)
+    append!(s, itr)
+    @test s.a == 1:100
+    @test s.b == 1.0:100.0
+    # unknown length
+    append!(s, ((a = i, b = Float64(i)) for i in 101:200 if iseven(i)))
+    @test s.a == [1:100; 102:2:200]
+end
+
 @testset "project quality" begin
     Aqua.test_all(StructArrays)
 end
