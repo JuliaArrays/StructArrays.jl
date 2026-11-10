@@ -3,7 +3,7 @@ argtail(_, args...) = args
 split_tuple_type(T) = fieldtype(T, 1), Tuple{argtail(T.parameters...)...}
 
 eltypes(nt::NamedTuple{names}) where {names} = NamedTuple{names, eltypes(values(nt))}
-eltypes(t::Tuple) = Tuple{map(eltype, t)...}
+eltypes(t::Tuple) = Tuple{_mapcols(eltype, t)...}
 
 alwaysfalse(t) = false
 

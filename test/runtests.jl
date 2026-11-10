@@ -799,8 +799,8 @@ end
         t = StructArray(cols)
         row = t[1]
 
-        @test (@inferred StructArray(cols)) == t broken=true
-        @test (@inferred StructArrays.eltypes(cols)) == eltype(t) broken=true
+        @test (@inferred StructArray(cols)) == t
+        @test (@inferred StructArrays.eltypes(cols)) == eltype(t)
 
         @test (@inferred t[1]) == row
         @test (@inferred t[1:2]) == t
