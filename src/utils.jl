@@ -2,8 +2,23 @@ argtail(_, args...) = args
 
 split_tuple_type(T) = fieldtype(T, 1), Tuple{argtail(T.parameters...)...}
 
+# Above this many components, recursive/splatting tuple code hits Julia's
+# specialization limits, so homogeneous component tuples use a loop instead.
+const WIDE_TUPLE_LENGTH = 32
+
 eltypes(nt::NamedTuple{names}) where {names} = NamedTuple{names, eltypes(values(nt))}
-eltypes(t::Tuple) = Tuple{map(eltype, t)...}
+_eltypes(t::Tuple) = Tuple{map(eltype, t)...}
+function eltypes(t::T) where {T<:Tuple}
+    if @generated
+        types = fieldtypes(T)
+        if !isempty(types) && all(==(types[1]), types) && isconcretetype(types[1]) && types[1] <: AbstractArray
+            return :(NTuple{$(length(types)), $(eltype(types[1]))})
+        end
+        return :(_eltypes(t))
+    else
+        return _eltypes(t)
+    end
+end
 
 alwaysfalse(t) = false
 
@@ -193,14 +208,33 @@ maybe_convert_elt(::Type{T}, vals) where T = convert(T, vals)
 maybe_convert_elt(::Type{T}, vals::Tuple) where T = T <: Tuple ? convert(T, vals) : vals  # assignment of fields by position
 maybe_convert_elt(::Type{T}, vals::NamedTuple) where T = T<:NamedTuple ? convert(T, vals) : vals # assignment of fields by name
 
+function _findconsistentvalue(f, cols)
+    val = f(first(cols))
+    isconsistent = all(map(isequal(val) ∘ f, values(cols)))
+    return ifelse(isconsistent, val, nothing)
+end
+
 """
     findconsistentvalue(f, components::Union{Tuple, NamedTuple})
 
 Compute the unique value that `f` takes on each `component ∈ components`.
 If not all values are equal, return `nothing`. Otherwise, return the unique value.
 """
-function findconsistentvalue(f::F, cols::Tup) where F
-    val = f(first(cols))
-    isconsistent = all(map(isequal(val) ∘ f, values(cols)))
-    return ifelse(isconsistent, val, nothing)
+function findconsistentvalue(f::F, cols::T) where {F, T<:Tup}
+    if @generated
+        types = fieldtypes(T)
+        if length(types) > WIDE_TUPLE_LENGTH && all(==(types[1]), types) && isconcretetype(types[1])
+            # Unrolled with constant field indices: looping over `cols` would
+            # index it dynamically, which can force a wide tuple onto the heap.
+            checks = [:(isequal(val, f(getfield(cols, $i))) || return nothing) for i in 2:length(types)]
+            return quote
+                val = f(getfield(cols, 1))
+                $(checks...)
+                return val
+            end
+        end
+        return :(_findconsistentvalue(f, cols))
+    else
+        return _findconsistentvalue(f, cols)
+    end
 end

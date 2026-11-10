@@ -31,6 +31,16 @@ end
 try_compatible_columns(rows::StructArray{T}, s::StructArray{T}) where {T} = Tables.columntable(rows)
 try_compatible_columns(rows::StructArray{R}, s::StructArray{S}) where {R,S} = nothing
 
+function _prepare_rows!(s, rows, ::typeof(push!))
+    _sizehint_rows!(s, rows, Base.IteratorSize(rows))
+end
+_prepare_rows!(s, rows, ::typeof(pushfirst!)) = s
+
+function _sizehint_rows!(s, rows, ::Union{Base.HasLength, Base.HasShape})
+    sizehint!(s, length(s) + length(rows))
+end
+_sizehint_rows!(s, rows, ::Any) = s
+
 for (f, g) in zip((:append!, :prepend!), (:push!, :pushfirst!))
     @eval function Base.$f(s::StructVector, rows)
         table = try_compatible_columns(rows, s)
@@ -42,6 +52,7 @@ for (f, g) in zip((:append!, :prepend!), (:push!, :pushfirst!))
         else
             # Otherwise, fallback to a generic implementation expecting
             # that `rows` is an iterator:
+            _prepare_rows!(s, rows, $g)
             return foldl($g, rows; init = s)
         end
     end
