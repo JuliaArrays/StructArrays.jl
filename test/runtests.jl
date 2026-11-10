@@ -790,6 +790,36 @@ end
     @inferred map_params_infer()
 end
 
+@testset "wide components" begin
+    # Base.map loses inference on tuples with 32 or more elements,
+    # so componentwise operations must not rely on it
+    widecols(n, het) = ntuple(i -> het && iseven(i) ? [1.0, 2.0] : [1, 2], n)
+    @testset "$n columns, $(het ? "mixed" : "same") types, $(named ? "NamedTuple" : "Tuple")" for n in (32, 64), het in (false, true), named in (false, true)
+        cols = named ? NamedTuple{ntuple(i -> Symbol(:x, i), n)}(widecols(n, het)) : widecols(n, het)
+        t = StructArray(cols)
+        row = t[1]
+
+        @test (@inferred StructArray(cols)) == t broken=true
+        @test (@inferred StructArrays.eltypes(cols)) == eltype(t) broken=true
+
+        @test (@inferred t[1]) == row
+        @test (@inferred t[1:2]) == t broken=true
+        @test (@inferred view(t, 1:2)) == t broken=true
+
+        @test (@inferred similar(t)) isa typeof(t) broken=true
+        @test (@inferred similar(t, 3)) isa typeof(t) broken=true
+        @test (@inferred copy(t)) == t broken=true
+        @test (@inferred reshape(t, 1, 2)) == reshape(collect(t), 1, 2) broken=true
+        @test (@inferred deleteat!(copy(t), 1)) == t[2:2] broken=true
+        @test (@inferred keepat!(copy(t), [1])) == t[1:1] broken=true
+        @test (@inferred pop!(copy(t))) == t[2] broken=!named
+        @test (@inferred popfirst!(copy(t))) == row broken=!named
+        @test (@inferred refarray(t)) == t broken=true
+        @test (@inferred StructArrays.replace_storage(identity, t)) == t broken=true
+        @test (@inferred StructArrays.colmetadata(t)) == map(_ -> nothing, Tables.columns(t)) broken=true
+    end
+end
+
 @testset "propertynames" begin
     a = StructArray{ComplexF64}((Float64[], Float64[]))
     @test sort(collect(propertynames(a))) == [:im, :re]
