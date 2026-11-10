@@ -40,7 +40,7 @@ _roweq(t::Tuple, i, j) = roweq(t[1], i, j) ? _roweq(tail(t), i, j) : false
 function roweq(t::T, i, j) where {T<:Tuple}
     if @generated
         types = fieldtypes(T)
-        if length(types) > 32 && all(==(types[1]), types) && isconcretetype(types[1])
+        if length(types) > WIDE_TUPLE_LENGTH && all(==(types[1]), types) && isconcretetype(types[1])
             return quote
                 for col in t
                     roweq(col, i, j) || return false

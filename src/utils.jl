@@ -2,6 +2,10 @@ argtail(_, args...) = args
 
 split_tuple_type(T) = fieldtype(T, 1), Tuple{argtail(T.parameters...)...}
 
+# Above this many components, recursive/splatting tuple code hits Julia's
+# specialization limits, so homogeneous component tuples use a loop instead.
+const WIDE_TUPLE_LENGTH = 32
+
 eltypes(nt::NamedTuple{names}) where {names} = NamedTuple{names, eltypes(values(nt))}
 _eltypes(t::Tuple) = Tuple{map(eltype, t)...}
 function eltypes(t::T) where {T<:Tuple}
@@ -216,28 +220,10 @@ function _findconsistentvalue(f, cols)
     return ifelse(isconsistent, val, nothing)
 end
 
-function findconsistentvalue(f::F, cols::T) where {F, T<:Tuple}
+function findconsistentvalue(f::F, cols::T) where {F, T<:Tup}
     if @generated
         types = fieldtypes(T)
-        if length(types) > 32 && all(==(types[1]), types) && isconcretetype(types[1])
-            return quote
-                val = f(first(cols))
-                for col in cols
-                    isequal(val, f(col)) || return nothing
-                end
-                return val
-            end
-        end
-        return :(_findconsistentvalue(f, cols))
-    else
-        return _findconsistentvalue(f, cols)
-    end
-end
-
-function findconsistentvalue(f::F, cols::T) where {F, T<:NamedTuple}
-    if @generated
-        types = fieldtypes(T)
-        if length(types) > 32 && all(==(types[1]), types) && isconcretetype(types[1])
+        if length(types) > WIDE_TUPLE_LENGTH && all(==(types[1]), types) && isconcretetype(types[1])
             return quote
                 val = f(first(cols))
                 for col in cols
