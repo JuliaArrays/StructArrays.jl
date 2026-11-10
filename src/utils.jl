@@ -32,6 +32,15 @@ end
 
 map_params_as_tuple_fallback(f, ::Type{T}) where {T<:Tup} = map(f, fieldtypes(T))
 
+"""
+    StructArrays._mapcols(f, cols::Union{Tuple,NamedTuple})
+
+Apply `f` to each element of `cols`, returning a `Tuple` or `NamedTuple` with the same names.
+Unlike `map`, stays inferrable for any number of elements: `map` gives up on tuples with 32 or more.
+"""
+@inline @generated _mapcols(f::F, cols::Tup) where {F} =
+    :($(strip_params(cols))(Base.Cartesian.@ntuple $(fieldcount(cols)) i -> f(cols[i])))
+
 buildfromschema(initializer::F, ::Type{T}) where {F, T} = buildfromschema(initializer, T, staticschema(T))
 
 """

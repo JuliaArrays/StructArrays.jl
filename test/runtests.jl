@@ -803,8 +803,8 @@ end
         @test (@inferred StructArrays.eltypes(cols)) == eltype(t) broken=true
 
         @test (@inferred t[1]) == row
-        @test (@inferred t[1:2]) == t broken=true
-        @test (@inferred view(t, 1:2)) == t broken=true
+        @test (@inferred t[1:2]) == t
+        @test (@inferred view(t, 1:2)) == t
 
         @test (@inferred similar(t)) isa typeof(t) broken=true
         @test (@inferred similar(t, 3)) isa typeof(t) broken=true

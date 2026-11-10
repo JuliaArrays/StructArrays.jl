@@ -342,7 +342,7 @@ to
 map(c -> c[I...], Tuple(cols))
 ```
 """
-@inline @generated get_ith(cols::Tup, I...) = :(Base.Cartesian.@ntuple $(fieldcount(cols)) i -> @inbounds cols[i][I...])
+@inline get_ith(cols::Tup, I...) = _mapcols(c -> @inbounds(c[I...]), cols)
 
 Base.@propagate_inbounds Base.getindex(x::StructArray, I...) = _getindex(x, to_indices(x, I)...)
 
@@ -354,12 +354,12 @@ end
 
 @inline function _getindex(s::StructArray{T}, I...) where {T}
     @boundscheck checkbounds(s, I...)
-    StructArray{T}(map(v -> @inbounds(getindex(v, I...)), components(s)))
+    StructArray{T}(_mapcols(v -> @inbounds(getindex(v, I...)), components(s)))
 end
 
 @inline function Base.view(s::StructArray{T, N, C}, I...) where {T, N, C}
     @boundscheck checkbounds(s, I...)
-    StructArray{T}(map(v -> @inbounds(view(v, I...)), components(s)))
+    StructArray{T}(_mapcols(v -> @inbounds(view(v, I...)), components(s)))
 end
 
 function Base.parentindices(s::StructArray)
