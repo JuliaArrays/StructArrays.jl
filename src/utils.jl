@@ -208,27 +208,28 @@ maybe_convert_elt(::Type{T}, vals) where T = convert(T, vals)
 maybe_convert_elt(::Type{T}, vals::Tuple) where T = T <: Tuple ? convert(T, vals) : vals  # assignment of fields by position
 maybe_convert_elt(::Type{T}, vals::NamedTuple) where T = T<:NamedTuple ? convert(T, vals) : vals # assignment of fields by name
 
-"""
-    findconsistentvalue(f, components::Union{Tuple, NamedTuple})
-
-Compute the unique value that `f` takes on each `component ∈ components`.
-If not all values are equal, return `nothing`. Otherwise, return the unique value.
-"""
 function _findconsistentvalue(f, cols)
     val = f(first(cols))
     isconsistent = all(map(isequal(val) ∘ f, values(cols)))
     return ifelse(isconsistent, val, nothing)
 end
 
+"""
+    findconsistentvalue(f, components::Union{Tuple, NamedTuple})
+
+Compute the unique value that `f` takes on each `component ∈ components`.
+If not all values are equal, return `nothing`. Otherwise, return the unique value.
+"""
 function findconsistentvalue(f::F, cols::T) where {F, T<:Tup}
     if @generated
         types = fieldtypes(T)
         if length(types) > WIDE_TUPLE_LENGTH && all(==(types[1]), types) && isconcretetype(types[1])
+            # Unrolled with constant field indices: looping over `cols` would
+            # index it dynamically, which can force a wide tuple onto the heap.
+            checks = [:(isequal(val, f(getfield(cols, $i))) || return nothing) for i in 2:length(types)]
             return quote
-                val = f(first(cols))
-                for col in cols
-                    isequal(val, f(col)) || return nothing
-                end
+                val = f(getfield(cols, 1))
+                $(checks...)
                 return val
             end
         end

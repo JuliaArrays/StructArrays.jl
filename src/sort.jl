@@ -37,23 +37,23 @@ end
 
 _roweq(t::Tuple{}, i, j) = true
 _roweq(t::Tuple, i, j) = roweq(t[1], i, j) ? _roweq(tail(t), i, j) : false
-function roweq(t::T, i, j) where {T<:Tuple}
+function roweq(t::T, i, j) where {T<:Tup}
     if @generated
         types = fieldtypes(T)
         if length(types) > WIDE_TUPLE_LENGTH && all(==(types[1]), types) && isconcretetype(types[1])
             return quote
-                for col in t
-                    roweq(col, i, j) || return false
+                for k in 1:$(length(types))
+                    roweq(getfield(t, k), i, j) || return false
                 end
                 return true
             end
         end
-        return :(_roweq(t, i, j))
+        return :(_roweq(Tuple(t), i, j))
     else
-        return _roweq(t, i, j)
+        return _roweq(Tuple(t), i, j)
     end
 end
-roweq(s::StructArray, i, j) = roweq(Tuple(components(s)), i, j)
+roweq(s::StructArray, i, j) = roweq(components(s), i, j)
 
 function uniquesorted(keys, perm=sortperm(keys))
     (keys[perm[idxs[1]]] for idxs in GroupPerm(keys, perm))

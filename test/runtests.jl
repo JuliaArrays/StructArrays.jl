@@ -1665,18 +1665,24 @@ end
     # loop-based code paths for homogeneous component tuples.
     N = 2 * StructArrays.WIDE_TUPLE_LENGTH
     names = ntuple(i -> Symbol(:x, i), N)
+    # Measure allocations behind a function barrier (and without returning a
+    # wide tuple) so that only the code under test is counted.
+    allocs(f::F, args...) where {F} = (f(args...); @allocated f(args...))
+    construct(c) = StructArray(c)
+    storerow!(out, s, i) = (out[1] = s[i]; nothing)
+    roweq(s, i, j) = StructArrays.roweq(s, i, j)
 
     @testset "construction" begin
         cols = ntuple(_ -> rand(10), N)
         s = @inferred StructArray(cols)
         @test eltype(s) == NTuple{N, Float64}
         @test size(s) == (10,)
-        @test @allocated(StructArray(cols)) == 0
+        @test allocs(construct, cols) == 0
 
         ncols = NamedTuple{names}(cols)
         ns = @inferred StructArray(ncols)
         @test eltype(ns) == NamedTuple{names, NTuple{N, Float64}}
-        @test @allocated(StructArray(ncols)) == 0
+        @test allocs(construct, ncols) == 0
 
         bad = ntuple(i -> i == N ? rand(9) : rand(10), N)
         @test_throws ArgumentError StructArray(bad)
@@ -1693,16 +1699,13 @@ end
     @testset "getindex" begin
         cols = ntuple(_ -> rand(10), N)
         s = StructArray(cols)
-        rowsum(s, i) = sum(s[i]) # avoid measuring the boxing of a returned wide tuple
         @test @inferred(s[3]) == map(c -> c[3], cols)
-        rowsum(s, 3)
-        @test @allocated(rowsum(s, 3)) == 0
+        @test allocs(storerow!, Vector{eltype(s)}(undef, 1), s, 3) == 0
         @test_throws BoundsError s[11]
 
         ns = StructArray(NamedTuple{names}(cols))
         @test @inferred(ns[3]) == NamedTuple{names}(map(c -> c[3], cols))
-        rowsum(ns, 3)
-        @test @allocated(rowsum(ns, 3)) == 0
+        @test allocs(storerow!, Vector{eltype(ns)}(undef, 1), ns, 3) == 0
 
         # conversion to the declared eltype is preserved
         cs = StructArray{NTuple{2, Float64}}(([1, 2], [3, 4]))
@@ -1720,7 +1723,11 @@ end
         t = StructArray(ntuple(_ -> [1, 1, 2], N))
         @test StructArrays.roweq(t, 1, 2)
         @test !StructArrays.roweq(t, 1, 3)
-        @test @allocated(StructArrays.roweq(t, 1, 2)) == 0
+        @test allocs(roweq, t, 1, 2) == 0
+        nt = StructArray(NamedTuple{names}(components(t)))
+        @test StructArrays.roweq(nt, 1, 2)
+        @test !StructArrays.roweq(nt, 1, 3)
+        @test allocs(roweq, nt, 1, 2) == 0
 
         k = StructArray(ntuple(i -> i == N ? [1, 2, 1, 2] : [1, 1, 1, 1], N))
         groups = collect(StructArrays.GroupPerm(k, sortperm(k)))
