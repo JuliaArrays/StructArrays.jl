@@ -31,18 +31,28 @@ end
 try_compatible_columns(rows::StructArray{T}, s::StructArray{T}) where {T} = Tables.columntable(rows)
 try_compatible_columns(rows::StructArray{R}, s::StructArray{S}) where {R,S} = nothing
 
-for (f, g) in zip((:append!, :prepend!), (:push!, :pushfirst!))
-    @eval function Base.$f(s::StructVector, rows)
-        table = try_compatible_columns(rows, s)
-        if table !== nothing
-            # Input `rows` is a container of rows _and_ satisfies column
-            # table interface.  Thus, we can add the input column-by-column.
-            foreachfield($f, s, table)
-            return s
-        else
-            # Otherwise, fallback to a generic implementation expecting
-            # that `rows` is an iterator:
-            return foldl($g, rows; init = s)
-        end
+function Base.append!(s::StructVector, rows)
+    table = try_compatible_columns(rows, s)
+    if table !== nothing
+        # Input `rows` is a container of rows _and_ satisfies column
+        # table interface.  Thus, we can add the input column-by-column.
+        foreachfield(append!, s, table)
+        return s
+    else
+        # Otherwise, fallback to a generic implementation expecting
+        # that `rows` is an iterator:
+        return foldl(push!, rows; init = s)
+    end
+end
+
+function Base.prepend!(s::StructVector, rows)
+    table = try_compatible_columns(rows, s)
+    if table !== nothing
+        foreachfield(prepend!, s, table)
+        return s
+    else
+        # Pushing each row to the front would reverse their order, so collect
+        # the rows into a temporary `StructVector` and prepend it column-wise.
+        return prepend!(s, append!(similar(s, 0), rows))
     end
 end
