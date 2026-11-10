@@ -273,7 +273,7 @@ Base.convert(::Type{StructVector}, v::StructVector) = v
 
 # Helper function to avoid adding too many dispatches to `Base.similar`
 function _similar(s::StructArray{T}, ::Type{T}, sz) where {T}
-    return StructArray{T}(map(typ -> similar(typ, sz), components(s)))
+    return StructArray{T}(_mapcols(typ -> similar(typ, sz), components(s)))
 end
 
 function _similar(s::StructArray{T}, S::Type, sz) where {T}
@@ -407,18 +407,18 @@ end
 
 for f in (:pop!, :popfirst!)
     @eval function Base.$f(s::StructVector{T}) where T
-        t = map($f, components(s))
+        t = _mapcols($f, components(s))
         return createinstance(T, t...)
     end
 end
 
 function Base.deleteat!(s::StructVector{T}, idxs) where T
-    t = map(Base.Fix2(deleteat!, idxs), components(s))
+    t = _mapcols(Base.Fix2(deleteat!, idxs), components(s))
     return StructVector{T}(t)
 end
 
 function Base.keepat!(s::StructVector{T}, idxs) where T
-    t = map(Base.Fix2(keepat!, idxs), components(s))
+    t = _mapcols(Base.Fix2(keepat!, idxs), components(s))
     return StructVector{T}(t)
 end
 
@@ -484,7 +484,7 @@ end
 Base.reduce(::typeof(vcat), A::AbstractVector{<:StructArray}) = _reducecat_structarray(vcat, A)
 Base.reduce(::typeof(hcat), A::AbstractVector{<:StructArray}) = _reducecat_structarray(hcat, A)
 
-Base.copy(s::StructArray{T}) where {T} = StructArray{T}(map(copy, components(s)))
+Base.copy(s::StructArray{T}) where {T} = StructArray{T}(_mapcols(copy, components(s)))
 
 for type in (
         :Dims,
@@ -500,7 +500,7 @@ for type in (
         :(Tuple{Colon}),
     )
     @eval function Base.reshape(s::StructArray{T}, d::$(type)) where {T}
-        StructArray{T}(map(x -> reshape(x, d), components(s)))
+        StructArray{T}(_mapcols(x -> reshape(x, d), components(s)))
     end
 end
 

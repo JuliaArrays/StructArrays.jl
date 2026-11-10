@@ -160,7 +160,7 @@ julia> s_pooled = StructArrays.replace_storage(s) do v
 """
 function replace_storage(f, s::StructArray{T}) where T
     cols = components(s)
-    newcols = map(t -> replace_storage(f, t), cols)
+    newcols = _mapcols(t -> replace_storage(f, t), cols)
     StructArray{T}(newcols)
 end
 

@@ -21,7 +21,7 @@ include("tables.jl")
 import DataAPI: refarray, refvalue
 using DataAPI: defaultarray
 
-refarray(s::StructArray) = StructArray(map(refarray, components(s)))
+refarray(s::StructArray) = StructArray(_mapcols(refarray, components(s)))
 
 function refvalue(s::StructArray{T}, v::Tup) where {T}
     createinstance(T, map(refvalue, components(s), v)...)
@@ -36,7 +36,7 @@ colmetadatasupport(::Type{T}) where {T<:StructArray} = (
 )
 colmetadata(sa::StructArray, col::Symbol) = metadata(getproperty(sa, col))
 colmetadata(sa::StructArray) =
-    map(Tables.columns(sa)) do col
+    _mapcols(Tables.columns(sa)) do col
         metadatasupport(typeof(col)).read ? metadata(col) : nothing
     end
 

@@ -806,17 +806,17 @@ end
         @test (@inferred t[1:2]) == t
         @test (@inferred view(t, 1:2)) == t
 
-        @test (@inferred similar(t)) isa typeof(t) broken=true
-        @test (@inferred similar(t, 3)) isa typeof(t) broken=true
-        @test (@inferred copy(t)) == t broken=true
-        @test (@inferred reshape(t, 1, 2)) == reshape(collect(t), 1, 2) broken=true
-        @test (@inferred deleteat!(copy(t), 1)) == t[2:2] broken=true
-        @test (@inferred keepat!(copy(t), [1])) == t[1:1] broken=true
-        @test (@inferred pop!(copy(t))) == t[2] broken=!named
-        @test (@inferred popfirst!(copy(t))) == row broken=!named
-        @test (@inferred refarray(t)) == t broken=true
-        @test (@inferred StructArrays.replace_storage(identity, t)) == t broken=true
-        @test (@inferred StructArrays.colmetadata(t)) == map(_ -> nothing, Tables.columns(t)) broken=true
+        @test (@inferred similar(t)) isa typeof(t)
+        @test (@inferred similar(t, 3)) isa typeof(t)
+        @test (@inferred copy(t)) == t
+        @test (@inferred reshape(t, 1, 2)) == reshape(collect(t), 1, 2)
+        @test (@inferred deleteat!(copy(t), 1)) == t[2:2]
+        @test (@inferred keepat!(copy(t), [1])) == t[1:1]
+        @test (@inferred pop!(copy(t))) == t[2]
+        @test (@inferred popfirst!(copy(t))) == row
+        @test (@inferred refarray(t)) == t
+        @test (@inferred StructArrays.replace_storage(identity, t)) == t
+        @test (@inferred StructArrays.colmetadata(t)) == map(_ -> nothing, Tables.columns(t))
     end
 end
 
