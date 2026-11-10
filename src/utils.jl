@@ -210,6 +210,6 @@ If not all values are equal, return `nothing`. Otherwise, return the unique valu
 """
 function findconsistentvalue(f::F, cols::Tup) where F
     val = f(first(cols))
-    isconsistent = all(map(isequal(val) ∘ f, values(cols)))
+    isconsistent = all(_mapcols(isequal(val) ∘ f, cols))
     return ifelse(isconsistent, val, nothing)
 end
