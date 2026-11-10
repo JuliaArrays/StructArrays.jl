@@ -283,6 +283,17 @@ end
 
     @test e == c == StructArray(a=[10,1], b=[20,2], c=["A","a"])
 
+    # multiple rows keep their order (#371)
+    c = StructArray(a=[1], b=[2], c=["a"])
+    e = prepend!(c, [(a=10, b=20, c="A"), (a=11, b=21, c="B")])
+    @test e == c == StructArray(a=[10,11,1], b=[20,21,2], c=["A","B","a"])
+    c = StructArray(a=[1], b=[2.0])
+    prepend!(c, ((a=i, b=i) for i in -2:0))
+    @test c == StructArray(a=[-2,-1,0,1], b=[-2.0,-1.0,0.0,2.0])
+    @test eltype(c.b) == Float64
+    c = StructArray(a=[1], b=[2])
+    @test prepend!(c, ()) == StructArray(a=[1], b=[2])
+
     c = StructArray(a=[1,2,3], b=[1,4,6], c=["a","b","c"])
     d = filter!(c) do el
         return isodd(el.a) && iseven(el.b)
@@ -320,6 +331,10 @@ end
     e = prepend!(c, d)
 
     @test e == c == StructArray{C}(a=[10,1], b=[20,2], c=["A","a"])
+
+    c = StructArray{C}(a=[1], b=[2], c=["a"])
+    e = prepend!(c, [C(10, 20, "A"), C(11, 21, "B")])
+    @test e == c == StructArray{C}(a=[10,11,1], b=[20,21,2], c=["A","B","a"])
 
     c = StructArray{C}(a=[1,2,3], b=[1,4,6], c=["a","b","c"])
     d = filter!(c) do el
