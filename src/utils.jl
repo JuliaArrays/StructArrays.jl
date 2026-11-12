@@ -41,6 +41,12 @@ Unlike `map`, stays inferrable for any number of elements: `map` gives up on tup
 @inline @generated _mapcols(f::F, cols::Tup) where {F} =
     :($(strip_params(cols))(Base.Cartesian.@ntuple $(fieldcount(cols)) i -> f(cols[i])))
 
+# Short-circuiting `all(f, cols)` and `any(f, cols)` that stay allocation-free for any number of elements, including NamedTuples
+@inline @generated _allcols(f::F, cols::Tup) where {F} =
+    :(Base.Cartesian.@nall $(fieldcount(cols)) i -> f(cols[i]))
+@inline @generated _anycols(f::F, cols::Tup) where {F} =
+    :(Base.Cartesian.@nany $(fieldcount(cols)) i -> f(cols[i]))
+
 buildfromschema(initializer::F, ::Type{T}) where {F, T} = buildfromschema(initializer, T, staticschema(T))
 
 """

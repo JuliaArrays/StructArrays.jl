@@ -830,6 +830,16 @@ end
         @test allocs(storerow!, out, t, 1) == 0
         @test allocs(storepop!, out, pop!, copy(t)) == 0
         @test allocs(storepop!, out, popfirst!, copy(t)) == 0
+        # equal rows, so that every column is compared
+        @test StructArrays.roweq(t, 1, 1)
+        @test !StructArrays.roweq(t, 1, 2)
+        @test allocs(StructArrays.roweq, t, 1, 1) == 0
+        # the last component, so that every component is checked
+        @test allocs(Base.Broadcast.broadcast_unalias, t, last(components(t))) == 0
+        # sparse components, so that `issparse` is called on every one
+        sp = StructArray(map(sparse, components(t)))
+        @test issparse(sp)
+        @test allocs(issparse, sp) == 0
     end
 
     s = StructArray{Wide64}(widecols(64, true))
@@ -1308,6 +1318,13 @@ end
         sp = @inferred sparse(sa)
         @test sp isa SparseMatrixCSC{eltype(sa)}
         @test sp == sa
+    end
+    @testset "issparse" begin
+        s = StructArray(a = sparse([1, 0]), b = sparse([0, 1]))
+        @test issparse(s)
+        @test !issparse(StructArray(a = sparse([1, 0]), b = [0, 1]))
+        allocs(f::F, args...) where {F} = (f(args...); @allocated f(args...))
+        @test allocs(issparse, s) == 0
     end
 end
 

@@ -35,9 +35,8 @@ Base.eltype(::Type{<:GroupPerm}) = UnitRange{Int}
     return eq
 end
 
-roweq(t::Tuple{}, i, j) = true
-roweq(t::Tuple, i, j) = roweq(t[1], i, j) ? roweq(tail(t), i, j) : false
-roweq(s::StructArray, i, j) = roweq(Tuple(components(s)), i, j)
+roweq(t::Tup, i, j) = _allcols(c -> roweq(c, i, j), t)
+roweq(s::StructArray, i, j) = roweq(components(s), i, j)
 
 function uniquesorted(keys, perm=sortperm(keys))
     (keys[perm[idxs[1]]] for idxs in GroupPerm(keys, perm))
