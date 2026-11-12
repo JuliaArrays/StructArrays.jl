@@ -22,15 +22,10 @@ struct StructArray{T, N, C<:Tup, I} <: AbstractArray{T, N}
     end
 end
 
-# compute optimal type to use for indexing as a function of components
-index_type(components::NamedTuple) = index_type(values(components))
-index_type(::Tuple{}) = Int
-function index_type(components::Tuple)
-    f, ls = first(components), tail(components)
-    return IndexStyle(f) isa IndexCartesian ? CartesianIndex{ndims(f)} : index_type(ls)
-end
-# Only check first component if the all the component types match
-index_type(components::NTuple) = invoke(index_type, Tuple{Tuple}, (first(components),))
+# compute optimal type to use for indexing as a function of components,
+# which all have the same `ndims` (guaranteed by the inner constructor)
+index_type(components::Tup) =
+    _anycols(c -> IndexStyle(c) isa IndexCartesian, components) ? CartesianIndex{ndims(first(components))} : Int
 # Return the index type parameter as a function of the StructArray type or instance
 index_type(s::StructArray) = index_type(typeof(s))
 index_type(::Type{StructArray{T, N, C, I}}) where {T, N, C, I} = I
@@ -646,7 +641,7 @@ end
 
 # for aliasing analysis during broadcast
 function Broadcast.broadcast_unalias(dest::StructArray, src::AbstractArray)
-    if dest === src || any(Base.Fix2(===, src), values(components(dest))) # values() works around Julia 1.13 allocation regression
+    if dest === src || _anycols(Base.Fix2(===, src), components(dest))
         return src
     else
         return Base.unalias(dest, src)

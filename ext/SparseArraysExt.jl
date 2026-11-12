@@ -9,6 +9,6 @@ function sparse(S::StructArray{T}) where {T}
     return createinstance.(T, sparse_components...)
 end
 
-issparse(S::StructArray) = all(issparse, components(S))
+issparse(S::StructArray) = StructArrays._allcols(issparse, components(S))
 
 end
