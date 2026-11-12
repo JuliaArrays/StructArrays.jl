@@ -127,6 +127,12 @@ end
     cols = (a=rand(2), b=rand(2), c=rand(3))
     @test isnothing(StructArrays.findconsistentvalue(length, cols))
     @test isnothing(StructArrays.findconsistentvalue(length, Tuple(cols)))
+
+    # stops at the first inconsistent component
+    ncalls = Ref(0)
+    countlength(c) = (ncalls[] += 1; length(c))
+    @test isnothing(StructArrays.findconsistentvalue(countlength, ([1], [1, 2], [1], [1])))
+    @test ncalls[] == 3
 end
 
 @testset "indexstyle" begin
