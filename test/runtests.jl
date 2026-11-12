@@ -817,6 +817,7 @@ end
         @test (@inferred refarray(t)) == t
         @test (@inferred StructArrays.replace_storage(identity, t)) == t
         @test (@inferred StructArrays.colmetadata(t)) == map(_ -> nothing, Tables.columns(t))
+        @test (@inferred reshape(t, (SOneTo(2),))) == t
     end
 end
 

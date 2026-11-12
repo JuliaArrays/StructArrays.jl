@@ -46,7 +46,7 @@ let shape = isdefined(Base, :AbstractOneTo) && SOneTo <: Base.AbstractOneTo ?
     @eval Base.similar(s::StructArray, ::Type{T}, sz::$shape) where T = StructArrays._similar(s, T, sz)
     @eval Base.similar(::Type{<:StructArray{T, N, C}}, sz::$shape) where {T, N, C} = StructArrays.buildfromschema(typ -> similar(typ, sz), T, C)
 end
-Base.reshape(s::StructArray{T}, d::Tuple{SOneTo, Vararg{SOneTo}}) where {T} = StructArray{T}(map(x -> reshape(x, d), StructArrays.components(s)))
+Base.reshape(s::StructArray{T}, d::Tuple{SOneTo, Vararg{SOneTo}}) where {T} = StructArray{T}(StructArrays._mapcols(x -> reshape(x, d), StructArrays.components(s)))
 
 # Broadcast overload
 using StaticArrays: StaticArrayStyle, similar_type, Size, SOneTo
