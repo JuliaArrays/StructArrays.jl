@@ -1203,6 +1203,20 @@ end
     Base.showarg(io, rows, false)
     str = String(take!(io))
     @test str == "LazyRows(::Matrix{Float64}, ::Matrix{Float64})"
+
+    # LazyRows shares memory with its columns
+    s = StructArray(a=[1, 2, 3, 4], b=[10, 20, 30, 40])
+    rows = LazyRows(s)
+    @test Base.dataids(rows) == Base.dataids(s)
+    @test Base.mightalias(rows, s.a)
+    @test Base.mightalias(view(rows, 2:3), s.b)
+    @test !Base.mightalias(rows, [1, 2, 3, 4])
+    rc = Base.unaliascopy(rows)
+    @test rc isa typeof(rows)
+    @test parent(rc) == s
+    @test !Base.mightalias(rc, s)
+    s.a .= (r -> r.a).(view(rows, 4:-1:1))
+    @test s.a == [4, 3, 2, 1]
 end
 
 @testset "refarray" begin

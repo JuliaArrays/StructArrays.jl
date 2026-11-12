@@ -77,6 +77,8 @@ struct LazyRows{T, N, C, I} <: AbstractArray{LazyRow{T, N, C, I}, N}
     columns::StructArray{T, N, C, I}
 end
 Base.parent(v::LazyRows) = getfield(v, 1)
+Base.dataids(v::LazyRows) = Base.dataids(parent(v))
+Base.unaliascopy(v::LazyRows) = LazyRows(Base.unaliascopy(parent(v)))
 components(v::LazyRows) = components(parent(v))
 
 component(v::LazyRows, key) = component(parent(v), key)
