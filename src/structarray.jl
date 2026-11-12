@@ -349,7 +349,7 @@ Base.@propagate_inbounds Base.getindex(x::StructArray, I...) = _getindex(x, to_i
 Base.@propagate_inbounds function _getindex(x::StructArray{T}, I::Vararg{Int}) where {T}
     cols = components(x)
     @boundscheck checkbounds(x, I...)
-    return createinstance(T, get_ith(cols, I...)...)
+    return _createinstance(T, get_ith(cols, I...))
 end
 
 @inline function _getindex(s::StructArray{T}, I...) where {T}
@@ -408,7 +408,7 @@ end
 for f in (:pop!, :popfirst!)
     @eval function Base.$f(s::StructVector{T}) where T
         t = _mapcols($f, components(s))
-        return createinstance(T, t...)
+        return _createinstance(T, t)
     end
 end
 

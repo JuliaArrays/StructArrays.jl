@@ -798,6 +798,10 @@ end
     # Base.map loses inference on tuples with 32 or more elements,
     # so componentwise operations must not rely on it
     widecols(n, het) = ntuple(i -> het && iseven(i) ? [1.0, 2.0] : [1, 2], n)
+    # rows are stored rather than returned
+    allocs(f::F, args...) where {F} = (f(args...); @allocated f(args...))
+    storerow!(out, t, i) = (out[1] = t[i]; nothing)
+    storepop!(out, f::F, t) where {F} = (out[1] = f(t); nothing)
     @testset "$n columns, $(het ? "mixed" : "same") types, $(named ? "NamedTuple" : "Tuple")" for n in (32, 64), het in (false, true), named in (false, true)
         cols = named ? NamedTuple{ntuple(i -> Symbol(:x, i), n)}(widecols(n, het)) : widecols(n, het)
         t = StructArray(cols)
@@ -822,10 +826,17 @@ end
         @test (@inferred StructArrays.replace_storage(identity, t)) == t
         @test (@inferred StructArrays.colmetadata(t)) == map(_ -> nothing, Tables.columns(t))
         @test (@inferred reshape(t, (SOneTo(2),))) == t
+        out = Vector{eltype(t)}(undef, 1)
+        @test allocs(storerow!, out, t, 1) == 0
+        @test allocs(storepop!, out, pop!, copy(t)) == 0
+        @test allocs(storepop!, out, popfirst!, copy(t)) == 0
     end
 
     s = StructArray{Wide64}(widecols(64, true))
     @test (@inferred constructorof(typeof(s))(components(s))) == s
+
+    sv = StructArray{SVector{64, Float64}}(ntuple(_ -> [1.0, 2.0], 64))
+    @test allocs(storerow!, Vector{eltype(sv)}(undef, 1), sv, 1) == 0
 end
 
 @testset "propertynames" begin
