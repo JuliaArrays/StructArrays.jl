@@ -1360,6 +1360,18 @@ Base.BroadcastStyle(::Broadcast.ArrayStyle{MyArray2}, S::Broadcast.DefaultArrayS
 
     # used inside of broadcast but we also test it here explicitly
     @test isa(@inferred(Base.dataids(s)), NTuple{N, UInt} where {N})
+    @test Base.dataids(s) == (UInt(pointer(s.re)), UInt(pointer(s.im)))
+
+    # more columns than Base tuple functions handle inferrably
+    x, idx = rand(3), [3, 2, 1]
+    cols = (ntuple(_ -> rand(3), 31)..., 1:3, view(x, idx))
+    ids = (map(c -> UInt(pointer(c)), cols[1:31])..., UInt(pointer(x)), UInt(pointer(idx)))
+    sw = StructArray(NamedTuple{ntuple(i -> Symbol(:c, i), 33)}(cols))
+    @test @inferred(Base.dataids(sw)) == ids
+    @test @inferred(Base.dataids(StructArray(cols))) == ids
+    dataids_allocs(s) = @allocated Base.dataids(s)
+    dataids_allocs(sw)
+    @test dataids_allocs(sw) == 0
 
 
     @testset "style conflict check" begin

@@ -653,7 +653,9 @@ function Broadcast.broadcast_unalias(dest::StructArray, src::AbstractArray)
     end
 end
 
-Base.dataids(u::StructArray) = mapreduce(Base.dataids, (a, b) -> (a..., b...), values(components(u)), init=())
+Base.dataids(u::StructArray) = dataids_cols(components(u))
+# generated to stay inferrable and non-allocating for any number of columns
+@generated dataids_cols(cols::Tup) = :(Base.Cartesian.@ntuple $(fieldcount(cols)) i -> Base.dataids(cols[i])...)
 
 # Since all the components have the same axes, we choose the type of the first one to
 # define IteratorSize for a StructArray
