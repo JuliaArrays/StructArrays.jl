@@ -1,7 +1,7 @@
 module StaticArraysExt
 
 using StructArrays
-using StaticArrays: StaticArray, FieldArray, tuple_prod, SVector, MVector, SOneTo, HeterogeneousShapeTuple
+using StaticArrays: StaticArray, FieldArray, tuple_prod, SVector, MVector, SOneTo, HeterogeneousShapeTuple, SArray, MArray, SizedArray
 
 """
     StructArrays.staticschema(::Type{<:StaticArray{S, T}}) where {S, T}
@@ -22,6 +22,7 @@ which subtypes `FieldArray`.
     end
 end
 StructArrays.createinstance(::Type{T}, args...) where {T<:StaticArray} = T(args)
+StructArrays._createinstance(::Type{T}, row) where {T<:Union{SArray, MArray, SizedArray}} = T(row)
 StructArrays.component(s::StaticArray, i::Integer) = getindex(s, i)
 
 function StructArrays.component(s::StructArray{<:Union{SVector,MVector}}, key::Symbol)

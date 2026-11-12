@@ -59,6 +59,11 @@ end
 
 createinstance(::Type{T}, args...) where {T<:Tup} = T(args)
 
+# Build a `T` from a tuple of field values. Splatting more than 32 values allocates, so types whose
+# `createinstance` belongs to this package (no user can overload it) are built from the tuple directly.
+_createinstance(::Type{T}, row) where {T} = createinstance(T, row...)
+_createinstance(::Type{T}, row) where {T<:Tup} = T(row)
+
 struct Instantiator{T} end
 
 Instantiator(::Type{T}) where {T} = Instantiator{T}()
