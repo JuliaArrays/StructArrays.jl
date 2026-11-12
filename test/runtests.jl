@@ -790,6 +790,10 @@ end
     @inferred map_params_infer()
 end
 
+@eval struct Wide64
+    $([:($(Symbol(:x, i))::$(iseven(i) ? Float64 : Int)) for i in 1:64]...)
+end
+
 @testset "wide components" begin
     # Base.map loses inference on tuples with 32 or more elements,
     # so componentwise operations must not rely on it
@@ -819,6 +823,9 @@ end
         @test (@inferred StructArrays.colmetadata(t)) == map(_ -> nothing, Tables.columns(t))
         @test (@inferred reshape(t, (SOneTo(2),))) == t
     end
+
+    s = StructArray{Wide64}(widecols(64, true))
+    @test (@inferred constructorof(typeof(s))(components(s))) == s
 end
 
 @testset "propertynames" begin
