@@ -1203,6 +1203,24 @@ end
     Base.showarg(io, rows, false)
     str = String(take!(io))
     @test str == "LazyRows(::Matrix{Float64}, ::Matrix{Float64})"
+
+    # LazyRows shares memory with its columns
+    s = StructArray(a=[1, 2, 3, 4], b=[10, 20, 30, 40])
+    rows = LazyRows(s)
+    @test Base.dataids(rows) == Base.dataids(s)
+    @test Base.mightalias(rows, s.a)
+    @test Base.mightalias(view(rows, 2:3), s.b)
+    @test !Base.mightalias(rows, [1, 2, 3, 4])
+    rc = Base.unaliascopy(rows)
+    @test rc isa typeof(rows)
+    @test parent(rc) == s
+    @test !Base.mightalias(rc, s)
+    s.a .= (r -> r.a).(view(rows, 4:-1:1))
+    @test s.a == [4, 3, 2, 1]
+    s = StructArray(a=view([1, 2, 3], :))
+    @test Base.unaliascopy(LazyRows(s)) isa typeof(LazyRows(s))
+    s.a .= (r -> r.a).(view(LazyRows(s), 3:-1:1))
+    @test s.a == [3, 2, 1]
 end
 
 @testset "refarray" begin
@@ -1360,6 +1378,15 @@ Base.BroadcastStyle(::Broadcast.ArrayStyle{MyArray2}, S::Broadcast.DefaultArrayS
 
     # used inside of broadcast but we also test it here explicitly
     @test isa(@inferred(Base.dataids(s)), NTuple{N, UInt} where {N})
+
+    # unaliasing keeps the exact type even when `copy` of a component would change it
+    u = StructArray(a=view([1, 2, 3], :), b=1:3, c=StructArray(x=reshape([1, 2, 3], 3)))
+    uc = @inferred Base.unaliascopy(u)
+    @test uc isa typeof(u)
+    @test uc == u
+    @test !Base.mightalias(uc, u)
+    u.a .= (r -> r.a + r.b + r.c.x).(view(u, 3:-1:1))
+    @test u.a == [9, 6, 3]
 
 
     @testset "style conflict check" begin
