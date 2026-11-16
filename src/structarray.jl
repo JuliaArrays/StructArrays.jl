@@ -654,6 +654,7 @@ function Broadcast.broadcast_unalias(dest::StructArray, src::AbstractArray)
 end
 
 Base.dataids(u::StructArray) = mapreduce(Base.dataids, (a, b) -> (a..., b...), values(components(u)), init=())
+Base.unaliascopy(s::StructArray{T}) where {T} = StructArray{T}(map(Base.unaliascopy, components(s)))
 
 # Since all the components have the same axes, we choose the type of the first one to
 # define IteratorSize for a StructArray
