@@ -336,10 +336,10 @@ Base.axes(s::StructArray) = axes(components(s)[1])
 """
     StructArrays.get_ith(cols::Union{Tuple,NamedTuple}, I...)
 
-Form a `Tuple` of the `I`th index of each element of `cols`, i.e. is equivalent
-to
+Form a `Tuple` or `NamedTuple` (matching `cols`) of the `I`th index of each element
+of `cols`, i.e. is equivalent to
 ```julia
-map(c -> c[I...], Tuple(cols))
+map(c -> c[I...], cols)
 ```
 """
 @inline get_ith(cols::Tup, I...) = _mapcols(c -> @inbounds(c[I...]), cols)
