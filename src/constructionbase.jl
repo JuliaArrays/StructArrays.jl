@@ -7,7 +7,7 @@ ConstructionBase.constructorof(::Type{<:StructArray{<:Union{Tuple, NamedTuple}}}
 ConstructionBase.constructorof(::Type{<:StructArray{T}}) where {T} = function(comps::CT) where {CT}
     # the resulting eltype is like T, but potentially with different type parameters, eg Complex{Int} -> Complex{Float64}
     # probe its constructorof to get the right concrete type
-    ET = Base.promote_op(constructorof(T), map(eltype, fieldtypes(CT))...)
+    ET = Base.promote_op(constructorof(T), _mapcols(eltype, comps)...)
     StructArray{ET}(comps)
 end
 

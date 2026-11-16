@@ -3,7 +3,7 @@ argtail(_, args...) = args
 split_tuple_type(T) = fieldtype(T, 1), Tuple{argtail(T.parameters...)...}
 
 eltypes(nt::NamedTuple{names}) where {names} = NamedTuple{names, eltypes(values(nt))}
-eltypes(t::Tuple) = Tuple{map(eltype, t)...}
+eltypes(t::Tuple) = Tuple{_mapcols(eltype, t)...}
 
 alwaysfalse(t) = false
 
@@ -31,6 +31,15 @@ function map_params_as_tuple(f::F, ::Type{T}) where {F, T<:Tup}
 end
 
 map_params_as_tuple_fallback(f, ::Type{T}) where {T<:Tup} = map(f, fieldtypes(T))
+
+"""
+    StructArrays._mapcols(f, cols::Union{Tuple,NamedTuple})
+
+Apply `f` to each element of `cols`, returning a `Tuple` or `NamedTuple` with the same names.
+Unlike `map`, stays inferrable for any number of elements: `map` gives up on tuples with 32 or more.
+"""
+@inline @generated _mapcols(f::F, cols::Tup) where {F} =
+    :($(strip_params(cols))(Base.Cartesian.@ntuple $(fieldcount(cols)) i -> f(cols[i])))
 
 buildfromschema(initializer::F, ::Type{T}) where {F, T} = buildfromschema(initializer, T, staticschema(T))
 
@@ -151,7 +160,7 @@ julia> s_pooled = StructArrays.replace_storage(s) do v
 """
 function replace_storage(f, s::StructArray{T}) where T
     cols = components(s)
-    newcols = map(t -> replace_storage(f, t), cols)
+    newcols = _mapcols(t -> replace_storage(f, t), cols)
     StructArray{T}(newcols)
 end
 
@@ -201,6 +210,6 @@ If not all values are equal, return `nothing`. Otherwise, return the unique valu
 """
 function findconsistentvalue(f::F, cols::Tup) where F
     val = f(first(cols))
-    isconsistent = all(map(isequal(val) ∘ f, values(cols)))
+    isconsistent = all(_mapcols(isequal(val) ∘ f, cols))
     return ifelse(isconsistent, val, nothing)
 end
